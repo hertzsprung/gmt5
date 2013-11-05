@@ -1,8 +1,7 @@
 	$Id$
 
 README file for GMT supplemental x2sys programs
-Distributed under the GNU Lesser Public License; see file
-LICENSE.TXT in main GMT directory.
+Distributed under the GNU Public License (see file ../LICENSE.TXT)
 
 AUTHOR:		Paul Wessel
 DATE:		1-JAN-2011
@@ -11,7 +10,7 @@ INSTALL INFO:	The x2sys directory should install under GMT/src
 1.4 UPDATE [3-AUG-2010]
 
 Modularized as part of new GMT5-style design.
-Make any old mgg .gmt involvement subject to GMT_COMPATIBILTY setting
+Make any old mgg .gmt involvement subject to GMT_COMPAT compile mode
 
 1.3 UPDATE [24-JULY-2009]
 

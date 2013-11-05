@@ -21,10 +21,10 @@
 #
 # This software is distributed WITHOUT ANY WARRANTY; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See COPYING-CMAKE-SCRIPTS for more information.
+# See the License for more information.
 #=============================================================================
-# Note: this file is not an exact copy of the original file from Kitware.
-#       It has been modified for the needs of GMT.
+# (To distribute this file outside of CMake, substitute the full
+#  License text for the above reference.)
 
 #
 # $GDAL_DIR is an environment variable that would
@@ -42,12 +42,6 @@
 # This makes the presumption that you are include gdal.h like
 #
 #include "gdal.h"
-
-if (DEFINED GDAL_ROOT AND NOT GDAL_ROOT)
-  set (GDAL_LIBRARY "" CACHE INTERNAL "")
-  set (GDAL_INCLUDE_DIR "" CACHE INTERNAL "")
-  return()
-endif()
 
 if (UNIX AND NOT GDAL_FOUND)
   # Use gdal-config to obtain the library version (this should hopefully
@@ -132,5 +126,3 @@ find_package_handle_standard_args (GDAL DEFAULT_MSG GDAL_LIBRARY GDAL_INCLUDE_DI
 
 set (GDAL_LIBRARIES ${GDAL_LIBRARY})
 set (GDAL_INCLUDE_DIRS ${GDAL_INCLUDE_DIR})
-
-# vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

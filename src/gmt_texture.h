@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -40,16 +40,16 @@ struct GMT_PEN {	/* Holds pen attributes */
 struct GMT_FILL {	/* Holds fill attributes */
 	double rgb[4];			/* Chosen color if no pattern + Transparency 0-1 [0 = opaque] */
 	double f_rgb[4], b_rgb[4];	/* Colors applied to unset and set bits in 1-bit image */
-	bool use_pattern;		/* true if pattern rather than rgb is set */
-	int pattern_no;		/* Number of predefined pattern, or -1 if not set */
-	unsigned int dpi;		/* Desired dpi of image building-block */
+	GMT_LONG use_pattern;		/* TRUE if pattern rather than rgb is set */
+	GMT_LONG pattern_no;		/* Number of predefined pattern, if set */
+	GMT_LONG dpi;			/* Desired dpi of image building-block */
 	char pattern[GMT_BUFSIZ];		/* Full filename of user-define raster */
 };
 
 struct GMT_FONT {	/* Holds font attributes */
 	double size;			/* Font size in points */
-	unsigned int id;		/* Font ID number from predefined list */
-	unsigned int form;		/* Combination of binary 1 = fill, 2 = outline, 4 = pattern fill [1] */
+	GMT_LONG id;			/* Font ID number from predefined list */
+	GMT_LONG form;			/* Combination of binary 1 = fill, 2 = outline, 4 = pattern fill [1] */
 	struct GMT_FILL fill;		/* Font fill [black] */
 	struct GMT_PEN pen;		/* Font outline pen [none] */
 };

@@ -3,19 +3,24 @@
 #
 # Convert grids between netcdf and several of the other "native" formats
 
+. functions.sh
+header "Convert between netcdf and ESRI integer format"
+
 log=reformat_ei.log
 
-gmt grdmath -R-10/10/-10/10 -I1 X = lixo.nc
+grdmath -R-10/10/-10/10 -I1 X = lixo.nc
 
 # First conver to int
-gmt grdreformat lixo.nc lixo.ei=ei
-gmt grdmath lixo.nc lixo.ei=ei SUB = lixo_dif.nc
-gmt grd2xyz lixo_dif.nc -ZTLa > $log
+grdreformat lixo.nc lixo.ei=ei
+grdmath lixo.nc lixo.ei=ei SUB = lixo_dif.nc
+grd2xyz lixo_dif.nc -ZTLa > $log
 
 # Now convert back to .nc
-gmt grdreformat lixo.ei=ei lixo.nc
-gmt grdmath lixo.nc lixo.ei=ei SUB = lixo_dif.nc
-gmt grd2xyz lixo_dif.nc -ZTLa >> $log
+grdreformat lixo.ei=ei lixo.nc
+grdmath lixo.nc lixo.ei=ei SUB = lixo_dif.nc
+grd2xyz lixo_dif.nc -ZTLa >> $log
 
-res=`gmt info -C $log`
-echo ${res[0]} ${res[1]} | $AWK '{if($1 != 0 || $2 != 0) print 1}' > fail
+res=`minmax -C $log`
+echo ${res[0]} ${res[1]} | awk '{if($1 != 0 || $2 != 0) print 1}' > fail
+
+passfail reformat_ei

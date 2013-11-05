@@ -3,9 +3,10 @@
 #
 # Plot all the symbols on a 1x1 inch grid pattern
 
-ps=plot_symbols.ps
+. functions.sh
+header "Test psxyz and all the symbols with fill"
 
-gmt psxyz -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -p155/35 -S1i -X1i -Y1i -K << EOF > $ps
+psxyz -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -p155/35 -S1i -X1i -Y1i -K << EOF > $ps
 > Fat pen -W2p
 0.5	5.5	0	-
 > Plain red symbols -W- -Gred
@@ -21,7 +22,7 @@ gmt psxyz -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -p155/35 -S1i -X1i -Y1i -K << EO
 0.5	3.5	0	i
 1.5	3.5	0	90	1	0.5	j
 > Do orange -Gorange
-2.5	3.5	0	l+tM
+2.5	3.5	0	l/M
 3.5	3.5	0	n
 > Do yellowized pattern # 20 -Gp100/20:Fyellow
 0.5	2.5	0	1	0.5	r
@@ -38,9 +39,11 @@ gmt psxyz -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -p155/35 -S1i -X1i -Y1i -K << EO
 > Dual-colored pattern # 12 -Gp100/12:FredBgreen -W3p,orange
 3.5	1.5	0	a
 EOF
-gmt psxyz -R0/4/1/6/0/3 -Jx1i -Jz1i -O -Bxyzg1 -G0 -W0.25p -p155/35 -S1i -Y4i << EOF >> $ps
+psxyz -R0/4/1/6/0/3 -Jx1i -Jz1i -O -Bg1/g1/g1 -G0 -W0.25p -p155/35 -S1i -Y4i << EOF >> $ps
 > Red cube -Gred
 2.5	2.5	3	u
 > Blue column -Gblue
 2.5	2.5	2	o
 EOF
+
+pscmp

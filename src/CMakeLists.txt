@@ -1,43 +1,37 @@
 #
 # $Id$
 #
-# Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2011 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; version 3 or any later version.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# GNU General Public License for more details.
 #
 # Contact info: gmt.soest.hawaii.edu
 #-------------------------------------------------------------------------------
 #
-# To modify the cmake process: Edit your cmake/ConfigUser.cmake file
-#
 # src/CMakeLists.txt
 #
 
-include (ManageString)
 include (GmtHelperMacros)
 
-# On Windows do not prefix the DLLs with the 'lib' prefix
-if (WIN32)
-	set(LIB_PREFIX "")
-else (WIN32)
-	set(LIB_PREFIX "lib")
-endif (WIN32)
+# Include GMT_CREATE_MANPAGES macro
+include (GmtManpages)
 
-# Include CREATE_DEBUG_SYM macro and set DEBUG_BUILD
+# Include CREATE_DEBUG_SYM macro
 include (CreateDebugSym)
 
 # Find libraries
 message (STATUS "Searching dependent libraries. This may take a few minutes...")
 find_package (NETCDF REQUIRED)
 include_directories (${NETCDF_INCLUDE_DIR})
+add_definitions (${NETCDF_DEFINITIONS})
 
 find_package (GDAL)
 if (GDAL_FOUND)
@@ -68,28 +62,16 @@ else (PCRE_FOUND)
 	endif (REGEX_FOUND)
 endif (PCRE_FOUND)
 
-find_package (FFTW3)
-if (FFTW3_FOUND)
-	set (HAVE_FFTW3F TRUE CACHE INTERNAL "System has single precision FFTW")
-	if (FFTW3F_THREADS_LIBRARY)
-		set (HAVE_FFTW3F_THREADS TRUE CACHE INTERNAL "System has single precision threadded FFTW")
-	endif (FFTW3F_THREADS_LIBRARY)
-	include_directories (${FFTW3_INCLUDE_DIR})
-	list (APPEND GMT_OPTIONAL_LIBRARIES ${FFTW3F_LIBRARIES})
-endif (FFTW3_FOUND)
-
-find_package (ZLIB)
-if (ZLIB_FOUND)
-	set (HAVE_ZLIB TRUE CACHE INTERNAL "System has ZLIB")
-	include_directories (${ZLIB_INCLUDE_DIRS})
-endif (ZLIB_FOUND)
-
-if (APPLE)
-	# Accelerate framework
-	find_library (ACCELERATE_FRAMEWORK Accelerate)
-	mark_as_advanced (ACCELERATE_FRAMEWORK)
-	list (APPEND GMT_OPTIONAL_LIBRARIES ${ACCELERATE_FRAMEWORK})
-endif (APPLE)
+find_package (Matlab)
+if (GMT_MATLAB AND MATLAB_FOUND)
+	# We want the Matlab API
+	set (GMT_MATLAB yes PARENT_SCOPE)
+	include_directories (${MATLAB_INCLUDE_DIR})
+	list (APPEND GMT_OPTIONAL_LIBRARIES ${MATLAB_LIBRARIES})
+else (GMT_MATLAB AND MATLAB_FOUND)
+	# Don't build Matlab API
+	set (GMT_MATLAB no PARENT_SCOPE)
+endif (GMT_MATLAB AND MATLAB_FOUND)
 
 find_package (OpenMP)
 if (OPENMP_FOUND AND GMT_OPENMP)
@@ -111,210 +93,148 @@ include(ConfigureChecks)
 
 include_directories (${GMT_SOURCE_DIR}/src)
 include_directories (${CMAKE_CURRENT_BINARY_DIR})
+#include_directories (${PROJECT_BINARY_DIR})
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 
 # Examples and tests depend on Shorelines
-find_package (GSHHG)
-if (DO_EXAMPLES OR DO_TESTS AND NOT GSHHG_FOUND)
-	message (FATAL_ERROR "Cannot proceed without GSHHG Shorelines. "
-		"Need to either set GSHHG_ROOT or disable tests.")
-endif (DO_EXAMPLES OR DO_TESTS AND NOT GSHHG_FOUND)
+find_package (GSHHS)
+if (DO_EXAMPLES OR DO_TESTS AND NOT GSHHS_FOUND)
+	message (FATAL_ERROR "Cannot proceed without GSHHS Shorelines. "
+		"Need to either set GSHHS_ROOT or disable tests.")
+endif (DO_EXAMPLES OR DO_TESTS AND NOT GSHHS_FOUND)
 
-# Examples and tests depend on DCW
-find_package (DCW)
-if (DO_EXAMPLES OR DO_TESTS AND NOT DCW_FOUND)
-	message (FATAL_ERROR "Cannot proceed without DCW polygons. "
-		"Need to either set DCW_ROOT or disable tests."
-		"Obtain dcw-gmt-<version>.tar.gz or dcw-gmt-<version>.zip from ftp.soest.hawaii.edu://gmt5 and make DCW_ROOT variable point to the directory where you unarchived the files")
-endif (DO_EXAMPLES OR DO_TESTS AND NOT DCW_FOUND)
 
-# These lines are temporarily here for the beta release
-set (GMT_DEMOS_SRCS testapi.c testgmt5.c testgmtio.c testgrdio.c testio.c)
+# These three lines are temporarily here for the beta release
+set (GMT_PROGS2_SRCS gmtaverage.c)
+set (GMT_PROGSPS2_SRCS testapi.c)
+set (GMT_DEMOS2_SRCS gmtmercmap.c testgmt5.c testgmtio.c testio.c)
 
-if (NOT LICENSE_RESTRICTED) # off
-	# enable Shewchuk's triangle routine
-	set (GMT_TRIANGULATE "Shewchuk" PARENT_SCOPE)
+# source files
+set (GMT_DEMOS_SRCS gmt.c ${GMT_DEMOS2_SRCS})
+
+if (NOT LICENSE_RESTRICTED)
 	set (GMT_TRIANGLE_SRCS triangle.c triangle.h)
-	list (APPEND GMT_EXTRA_LICENSE_FILES ${CMAKE_CURRENT_DIR}/README.TRIANGLE)
-else (NOT LICENSE_RESTRICTED) # on
-	# disable Shewchuk's triangle routine
-	set (GMT_TRIANGULATE "Watson" PARENT_SCOPE)
+	set (GMT_EXTRA_LICENSE_TERMS ${CMAKE_CURRENT_DIR}/README.TRIANGLE)
 endif (NOT LICENSE_RESTRICTED)
 
-set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
-	fitcircle.c gmt2kml.c gmtconvert.c gmtmath.c gmtselect.c gmtsimplify.c
-	gmtspatial.c gmtconnect.c gmtvector.c gmtwhich.c grd2cpt.c grd2rgb.c
-	grd2xyz.c grdblend.c grdclip.c grdcut.c grdedit.c grdfft.c grdfilter.c
-	grdgradient.c grdhisteq.c grdinfo.c grdlandmask.c grdmask.c grdmath.c
-	grdpaste.c grdproject.c grdraster.c grdsample.c grdreformat.c grdtrack.c
-	grdtrend.c grdvolume.c greenspline.c kml2gmt.c makecpt.c mapproject.c
-	gmtinfo.c nearneighbor.c project.c ps2raster.c sample1d.c spectrum1d.c
-	sph2grd.c sphdistance.c sphinterpolate.c sphtriangulate.c splitxyz.c
-	surface.c trend1d.c trend2d.c triangulate.c xyz2grd.c gmtdefaults.c gmtget.c
-	gmtset.c grdcontour.c grdimage.c grdvector.c grdview.c psbasemap.c psclip.c
-	pscoast.c pscontour.c pshistogram.c psimage.c psmask.c psrose.c psscale.c
-	pstext.c pswiggle.c psxy.c psxyz.c pslegend.c)
+set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c
+	colmath.c filter1d.c fitcircle.c gmt2kml.c
+	gmtconvert.c gmtdp.c gmtmath.c gmtselect.c
+	gmtspatial.c gmtstitch.c gmtvector.c gmtwhich.c
+	grd2cpt.c grd2rgb.c grd2xyz.c grdblend.c
+	grdclip.c grdcut.c grdedit.c grdfft.c
+	grdfilter.c grdgradient.c grdhisteq.c grdinfo.c
+	grdlandmask.c grdmask.c grdmath.c grdpaste.c
+	grdproject.c grdsample.c grdreformat.c grdtrack.c
+	grdtrend.c grdvolume.c greenspline.c kml2gmt.c
+	makecpt.c mapproject.c minmax.c nearneighbor.c
+	project.c ps2raster.c sample1d.c spectrum1d.c
+	splitxyz.c surface.c trend1d.c trend2d.c
+	triangulate.c xyz2grd.c)
+list (APPEND GMT_PROGS_SRCS ${GMT_PROGS2_SRCS})
 
-# Legacy modules for which to install compatibility links via
-# install_module_symlink
-set (GMT_COMPAT_MODULES minmax gmtstitch gmtdp)
+set (GMT_PROGSPS_SRCS gmtdefaults.c gmtget.c gmtset.c
+	grdcontour.c grdimage.c grdvector.c grdview.c
+	psbasemap.c psclip.c pscoast.c pscontour.c
+	pshistogram.c psimage.c psmask.c psrose.c
+	psscale.c pstext.c pswiggle.c psxy.c psxyz.c
+	pslegend.c)
+list (APPEND GMT_PROGSPS_SRCS ${GMT_PROGSPS2_SRCS})
 
 # libpslib
 set (GMT_PSL_SRCS pslib.c common_string.c common_string.h common_runpath.c
-	common_runpath.h declspec.h gmt_config.h gmt_notposix.h)
+	common_runpath.h gmt_notposix.h)
 
 # libgmt
-set (GMT_LIB_SRCS block_subs.h common_byteswap.h common_math.h
-	common_runpath.h common_sighandler.c common_string.h declspec.h getopt.h
-	gmt_dev.h gmt_calclock.h gmt_colors.h gmt_common.h gmt_constants.h
-	gmt_contour.h gmt_crossing.h gmt_customio.h gmt_dcw.h gmt_defaults.h
-	gmt_error.h gmt_gdalread.h gmt_grd.h gmt_grdio.h gmt_hash.h gmt_init.h
-	gmt_internals.h gmt_io.h gmt_macros.h gmt_map.h gmt_media_name.h
-	gmt_media_size.h gmt_mgg_header2.h gmt_sharedlibs.h gmt_memory.h
-	gmt_core_module.h gmt_nan.h gmt_notposix.h gmt_option.h gmt_pennames.h
-	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h gmt_stat.h
-	gmt_support.h gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
-	gmt_types.h gmt_unique.h gmt_vector.h gmt_version.h gshhg_version.h pslib.h
-	s_rint.h triangle.h gmt.h gmt_resources.h gmt_define.h gmt_private.h
-	gmt_error_codes.h gmt_api.c gmt_bcr.c gmt_calclock.c gmt_cdf.c gmt_compat.c
-	gmt_customio.c gmt_dcw.c gmt_error.c gmt_fft.c gmt_grdio.c gmt_io.c
-	gmt_memory.c gmt_nc.c gmt_notposix.c gmt_proj.c gmt_shore.c gmt_sph.c
-	gmt_stat.c gmt_support.c gmt_regexp.c gmt_vector.c gmt_parse.c
-	gmt_error_codes.c gshhg_version.c gmtread.c gmtwrite.c common_math.c
-	common_runpath.c common_sighandler.c common_string.c compat/qsort.c
-	gmt_sharedlibs.c gmt_core_module.c gmt_init.c gmt_map.c gmt_plot.c
-	kiss_fft/_kiss_fft_guts.h kiss_fft/kiss_fft.c kiss_fft/kiss_fft.h
-	kiss_fft/kiss_fftnd.c kiss_fft/kiss_fftnd.h
-	${GMT_TRIANGLE_SRCS})
+set (GMT_LIB_SRCS gmt_bcr.c gmt_calclock.c gmt_cdf.c gmt_customio.c
+	gmt_fft.c gmt_grdio.c gmt_io.c  gmt_nc.c gmt_notposix.c gmt_proj.c
+	gmt_shore.c gmt_stat.c gmt_support.c gmt_regexp.c gmt_vector.c
+	gmt_version.c gmtapi_parse.c common_math.c common_string.c common_runpath.c
+	${GMT_PROGS_SRCS} ${GMT_TRIANGLE_SRCS})
 
-if (BUILD_SUPPLEMENTS)
-	# Needed in supplib, + supplements themselves
-	set (GMT_SUPPL_SRCS gmt_supplements_module.h gmt_supplements_module.c)
-endif (BUILD_SUPPLEMENTS)
+set (GMT_LIB_PS_SRCS gmt_init.c gmt_map.c gmt_plot.c gmtapi_util.c
+	${GMT_PROGSPS_SRCS})
 
-# dependencies on generated files
-set (GMT_GEN_HDRS gmt_color_rgb.h gmt_colornames.h gmt_datums.h
-	gmt_ellipsoids.h gmt_keycases.h
-	gmt_keywords.h gmt_config.h
-	gmtmath.h gmtmath_op.h gmtmath_explain.h
-	grdmath.h grdmath_op.h grdmath_explain.h
-	gmt_dimensions.h
-	CACHE INTERNAL "Autogenerated GMT headers")
+set (GMT_LIB_HDRS gmt_datums.h gmt_prognames.h gmt_progcases.h
+	gmt_colornames.h gmt_color_rgb.h gmt_ellipsoids.h gmt_grdkeys.h
+	gmt_keycases.h gmt_keywords.h gmtapi_errno.h gmtapi_errstr.h
+	gmt_dimensions.h gmtmath.h gmtmath_op.h gmtmath_explain.h grdmath.h
+	grdmath_op.h grdmath_explain.h gmt_progpurpose.h gmt_config.h)
 
-# Add commands to create header files
-add_custom_command (OUTPUT gmt_datums.h
-	COMMAND ${CMAKE_COMMAND}
-	-D GENERATE_COMMAND=gen_gmt_datums_h
-	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-	-D GMT_SRC=${GMT_SOURCE_DIR}
-	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS Datums.txt)
+# header target
+add_custom_target (gmt_headers DEPENDS ${GMT_LIB_HDRS})
 
-add_custom_command (OUTPUT gmt_colornames.h gmt_color_rgb.h
-	COMMAND ${CMAKE_COMMAND}
-	-D GENERATE_COMMAND=gen_gmt_colors_h
-	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-	-D GMT_SRC=${GMT_SOURCE_DIR}
-	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS Colors.txt)
+# lib targets
+set (GMT_LIBS gmtlib pslib)
 
-add_custom_command (OUTPUT gmt_ellipsoids.h
-	COMMAND ${CMAKE_COMMAND}
-	-D GENERATE_COMMAND=gen_gmt_ellipsoids
-	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-	-D GMT_SRC=${GMT_SOURCE_DIR}
-	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS Ellipsoids.txt)
+# manpages
+string (REPLACE ".c" ".1" GMT_MAN_1 "${GMT_PROGS_SRCS};${GMT_PROGSPS_SRCS}")
+list (APPEND GMT_MAN_1 gmt.1 gmt_shell_functions.1 gmtlogo.1 isogmt.1 gmtswitch.1)
+set (GMT_MAN_3 pslib.3)
+set (GMT_MAN_5 gmtcolors.5 gmt.conf.5)
+set (GMT_MAN_DEPS common_options.txt
+	explain_-A.txt explain_-B.txt explain_-B_full.txt explain_-I.txt
+	explain_-J.txt explain_-J_full.txt explain_-Jz.txt explain_-Jz_full.txt
+	explain_-K.txt explain_-K_full.txt explain_-L_scale.txt explain_-O.txt
+	explain_-O_full.txt explain_-P.txt explain_-P_full.txt explain_-R.txt
+	explain_-R_full.txt explain_-Rgeo.txt explain_-Rz.txt explain_-Rz_full.txt
+	explain_-T_rose.txt explain_-U.txt explain_-U_full.txt explain_-V.txt
+	explain_-V_full.txt explain_-XY.txt explain_-XY_full.txt
+	explain_-aspatial.txt explain_-aspatial_full.txt explain_-bi.txt
+	explain_-bi_full.txt explain_-bo.txt explain_-bo_full.txt explain_-c.txt
+	explain_-c_full.txt explain_-f.txt explain_-f_full.txt explain_-g.txt
+	explain_-g_full.txt explain_-h.txt explain_-h_full.txt explain_-icols.txt
+	explain_-icols_full.txt explain_-n.txt explain_-n_full.txt
+	explain_-ocols.txt explain_-ocols_full.txt explain_-s.txt
+	explain_-s_full.txt explain_-t.txt explain_-t_full.txt explain_colon.txt
+	explain_color.txt explain_commonitems.txt explain_contdump.txt
+	explain_contlabel.txt explain_distunits.txt explain_fill.txt
+	explain_float.txt explain_font.txt explain_grd_coord.txt
+	explain_grd_inout.txt explain_grd_input.txt explain_grd_output.txt
+	explain_gshhs.txt explain_help.txt explain_intables.txt
+	explain_labelinfo.txt explain_nodereg.txt explain_nodereg_full.txt
+	explain_pen.txt explain_perspective.txt explain_perspective_full.txt
+	explain_precision.txt explain_symbols.txt refs.i)
 
-add_custom_command (OUTPUT gmt_keycases.h gmt_keywords.h
-	COMMAND ${CMAKE_COMMAND}
-	-D GENERATE_COMMAND=gen_gmt_keywords_h
-	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-	-D GMT_SRC=${GMT_SOURCE_DIR}
-	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS gmt_keywords.txt gmt_keywords.d)
+# add generated depends
+set (GMT_MAN_DEPS ${GMT_MAN_DEPS} Colors.i Fonts.i Ellipsoids.i
+	grdreformat_man.i gmtmath_man.i grdmath_man.i)
 
-add_custom_command (OUTPUT gmt_dimensions.h
-	COMMAND ${CMAKE_COMMAND}
-	-D GENERATE_COMMAND=gen_gmt_dimensions_h
-	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-	-D GMT_SRC=${GMT_SOURCE_DIR}
-	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS gmt_media_name.h gmt_pennames.h gmt_unique.h
-	gmt_datums.h gmt_colornames.h gmt_ellipsoids.h
-	gmt_keycases.h)
-	# depends on cached line numbers from these generated files:
+# rules for generating missing files
+include (GmtGenExtraHeaders)
 
-add_custom_command (OUTPUT gmtmath.h gmtmath_op.h gmtmath_explain.h
-	COMMAND ${CMAKE_COMMAND}
-	-D GENERATE_COMMAND=gen_gmt_math_h
-	-D GMT=GMT
-	-D gmt=gmt
-	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-	-D GMT_SRC=${GMT_SOURCE_DIR}
-	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS gmtmath.c)
+# generate gmt_progpurpose.h
+gmt_make_purpose_h (
+	GMT_PROG_PURPOSE
+	${GMT_PROGS_SRCS}
+	${GMT_PROGSPS_SRCS})
 
-add_custom_command (OUTPUT grdmath.h grdmath_op.h grdmath_explain.h
-	COMMAND ${CMAKE_COMMAND}
-	-D GENERATE_COMMAND=gen_grd_math_h
-	-D GMT=GRD
-	-D gmt=grd
-	-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-	-D GMT_SRC=${GMT_SOURCE_DIR}
-	-P ${CMAKE_MODULE_PATH}/GmtGenExtraHeaders.cmake
-	DEPENDS grdmath.c)
-
-# autogenerated files target
-add_custom_target (gen_gmt_headers DEPENDS ${GMT_GEN_HDRS})
-
-configure_file (gmt_config.h.in gmt_config.h)
-configure_file (gmt_version.h.in gmt_version.h)
-configure_file (isogmt.in isogmt${GMT_INSTALL_NAME_SUFFIX} @ONLY)
-configure_file (gmt-config.in gmt-config${GMT_INSTALL_NAME_SUFFIX} @ONLY)
+configure_file (gmt_config.h.cmake gmt_config.h)
+configure_file (gmt_version.h.cmake gmt_version.h)
+configure_file (isogmt.cmake isogmt @ONLY)
 
 # gmtprogram
 set (GMT_PROGRAM ${GMT_SOURCE_DIR}/src/gmtprogram.c)
 
 # extra ugly definitions for triangle
-set_source_files_properties (triangle.c
+set_source_files_properties (triangle
 	PROPERTIES
 	COMPILE_DEFINITIONS "NO_TIMER;TRILIBRARY;REDUCED;CDT_ONLY;ANSI_DECLARATORS")
 
-if (MSVC)
-	# Disable automatic manifest generation
-	string(REGEX REPLACE "/MANIFEST[^ ]*( |$)" ""
-		CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
-
-	# To expand the command line arguments in Windows, see:
-	# http://msdn.microsoft.com/en-us/library/8bch7bkk.aspx
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} setargv.obj")
-endif(MSVC)
-
 # libpslib
-add_library (pslib
-	${GMT_GEN_HDRS}
-	${GMT_PSL_SRCS})
-
-add_dependencies (pslib gen_gmt_headers) # make pslib after gen_gmt_headers
+add_library (pslib ${GMT_PSL_SRCS})
 
 if (HAVE_M_LIBRARY)
 	# link the math library
 	target_link_libraries (pslib m)
 endif (HAVE_M_LIBRARY)
 
-if (HAVE_ZLIB)
-	# for DEFLATE encoding
-  target_link_libraries (pslib ${ZLIB_LIBRARIES})
-endif (HAVE_ZLIB)
-
 # set the build version (VERSION) and the API version (SOVERSION)
 set_target_properties (pslib
 	PROPERTIES
-	OUTPUT_NAME psl
-	PREFIX "${LIB_PREFIX}"
-	IMPORT_PREFIX "${LIB_PREFIX}"
+	OUTPUT_NAME ps
+	PREFIX lib
+	IMPORT_PREFIX lib
 	VERSION ${GMT_PACKAGE_VERSION}
 	SOVERSION ${GMT_PACKAGE_VERSION_MAJOR}
 	INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
@@ -325,101 +245,41 @@ if (WIN32 AND PSL_DLL_RENAME)
 	set_target_properties (pslib PROPERTIES RUNTIME_OUTPUT_NAME ${PSL_DLL_RENAME})
 endif ()
 
-if (BUILD_SUPPLEMENTS)
-	# supplement directories (only those, which are to be included in gmtlib)
-	# EXTRA_BUILD_DIRS are for testing new supplements that are not yet in
-	# subversion. See cmake/ConfigUserTemplate.cmake for setting this parameter.
-	set (GMT_SUPPL_DIRS gshhg img meca mgd77 misc potential segy
-		spotter x2sys ${EXTRA_BUILD_DIRS})
-endif (BUILD_SUPPLEMENTS)
+# supplement directories (only those, which are to be included in gmtlib)
+set (GMT_SUPPL_DIRS dbase gshhs imgsrc meca mgd77 potential segy sph spotter
+	x2sys)
+
+# other supplement directories
+set (GMT_OTHER_SUPPL_DIRS misc xgrid)
 
 # path to all binary dirs (used to set PATH in test scripts)
-set (GMT_BINARY_DIR_PATH "${CMAKE_CURRENT_BINARY_DIR}/\${CMAKE_CONFIG_TYPE:-.}")
+set (GMT_BINARY_DIR_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
-if (BUILD_SUPPLEMENTS)
-	# process supplement directories
-	if (UNIX)
-		set (CMAKE_SHARED_MODULE_SUFFIX .so)
-	endif (UNIX)
-	foreach (_dir ${GMT_SUPPL_DIRS})
-		add_subdirectory (${_dir})
-		list (APPEND GMT_BINARY_DIR_PATH
-			"${CMAKE_CURRENT_BINARY_DIR}/${_dir}/\${CMAKE_CONFIG_TYPE:-.}")
-	endforeach (_dir)
-	# supplement library files
-	get_subdir_var_files (GMT_SUPPL_LIB_SRCS LIB_SRCS ${GMT_SUPPL_DIRS})
-
-	# include supplement directories
-	foreach (_dir ${GMT_SUPPL_DIRS})
-		include_directories (${CMAKE_CURRENT_BINARY_DIR}/${_dir})
-	endforeach (_dir)
-	# libgmtsuppl
-	if (WIN32)
-		add_library (supplib
-			${GMT_GEN_HDRS}
-			${GMT_SUPPL_SRCS}
-			${GMT_SUPPL_LIB_SRCS})
-	else (WIN32)
-		add_library (supplib MODULE
-			${GMT_GEN_HDRS}
-			${GMT_SUPPL_SRCS}
-			${GMT_SUPPL_LIB_SRCS})
-	endif (WIN32)
-
-	add_dependencies (supplib gen_gmt_headers) # make supplib after gen_gmt_headers
-	add_dependencies (supplib pslib) # make supplib after pslib
-	add_dependencies (supplib gmtlib) # make supplib after pslib
-
-	# No SOVERSION & VERSION for a MODULE, only for SHARED libs
-	target_link_libraries (supplib
-		gmtlib
-		pslib)
-
-	set_target_properties (supplib
-		PROPERTIES
-		OUTPUT_NAME supplements
-		RUNTIME_OUTPUT_NAME supplements
-		LIBRARY_OUTPUT_DIRECTORY plugins
-		RUNTIME_OUTPUT_DIRECTORY plugins
-		PREFIX ""
-		LINK_FLAGS "${USER_GMTLIB_LINK_FLAGS}"
-		DEFINE_SYMBOL "LIBRARY_EXPORTS")
-
-	if (WIN32 AND SUPP_DLL_RENAME)
-		set_target_properties (supplib PROPERTIES RUNTIME_OUTPUT_NAME ${SUPP_DLL_RENAME})
-	endif ()
-
-	if (HAVE_DLADDR AND HAVE_LIBDL)
-		# link the dynamic linking loader library
-		target_link_libraries (supplib dl)
-	endif (HAVE_DLADDR AND HAVE_LIBDL)
-
-	if (HAVE_M_LIBRARY)
-		# link the math library
-		target_link_libraries (supplib m)
-	endif (HAVE_M_LIBRARY)
-
-	# install target
-	install (TARGETS supplib
-		LIBRARY DESTINATION ${GMT_LIBDIR}/gmt${GMT_INSTALL_NAME_SUFFIX}/plugins # UNIX
-		COMPONENT Runtime
-		RUNTIME DESTINATION ${GMT_BINDIR}/gmt_plugins # Windows
-		COMPONENT Runtime)
-endif (BUILD_SUPPLEMENTS)
+# process supplement directories
+foreach (_dir ${GMT_SUPPL_DIRS} ${GMT_OTHER_SUPPL_DIRS})
+	add_subdirectory (${_dir})
+	list (APPEND GMT_BINARY_DIR_PATH ${CMAKE_CURRENT_BINARY_DIR}/${_dir})
+endforeach (_dir)
 
 # make UNIX PATH variable
 string (REPLACE ";" ":" GMT_BINARY_DIR_PATH "${GMT_BINARY_DIR_PATH}")
 set (GMT_BINARY_DIR_PATH ${GMT_BINARY_DIR_PATH} CACHE INTERNAL
 	"UNIX PATH to all binary dirs")
 
+# supplement library files
+get_subdir_var_files (GMT_SUPPL_LIB_SRCS LIB_SRCS ${GMT_SUPPL_DIRS})
+
+# include supplement directories
+foreach (_dir ${GMT_SUPPL_DIRS})
+	include_directories (${CMAKE_CURRENT_BINARY_DIR}/${_dir})
+endforeach (_dir)
+
 # libgmt
 add_library (gmtlib
-	${GMT_GEN_HDRS}
+	${GMT_LIB_HDRS}
 	${GMT_LIB_SRCS}
-	${GMT_PROGS_SRCS})
-
-add_dependencies (gmtlib gen_gmt_headers) # make gmtlib after gen_gmt_headers
-add_dependencies (gmtlib pslib) # make gmtlib after pslib
+	${GMT_LIB_PS_SRCS}
+	${GMT_SUPPL_LIB_SRCS})
 
 target_link_libraries (gmtlib
 	${NETCDF_LIBRARIES}
@@ -436,8 +296,8 @@ endif (HAVE_M_LIBRARY)
 set_target_properties (gmtlib
 	PROPERTIES
 	OUTPUT_NAME gmt
-	PREFIX "${LIB_PREFIX}"
-	IMPORT_PREFIX "${LIB_PREFIX}"
+	PREFIX lib
+	IMPORT_PREFIX lib
 	VERSION ${GMT_PACKAGE_VERSION}
 	SOVERSION ${GMT_PACKAGE_VERSION_MAJOR}
 	INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
@@ -449,56 +309,63 @@ if (WIN32 AND GMT_DLL_RENAME)
 	set_target_properties (gmtlib PROPERTIES RUNTIME_OUTPUT_NAME ${GMT_DLL_RENAME})
 endif ()
 
-if (HAVE_DLADDR AND HAVE_LIBDL)
-	# link the dynamic linking loader library
-	target_link_libraries (pslib dl)
-	target_link_libraries (gmtlib dl)
-endif (HAVE_DLADDR AND HAVE_LIBDL)
+# create build targets for gmt progs
+string (REPLACE ".c" "" GMT_PROGS "${GMT_PROGS_SRCS}")
+foreach (_gmtprog ${GMT_PROGS})
+	add_executable (${_gmtprog} ${GMT_PROGRAM})
+	set_target_properties (${_gmtprog} PROPERTIES
+		COMPILE_DEFINITIONS "FUNC_MODE=GMTAPI_GMT;FUNC=GMT_${_gmtprog}")
+	target_link_libraries (${_gmtprog} gmtlib)
+endforeach (_gmtprog)
 
-if (MSVC AND FFTW3_FOUND)
-	target_link_libraries(gmtlib ws2_32)
-endif (MSVC AND FFTW3_FOUND)
+# create build targets for gmt progsps
+string (REPLACE ".c" "" GMT_PROGSPS "${GMT_PROGSPS_SRCS}")
+foreach (_gmtprogps ${GMT_PROGSPS})
+	add_executable (${_gmtprogps} ${GMT_PROGRAM})
+	set_target_properties (${_gmtprogps}
+		PROPERTIES COMPILE_DEFINITIONS
+		"FUNC_MODE=GMTAPI_GMTPSL;FUNC=GMT_${_gmtprogps}")
+	target_link_libraries (${_gmtprogps} gmtlib)
+endforeach (_gmtprogps)
 
-# build targets for standalone gmt target and demos
-string (REPLACE ".c" "" _gmt_progs "gmt.c;${GMT_DEMOS_SRCS}")
-foreach (_gmt_prog ${_gmt_progs})
-	add_executable (${_gmt_prog} ${_gmt_prog}.c)
-	target_link_libraries (${_gmt_prog} gmtlib)
-endforeach (_gmt_prog)
+# generate gmt_modules.h
+set (GMT_SUPPL_STRING "modules")
+gmt_set_api_header(GMT_MODULES_API_H ${GMT_PROGS} ${GMT_PROGSPS})
 
-configure_file (psldemo.h.in psldemo.h @ONLY)
+# build targets for demos
+string (REPLACE ".c" "" GMT_DEMOS "${GMT_DEMOS_SRCS}")
+foreach (_gmtdemo ${GMT_DEMOS})
+	add_executable (${_gmtdemo} ${_gmtdemo}.c)
+	target_link_libraries (${_gmtdemo} gmtlib)
+endforeach (_gmtdemo)
+
+configure_file (psldemo.h.cmake psldemo.h @ONLY)
 add_executable (psldemo psldemo.h psldemo.c)
 target_link_libraries (psldemo pslib)
 
-# Rename gmt target to prevent version clash
-set_target_properties (gmt PROPERTIES OUTPUT_NAME gmt${GMT_INSTALL_NAME_SUFFIX})
+# rman for converting html manpages
+if (HAVE_GETOPT)
+	add_executable (rman rman.c)
+else (HAVE_GETOPT)
+	add_executable (rman rman.c getopt.c getopt.h)
+endif (HAVE_GETOPT)
 
-# generate and install Mac/Windows debugging symbols
-create_debug_sym (${GMT_BINDIR} gmt)
-if (WIN32)
-	create_debug_sym (${GMT_BINDIR} gmtlib pslib)
-	create_debug_sym (${GMT_BINDIR}/gmt_plugins supplib)
-else (WIN32)
-	create_debug_sym (${GMT_LIBDIR} gmtlib pslib)
-	create_debug_sym (${GMT_LIBDIR}/gmt${GMT_INSTALL_NAME_SUFFIX}/plugins supplib)
-endif (WIN32)
+# generate Mac debugging symbols
+create_debug_sym (${GMT_LIBS} ${GMT_PROGS} ${GMT_PROGSPS} ${GMT_DEMOS})
 
-# gshhg_version
-add_executable (gshhg_version gshhg_version.h gshhg_version.c)
-set_target_properties (gshhg_version
-	PROPERTIES COMPILE_DEFINITIONS "STANDALONE")
-target_link_libraries (gshhg_version ${NETCDF_LIBRARIES})
+# Tests depend on GMT progs and supplements:
+add_dependencies (check ${GMT_PROGSPS} ${GMT_PROGS} ${GMT_DEMOS} psldemo
+	gmt_suppl)
 
-if (BUILD_SUPPLEMENTS)
-	# Tests depend on GMT progs and supplements:
-	add_dependencies (check ${_gmt_progs} psldemo supplib)
-else (BUILD_SUPPLEMENTS)
-	# Tests depend on GMT progs and supplements:
-	add_dependencies (check ${_gmt_progs} psldemo)
-endif (BUILD_SUPPLEMENTS)
+# Rename gmt target on non-monolithic installs to prevent version clash
+if (NOT GMT_INSTALL_MONOLITHIC)
+	set_target_properties (gmt
+		PROPERTIES
+		OUTPUT_NAME gmt-${GMT_PACKAGE_VERSION_WITH_SVN_REVISION})
+endif (NOT GMT_INSTALL_MONOLITHIC)
 
 # add the install targets
-install (TARGETS gmtlib pslib gmt
+install (TARGETS ${GMT_LIBS} ${GMT_PROGS} ${GMT_PROGSPS} ${GMT_DEMOS}
 	ARCHIVE DESTINATION ${GMT_LIBDIR}
 	COMPONENT Runtime
 	LIBRARY DESTINATION ${GMT_LIBDIR}
@@ -506,46 +373,60 @@ install (TARGETS gmtlib pslib gmt
 	RUNTIME DESTINATION ${GMT_BINDIR}
 	COMPONENT Runtime)
 
-string (REPLACE ".c" "" _gmt_modules "${GMT_PROGS_SRCS}")
-install_module_symlink (${_gmt_modules} ${GMT_COMPAT_MODULES})
+if (WIN32 AND _debug_build)
+	# install program database files
+	set (_pdb_files)
+	foreach (_target libps libgmt ${GMT_PROGS} ${GMT_PROGSPS} ${GMT_DEMOS})
+		list (APPEND _pdb_files "${CMAKE_CURRENT_BINARY_DIR}/${_target}.pdb")
+	endforeach ()
+	install (FILES ${_pdb_files}
+		DESTINATION ${GMT_BINDIR}
+		COMPONENT Runtime)
+endif (WIN32 AND _debug_build)
 
 # Install public headers
-install (FILES gmt.h gmt_define.h gmt_option.h gmt_resources.h declspec.h
-	DESTINATION ${GMT_INCLUDEDIR}
+install (FILES declspec.h gmtapi.h
+	DESTINATION ${GMT_INCDIR}
 	COMPONENT Runtime)
 
-# symlink to gmt-wrapper in bindir and libdir:
-if (UNIX AND GMT_INSTALL_NAME_SUFFIX)
+# Non-monolithic installs:
+if (UNIX AND NOT GMT_INSTALL_MONOLITHIC)
+	# symlink to gmt-wrapper in bindir and libdir:
 	get_target_property(_gmt_wrapper_name gmt OUTPUT_NAME)
+	file (RELATIVE_PATH _rpath /bin /${GMT_BINDIR}/${_gmt_wrapper_name})
+	install (CODE "
+	execute_process (
+		COMMAND ${CMAKE_COMMAND} -E make_directory
+		\${CMAKE_INSTALL_PREFIX}/bin)
+	execute_process (
+		COMMAND ${CMAKE_COMMAND} -E create_symlink
+		${_rpath} \${CMAKE_INSTALL_PREFIX}/bin/${_gmt_wrapper_name}
+		COMMAND ${CMAKE_COMMAND} -E create_symlink
+		${_gmt_wrapper_name} \${CMAKE_INSTALL_PREFIX}/${GMT_BINDIR}/gmt)
+	")
+
+	# create symlinks in libdir/..:
+	file (RELATIVE_PATH _rpath /${GMT_LIBDIR} /${GMT_SHARE_PATH})
+	string (REGEX REPLACE "^[.][.]/(.*)" "\\1" _rpath "${_rpath}")
 	install (CODE "
 	execute_process (
 		COMMAND ${CMAKE_COMMAND} -E create_symlink
-		${_gmt_wrapper_name} \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${GMT_BINDIR}/gmt)
+		${_rpath} \${CMAKE_INSTALL_PREFIX}/${GMT_LIBDIR}/../share
+		COMMAND ${CMAKE_COMMAND} -E create_symlink
+		${_rpath}/man \${CMAKE_INSTALL_PREFIX}/${GMT_LIBDIR}/../man)
 	")
-endif (UNIX AND GMT_INSTALL_NAME_SUFFIX)
+endif (UNIX AND NOT GMT_INSTALL_MONOLITHIC)
 
 # install extra files
 install (PROGRAMS
-	${CMAKE_CURRENT_BINARY_DIR}/isogmt${GMT_INSTALL_NAME_SUFFIX}
-	${CMAKE_CURRENT_BINARY_DIR}/gmt-config${GMT_INSTALL_NAME_SUFFIX}
+	${CMAKE_CURRENT_BINARY_DIR}/isogmt
+	gmtlogo
+	gmtswitch
+	gmt_shell_functions.sh
+	lockfile.sh
+	ncdeflate.sh
 	DESTINATION ${GMT_BINDIR}
 	COMPONENT Runtime)
-
-install (CODE "
-execute_process (
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-	${CMAKE_CURRENT_SOURCE_DIR}/gmtlogo
-	\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${GMT_BINDIR}/gmtlogo${GMT_INSTALL_NAME_SUFFIX})
-execute_process (
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-	${CMAKE_CURRENT_SOURCE_DIR}/gmtswitch
-	\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${GMT_BINDIR}/gmtswitch${GMT_INSTALL_NAME_SUFFIX})
-execute_process (
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-	${CMAKE_CURRENT_SOURCE_DIR}/gmt_shell_functions.sh
-	\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${GMT_BINDIR}/gmt_shell_functions${GMT_INSTALL_NAME_SUFFIX}.sh)
-")
-
 if (WIN32)
 	install (PROGRAMS
 		gmtswitch.bat
@@ -553,10 +434,14 @@ if (WIN32)
 		COMPONENT Runtime)
 endif (WIN32)
 
+# Generate manpages
+gmt_create_manpages (${GMT_MAN_1} ${GMT_MAN_3} ${GMT_MAN_5}
+	DEPENDS ${GMT_MAN_DEPS})
+
 # this prints out the final version of the compiler/linker flags
 string (TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 string(REGEX REPLACE "[ ]+" " " _using_cflags ${CMAKE_C_FLAGS} " "
-	${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UPPER}})
+	${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UPPER}} " " ${NETCDF_DEFINITIONS})
 message (STATUS "Using CFLAGS = '${_using_cflags}'")
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

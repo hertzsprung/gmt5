@@ -2,25 +2,27 @@
 #
 #       $Id$
 
-ps=spotter_5.ps
+. functions.sh
+header "Testing grdpmodeler for evaluating APM model"
 
-POLES=${src}/../../src/spotter/WK97.d
+POLES="$src"/WK97.d
 
 # Determine the plate motion rates in effect when the Pacific crust was formed
-gmt grdpmodeler pac_age.nc -E$POLES -FPacific.txt -Gpac_vel.nc -Sr
-gmt makecpt -Crainbow -T0/140/5 -Z > t.cpt
-gmt grdimage pac_vel.nc -Ct.cpt -JM4.5i -K -Q -X0.75i -Y1.5i > $ps
-gmt pscoast -Rpac_vel.nc -J -O -K -Ggray -B30f10 -BWSne >> $ps
-echo "130 60 Plate velocity at formation" | gmt pstext -R -J -O -K -T -Dj0.1i -F+jTL+f14p -Gwhite -W1p >> $ps
-gmt psscale -Ct.cpt -D2.25i/-0.4i/3.5i/0.15ih -O -K -Bx50f25 -By+lkm/Myr >> $ps
+grdpmodeler "$src"/pac_age.nc -E$POLES -F"$src"/Pacific.txt -Gpac_vel.nc -Sr
+makecpt -Crainbow -T0/140/5 -Z > t.cpt
+grdimage pac_vel.nc -Ct.cpt -JM4.5i -K -Q -X0.75i -Y1.5i > $ps
+pscoast -Rpac_vel.nc -J -O -K -Ggray -B30f10WSne >> $ps
+echo "130 60 Plate velocity at formation" | pstext -R -J -O -K -T -Dj0.1i -F+jTL+f14p -Gwhite -W1p >> $ps
+psscale -Ct.cpt -D2.25i/-0.4i/3.5i/0.15ih -O -K -B50f25/:km/Myr: >> $ps
 
 # Determine how far the crust has moved since formation
-gmt grdpmodeler pac_age.nc -E$POLES -FPacific.txt -Gpac_dist.nc -Sd
-gmt makecpt -Crainbow -T0/8000/500 -Z > t.cpt
-gmt grdimage pac_dist.nc -Ct.cpt -J -O -K -Q -X4.75i >> $ps
-gmt pscoast -Rpac_vel.nc -J -O -K -Ggray -B30f10 -BwSne >> $ps
-echo "130 60 Dispacement since formation" | gmt pstext -R -J -O -K -T -Dj0.1i -F+jTL+f14p -Gwhite -W1p >> $ps
-gmt psscale -Ct.cpt -D2.25i/-0.4i/3.5i/0.15ih -O -K -Bx2000f1000 -By+lkm >> $ps
-gmt psxy -R -J -O -T >> $ps
+grdpmodeler "$src"/pac_age.nc -E$POLES -F"$src"/Pacific.txt -Gpac_dist.nc -Sd
+makecpt -Crainbow -T0/8000/500 -Z > t.cpt
+grdimage pac_dist.nc -Ct.cpt -J -O -K -Q -X4.75i >> $ps
+pscoast -Rpac_vel.nc -J -O -K -Ggray -B30f10wSne >> $ps
+echo "130 60 Dispacement since formation" | pstext -R -J -O -K -T -Dj0.1i -F+jTL+f14p -Gwhite -W1p >> $ps
+psscale -Ct.cpt -D2.25i/-0.4i/3.5i/0.15ih -O -K -B2000f1000/:km: >> $ps
+psxy -R -J -O -T >> $ps
 
+pscmp
 

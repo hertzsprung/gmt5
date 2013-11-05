@@ -21,18 +21,12 @@
 #
 # This software is distributed WITHOUT ANY WARRANTY; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See COPYING-CMAKE-SCRIPTS for more information.
+# See the License for more information.
 #=============================================================================
 
 # This makes the presumption that you are include pcre.h like
 #
 #include "pcre.h"
-
-if (DEFINED PCRE_ROOT AND NOT PCRE_ROOT)
-  set (PCRE_LIBRARY "" CACHE INTERNAL "")
-  set (PCRE_INCLUDE_DIR "" CACHE INTERNAL "")
-  return()
-endif()
 
 if (UNIX AND NOT PCRE_FOUND)
   # Use pcre-config to obtain the library version (this should hopefully
@@ -114,5 +108,3 @@ find_package_handle_standard_args (PCRE DEFAULT_MSG PCRE_LIBRARY PCRE_INCLUDE_DI
 
 set (PCRE_LIBRARIES ${PCRE_LIBRARY})
 set (PCRE_INCLUDE_DIRS ${PCRE_INCLUDE_DIR})
-
-# vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

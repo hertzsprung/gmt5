@@ -3,7 +3,8 @@
 #
 # Test Delauney and Voronoi for Cartesian data
 
-ps=trivor.ps
+. functions.sh
+header "Test triangulate for generating Delaunay and Voronoi edges"
 
 cat << EOF > nodes.xy
 2.53857	5.16657
@@ -18,9 +19,10 @@ cat << EOF > nodes.xy
 5.27815	1.15172
 EOF
 
-gmt triangulate nodes.xy -M | gmt psxy -R0/10/0/10 -JX6 -P -K -W0.25p,red > $ps
-gmt psxy -R -J -O -B2g1 -Sc0.2 -Gwhite -W0.25p nodes.xy -K >> $ps
-$AWK '{printf "%s %s %d\n", $1, $2, NR-1}' nodes.xy | gmt pstext -R -J -F+f8p -O -K >> $ps
-gmt triangulate nodes.xy -M -Q -R0/10/0/10 | gmt psxy -R0/10/0/10 -J -O -K -W1p >> $ps
-gmt psxy -R -J -O -T >> $ps
+triangulate nodes.xy -M | psxy -R0/10/0/10 -JX6 -P -K -W0.25p,red > $ps
+psxy -R -J -O -B2g1 -Sc0.2 -Gwhite -W0.25p nodes.xy -K >> $ps
+awk '{printf "%s %s %d\n", $1, $2, NR-1}' nodes.xy | pstext -R -J -F+f8p -O -K >> $ps
+triangulate nodes.xy -M -Q -R0/10/0/10 | psxy -R0/10/0/10 -J -O -K -W1p >> $ps
+psxy -R -J -O -T >> $ps
 
+pscmp

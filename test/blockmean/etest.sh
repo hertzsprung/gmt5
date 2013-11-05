@@ -6,6 +6,9 @@
 # in a -R0/2/0/2 -I2 -r situation (2x2 blocks)
 # In all blocks mean = median = mode = 5.
 
+. functions.sh
+header "Test blockmean's new -E option on given data"
+
 log=etest.log
 
 cat << EOF > data.d
@@ -30,15 +33,17 @@ cat << EOF > data.d
 EOF
 echo "All the mean/median/mode values should be 5" > $log
 echo "Plain means" >> $log
-gmt blockmean -R0/2/0/2 -I1 -r data.d >> $log
+blockmean -R0/2/0/2 -I1 -r data.d >> $log
 echo "Extended means" >> $log
-gmt blockmean -R0/2/0/2 -I1 -r -E data.d >> $log
+blockmean -R0/2/0/2 -I1 -r -E data.d >> $log
 echo "Plain medians" >> $log
-gmt blockmedian -R0/2/0/2 -I1 -r data.d >> $log
+blockmedian -R0/2/0/2 -I1 -r data.d >> $log
 echo "Extended medians" >> $log
-gmt blockmedian -R0/2/0/2 -I1 -r -E data.d >> $log
+blockmedian -R0/2/0/2 -I1 -r -E data.d >> $log
 echo "Plain modes" >> $log
-gmt blockmode -R0/2/0/2 -I1 -r data.d >> $log
+blockmode -R0/2/0/2 -I1 -r data.d >> $log
 echo "Extended modes" >> $log
-gmt blockmode -R0/2/0/2 -I1 -r -E data.d >> $log
-$AWK '{if (NF == 6 && $3 != 5) print $0}' $log > fail
+blockmode -R0/2/0/2 -I1 -r -E data.d >> $log
+awk '{if (NF == 6 && $3 != 5) print $0}' $log > fail
+
+passfail etest

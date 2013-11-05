@@ -6,7 +6,8 @@
 # We also draw a large cyan square around intermediate-depth quakes
 # i.e., depths in 70-300 km range.
 
-ps=macros.ps
+. functions.sh
+header "Test psxy for multi-parameter custom symbols"
 
 cat << EOF > seis.def
 # Circle of variable size and color for seismicity
@@ -47,5 +48,6 @@ cat << EOF > q.txt
 2	2	410	6
 2	0	50	9.5
 EOF
-gmt psxy -R-1/3/-1/3 -JM6i -P -Skseis/0.5i -Wthinnest q.txt -B1 > $ps
+psxy -R-1/3/-1/3 -JM6i -P -Skseis/0.5i -Wthinnest q.txt -B1 > $ps
 
+pscmp

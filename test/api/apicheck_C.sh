@@ -1,14 +1,16 @@
 #!/bin/bash
-#	$Id$
-#
 # Test the C API for i/o involving CPTs
+
+. functions.sh
 
 function cpt_check {
 	testapi -I$1 -W$2 -Tc
 	diff -q --strip-trailing-cr ctest[io].cpt >> fail
 }
 
-gmt makecpt -Cno_green -T0/10/1 > ctesti.cpt
+header "Test the API for various CPT i/o combinations"
+
+makecpt -Cno_green -T0/10/1 > ctesti.cpt
 rm -f fail
 # 1. Read File and write CPT via...
 cpt_check f f	# 1a. File
@@ -40,3 +42,5 @@ cpt_check r s	# 5b. Stream
 cpt_check r d	# 5c. File descriptor
 cpt_check r c	# 5d. Copy
 cpt_check r r	# 5e. Reference
+
+passfail apicheck_C

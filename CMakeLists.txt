@@ -1,28 +1,26 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+#	Copyright (c) 1991-2011 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 #	See LICENSE.TXT file for copying and redistribution conditions.
 #
 #	This program is free software; you can redistribute it and/or modify
-#	it under the terms of the GNU Lesser General Public License as published by
-#	the Free Software Foundation; version 3 or any later version.
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation; version 2 or any later version.
 #
 #	This program is distributed in the hope that it will be useful,
 #	but WITHOUT ANY WARRANTY; without even the implied warranty of
 #	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#	GNU Lesser General Public License for more details.
+#	GNU General Public License for more details.
 #
 #	Contact info: gmt.soest.hawaii.edu
 #-------------------------------------------------------------------------------
-#
-# To modify the cmake process: Edit your cmake/ConfigUser.cmake file
 #
 # To build out-of-source do (example):
 #
 #	mkdir build
 #	cd build
-#	cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+#	cmake -DCMAKE_INSTALL_PREFIX=gmt5 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 #
 # CMAKE_BUILD_TYPE can be: empty, Debug, Release, RelWithDebInfo or MinSizeRel
 #
@@ -44,21 +42,25 @@ if (${srcdir} STREQUAL ${bindir})
 endif (${srcdir} STREQUAL ${bindir})
 
 # Define minimum CMake version required
-cmake_minimum_required (VERSION 2.8.5)
+cmake_minimum_required (VERSION 2.8.6)
 
 # Define project name
 project (GMT)
 
 # Where to find our CMake modules (this variable is visible in subdirectories).
 set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules/"
-	CACHE INTERNAL "Location of our custom CMake modules." FORCE)
+	CACHE INTERNAL "Location of our custom CMake modules.")
 
 # Include configuration options (default options and options overridden by user).
 include (ConfigCMake)
 
 # Find UNIX commands
 include (FindUnixCommands)
-find_program (SVN svn)
+
+# Configure a header file to pass some of the CMake settings to the source code
+configure_file (
+	"${PROJECT_SOURCE_DIR}/config.h.cmake"
+	"${PROJECT_BINARY_DIR}/config.h")
 
 # Global test target
 add_custom_target (check
@@ -73,106 +75,34 @@ if (DO_EXAMPLES OR DO_TESTS AND NOT GRAPHICSMAGICK)
 endif (DO_EXAMPLES OR DO_TESTS AND NOT GRAPHICSMAGICK)
 
 # Add subdirectories
-#set(_manfiles_ps "" CACHE INTERNAL "Global list of PS manpages")
+set(_manfiles_ps "" CACHE INTERNAL "Global list of PS manpages")
+set(_manfiles_suppl_ps "" CACHE INTERNAL "Global list of supplement PS manpages")
 add_subdirectory (src)
-add_subdirectory (share)      # share must be processed *after* src (GSHHG_PATH)
+add_subdirectory (share)      # share must be processed *after* src (GSHHS_PATH)
 add_subdirectory (doc)        # share must be processed *after* src (PDF manpages)
 add_subdirectory (test)
 add_subdirectory (cmake/dist) # make distribution bundles (always last)
 
-# Source release target
-if (SVN AND HAVE_SVN_VERSION)
-	# Export svn working tree
-	add_custom_target (svn_export_release
-		COMMAND ${SVN} --force export
-		${GMT_SOURCE_DIR} ${GMT_RELEASE_PREFIX})
-	add_depend_to_target (gmt_release svn_export_release)
-	find_program (GNUTAR NAMES gnutar gtar tar)
-	if (GNUTAR)
-		# Targets for creating tarballs
-		string (REGEX REPLACE ".*/" "" _release_dirname "${GMT_RELEASE_PREFIX}")
-		add_custom_command (OUTPUT ${_release_dirname}-src.tar.gz
-			COMMAND ${GNUTAR} -cz --owner 0 --group 0 --mode a=rX,u=rwX
-			-f ${GMT_BINARY_DIR}/${_release_dirname}-src.tar.gz ${_release_dirname}
-			DEPENDS ${GMT_RELEASE_PREFIX}
-			WORKING_DIRECTORY ${GMT_RELEASE_PREFIX}/..
-			VERBATIM)
-		add_custom_command (OUTPUT ${_release_dirname}-src.tar.bz2
-			COMMAND ${GNUTAR} -cj --owner 0 --group 0 --mode a=rX,u=rwX
-			-f ${GMT_BINARY_DIR}/${_release_dirname}-src.tar.bz2 ${_release_dirname}
-			DEPENDS ${GMT_RELEASE_PREFIX}
-			WORKING_DIRECTORY ${GMT_RELEASE_PREFIX}/..
-			VERBATIM)
-		add_custom_target (gmt_release_tar
-			DEPENDS ${GMT_RELEASE_PREFIX}
-			${_release_dirname}-src.tar.gz ${_release_dirname}-src.tar.bz2)
-	endif (GNUTAR)
-endif (SVN AND HAVE_SVN_VERSION)
-
-get_target_property (_location gmtlib LOCATION)
-get_filename_component (GMT_CORE_LIB_NAME ${_location} NAME)
-
-get_target_property (_location pslib LOCATION)
-get_filename_component (PSL_LIB_NAME ${_location} NAME)
-
-if (BUILD_SUPPLEMENTS)
-	# Get name of shared supplemental library
-	get_target_property (_location supplib LOCATION)
-	get_filename_component (GMT_SUPPL_LIB_NAME ${_location} NAME)
-	set (SUPPL "yes [${GMT_SUPPL_LIB_NAME}]")
-else (BUILD_SUPPLEMENTS)
-	set (SUPPL "no")
-endif (BUILD_SUPPLEMENTS)
-
-if (BUILD_SHARED_LIBS)
-	set (BUILD_MODE "shared")
-else (BUILD_SHARED_LIBS)
-	set (BUILD_MODE "static")
-endif (BUILD_SHARED_LIBS)
-
-if (EXTRA_BUILD_DIRS)
-	set (PROTO ${EXTRA_BUILD_DIRS})
-else (EXTRA_BUILD_DIRS)
-	set (PROTO "none")
-endif (EXTRA_BUILD_DIRS)
-
-# Configure a header file to pass some of the CMake settings to the source code
-configure_file (
-	"${PROJECT_SOURCE_DIR}/config.h.in"
-	"${PROJECT_BINARY_DIR}/config.h")
+# Source release target (export svn working tree)
+add_custom_target (svn_export_release
+	COMMAND svn --force export
+	${GMT_SOURCE_DIR} ${GMT_RELEASE_PREFIX})
+add_depend_to_target (gmt_release svn_export_release)
 
 # Configuration done
 message(
-	"*  Options:\n"
-	"*  Found GSHHG database       : ${GSHHG_PATH} (${GSHHG_VERSION})\n"
-	"*  Found DCW-GMT database     : ${DCW_PATH}\n"
-	"*  NetCDF library             : ${NETCDF_LIBRARY}\n"
-	"*  NetCDF include dir         : ${NETCDF_INCLUDE_DIR}\n"
-	"*  GDAL library               : ${GDAL_LIBRARY}\n"
-	"*  GDAL include dir           : ${GDAL_INCLUDE_DIR}\n"
-	"*  FFTW library               : ${FFTW3F_LIBRARY}\n"
-	"*  FFTW include dir           : ${FFTW3_INCLUDE_DIR}\n"
-	"*  Accelerate Framework       : ${ACCELERATE_FRAMEWORK}\n"
-	"*  Regex support              : ${GMT_CONFIG_REGEX_MESSAGE}\n"
-	"*  File locking               : ${FLOCK}\n"
-	"*  License restriction        : ${LICENSE_RESTRICTED}\n"
-	"*  Triangulation method       : ${GMT_TRIANGULATE}\n"
-	"*  Build mode                 : ${BUILD_MODE}\n"
-	"*  Build GMT core             : always [${GMT_CORE_LIB_NAME}]\n"
-	"*  Build PSL library          : always [${PSL_LIB_NAME}]\n"
-	"*  Build GMT supplements      : ${SUPPL}\n"
-	"*  Build proto supplements    : ${PROTO}\n"
-	"*\n"
-	"*  Locations:\n"
-	"*  Installing GMT in          : ${CMAKE_INSTALL_PREFIX}\n"
-	"*  GMT_DATADIR                : ${CMAKE_INSTALL_PREFIX}/${GMT_DATADIR}\n"
-	"*  GMT_DOCDIR                 : ${CMAKE_INSTALL_PREFIX}/${GMT_DOCDIR}\n"
-	"*  GMT_MANDIR                 : ${CMAKE_INSTALL_PREFIX}/${GMT_MANDIR}")
-
-# For debugging: print all set variables
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#	message(STATUS "${_variableName}=${${_variableName}}")
-#endforeach()
+	"*  Found GSHHS database : ${GSHHS_PATH}\n"
+	"*  NetCDF library       : ${NETCDF_LIBRARY}\n"
+	"*  NetCDF include dir   : ${NETCDF_INCLUDE_DIR}\n"
+	"*  GDAL library         : ${GDAL_LIBRARY}\n"
+	"*  GDAL include dir     : ${GDAL_INCLUDE_DIR}\n"
+	"*  Regex support        : ${GMT_CONFIG_REGEX_MESSAGE}\n"
+	"*  Triangulation method : ${GMT_TRIANGULATE}\n"
+	"*  File locking         : ${FLOCK}\n"
+	"*  Build Matlab API     : ${GMT_MATLAB}\n*\n"
+	"*  Installing GMT in    : ${CMAKE_INSTALL_PREFIX}\n"
+	"*  GMT_SHARE_PATH       : ${CMAKE_INSTALL_PREFIX}/${GMT_SHARE_PATH}\n"
+	"*  GMT_DOC_PATH         : ${CMAKE_INSTALL_PREFIX}/${GMT_DOC_PATH}\n"
+	"*  GMT_MAN_PATH         : ${CMAKE_INSTALL_PREFIX}/${GMT_MAN_PATH}")
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

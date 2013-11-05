@@ -10,11 +10,14 @@
 # the historic Apollo 11 moon-landing; these 24-hour periods crosses
 # normal day boundaries:
 
-gmt sample1d -I0.5 << EOF > tt4.d
+. functions.sh
+header "Test time conversions (rel time & custom)"
+
+sample1d -I0.5 << EOF > tt.d
 0	0
 4	1
 EOF
-cat << EOF > tt4.answer
+cat << EOF > tt.answer
 1969-07-21T02:56:00	0
 1969-07-21T14:56:00	0.125
 1969-07-22T02:56:00	0.25
@@ -25,6 +28,8 @@ cat << EOF > tt4.answer
 1969-07-24T14:56:00	0.875
 1969-07-25T02:56:00	1
 EOF
-gmt gmtconvert tt4.d -fi0t -fo0T --TIME_EPOCH=1969-07-21T02:56:00 --TIME_UNIT=d > tt4.result
+gmtconvert tt.d -fi0t -fo0T --TIME_EPOCH=1969-07-21T02:56:00 --TIME_UNIT=d > tt.result
 
-diff tt4.result tt4.answer --strip-trailing-cr > fail
+diff tt.result tt.answer --strip-trailing-cr > fail
+
+passfail time_testing_4

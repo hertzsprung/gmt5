@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -25,52 +25,47 @@
  * Version:	5 API
  */
 
-#define THIS_MODULE_NAME	"psimage"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Place images or EPS files on maps"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "->JKOPRUVXYcptxy"
+#include "pslib.h"
+#include "gmt.h"
 
 struct PSIMAGE_CTRL {
 	struct In {
-		bool active;
+		GMT_LONG active;
 		char *file;
 	} In;
 	struct C {	/* -C<xpos>/<ypos>[/<justify>] */
-		bool active;
+		GMT_LONG active;
 		double x, y;
 		char justify[3];
 	} C;
 	struct E {	/* -E<dpi> */
-		bool active;
+		GMT_LONG active;
 		double dpi;
 	} E;
 	struct F {	/* -F<pen> */
-		bool active;
+		GMT_LONG active;
 		struct GMT_PEN pen;
 	} F;
 	struct G {	/* -G[f|b|t]<rgb> */
-		bool active;
-		unsigned int mode;	/* 0 for f|b, 1 for t */
+		GMT_LONG active;
+		GMT_LONG mode;	/* 0 for f|b, 1 for t */
 		double f_rgb[4];
 		double b_rgb[4];
 		double t_rgb[4];
 	} G;
 	struct I {	/* -I */
-		bool active;
+		GMT_LONG active;
 	} I;
 	struct M {	/* -M */
-		bool active;
+		GMT_LONG active;
 	} M;
 	struct N {	/* -N<nx>/<ny> */
-		bool active;
-		unsigned int nx, ny;
+		GMT_LONG active;
+		GMT_LONG nx, ny;
 	} N;
 	struct W {	/* -W[-]<width>[/<height>] */
-		bool active;
-		bool interpolate;
+		GMT_LONG active;
+		GMT_LONG interpolate;
 		double width, height;
 	} W;
 };
@@ -80,7 +75,7 @@ void *New_psimage_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new
 	
 	C = GMT_memory (GMT, NULL, 1, struct PSIMAGE_CTRL);
 	
-	/* Initialize values whose defaults are not 0/false/NULL */
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
 	C->F.pen = GMT->current.setting.map_default_pen;
 	strcpy (C->C.justify, "LB");
 	C->G.f_rgb[0] = C->G.b_rgb[0] = C->G.t_rgb[0] = -2;
@@ -94,44 +89,45 @@ void Free_psimage_Ctrl (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *C) {	/* Deall
 	GMT_free (GMT, C);
 }
 
-int GMT_psimage_usage (struct GMTAPI_CTRL *API, int level)
+GMT_LONG GMT_psimage_usage (struct GMTAPI_CTRL *C, GMT_LONG level)
 {
+	struct GMT_CTRL *GMT = C->GMT;
+
 	/* This displays the psimage synopsis and optionally full usage information */
 
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: psimage <imagefile> [-E<dpi> or -W[-]<width>[/<height>]] [-C<xpos>/<ypos>[/<justify>]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-F<pen>] [-G[b|f|t]<color>] [-I] [%s] [%s] [-K] [-M] [-N<nx>[/<ny>]] [-O]\n", GMT_J_OPT, GMT_Jz_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-P] [%s] [%s]\n", GMT_Rgeoz_OPT, GMT_U_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
+	GMT_message (GMT, "psimage %s [API] - Place images or EPS files on maps\n\n", GMT_VERSION);
+	GMT_message (GMT, "usage: psimage <imagefile> [-E<dpi> or -W[-]<width>[/<height>]] [-C<xpos>/<ypos>[/<justify>]]\n");
+	GMT_message (GMT, "\t[-F<pen>] [-G[b|f|t]<color>] [-I] [%s] [%s] [-K] [-M] [-N<nx>[/<ny>]] [-O] [-P]\n", GMT_J_OPT, GMT_Jz_OPT);
+	GMT_message (GMT, "\t[%s] [%s]\n", GMT_Rgeoz_OPT, GMT_U_OPT);
+	GMT_message (GMT, "\t[%s] [%s] [%s] [%s]\n\t[%s] [%s]\n\n", GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_p_OPT, GMT_t_OPT);
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMTAPI_SYNOPSIS) return (EXIT_FAILURE);
 
-	GMT_Message (API, GMT_TIME_NONE, "\t<imagefile> is an EPS or image file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Set image dpi (dots per inch), OR\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-W Set the width (and height) of the image.  If <height> = 0\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   then the original aspect ratio is maintained.  If <width> < 0\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   then we use absolute value and interpolate image in PostScript.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-C Set the lower left position on the map for raster image [0/0].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally, append justification (see pstext for codes).\n");
-	GMT_pen_syntax (API->GMT, 'F', "Draw a frame around the image with the given pen.");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Gb and -Gf (1-bit images only) sets the background and foreground color,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   respectively. Set <color> = - for transparency [Default is black and white].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Gt (not for 1-bit images) indicate which color to be made transparent\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   [Default no transparency].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-I Invert 1-bit images (does not affect 8 or 24-bit images).\n");
-	GMT_Option (API, "J-Z,K");
-	GMT_Message (API, GMT_TIME_NONE, "\t-M Force color -> monochrome image using GMT_YIQ-transformation.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Replicate image <nx> by <ny> times [Default is no replication].\n");
-	GMT_Option (API, "O,P,R,U,V,X,c,p");
-	GMT_Message (API, GMT_TIME_NONE, "\t   (Requires -R and -J for proper functioning).\n");
-	GMT_Option (API, "t,.");
+	GMT_message (GMT, "\t<imagefile> is an EPS or image file.\n");
+	GMT_message (GMT, "\t-E Set image dpi (dots per inch), OR\n");
+	GMT_message (GMT, "\t-W Set the width (and height) of the image.  If <height> = 0\n");
+	GMT_message (GMT, "\t   then the original aspect ratio is maintained.  If <width> < 0\n");
+	GMT_message (GMT, "\t   then we use absolute value and interpolate image in PostScript.\n");
+	GMT_message (GMT, "\n\tOPTIONS:\n");
+	GMT_message (GMT, "\t-C Set the lower left position on the map for raster image [0/0].\n");
+	GMT_message (GMT, "\t   Optionally, append justification (see pstext for codes).\n");
+	GMT_pen_syntax (GMT, 'F', "Draw a frame around the image with the given pen.");
+	GMT_message (GMT, "\t-Gb and -Gf (1-bit images only) sets the background and foreground color,\n");
+	GMT_message (GMT, "\t   respectively. Set <color> = - for transparency [Default is black and white].\n");
+	GMT_message (GMT, "\t-Gt (not for 1-bit images) indicate which color to be made transparent\n");
+	GMT_message (GMT, "\t   [Default no transparency].\n");
+	GMT_message (GMT, "\t-I Invert 1-bit images (does not affect 8 or 24-bit images).\n");
+	GMT_explain_options (GMT, "jZK");
+	GMT_message (GMT, "\t-M Force color -> monochrome image using GMT_YIQ-transformation.\n");
+	GMT_message (GMT, "\t-N Replicate image <nx> by <ny> times [Default is no replication].\n");
+	GMT_explain_options (GMT, "OPRUVXcp");
+	GMT_message (GMT, "\t   (Requires -R and -J for proper functioning).\n");
+	GMT_explain_options (GMT, "t.");
 	
 	return (EXIT_FAILURE);
 }
 
-int GMT_psimage_parse (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *Ctrl, struct GMT_OPTION *options)
+GMT_LONG GMT_psimage_parse (struct GMTAPI_CTRL *C, struct PSIMAGE_CTRL *Ctrl, struct GMT_OPTION *options)
 {
 	/* This parses the options provided to psimage and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
@@ -140,26 +136,23 @@ int GMT_psimage_parse (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *Ctrl, struct G
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0, n_files = 0;
-	int n;
-	char txt_a[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, letter;
+	GMT_LONG n_errors = 0, n_files = 0, n;
+	char txt_a[GMT_TEXT_LEN256], txt_b[GMT_TEXT_LEN256], letter;
 	struct GMT_OPTION *opt = NULL;
+	struct GMT_CTRL *GMT = C->GMT;
 
 	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
 
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (n_files++ == 0 && GMT_check_filearg (GMT, '<', opt->arg, GMT_IN))
-					Ctrl->In.file = strdup (opt->arg);
-				else
-					n_errors++;
+				if (n_files++ == 0) Ctrl->In.file = strdup (opt->arg);
 				break;
 
 			/* Processes program-specific parameters */
 
 			case 'C':	/* Image placement */
-				Ctrl->C.active = true;
+				Ctrl->C.active = TRUE;
 				n = sscanf (opt->arg, "%[^/]/%[^/]/%2s", txt_a, txt_b, Ctrl->C.justify);
 				n_errors += GMT_check_condition (GMT, n < 2 || n > 3, "Error: Syntax is -C<xpos>/<ypos>[/<justify>]\n");
 				Ctrl->C.x = GMT_to_inch (GMT, txt_a);
@@ -167,18 +160,18 @@ int GMT_psimage_parse (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *Ctrl, struct G
 				if (n == 2) strcpy (Ctrl->C.justify, "LB");	/* Default positioning */
 				break;
 			case 'E':	/* Specify image dpi */
-				Ctrl->E.active = true;
+				Ctrl->E.active = TRUE;
 				Ctrl->E.dpi = atof (opt->arg);
 				break;
 			case 'F':	/* Specify frame pen */
-				Ctrl->F.active = true;
+				Ctrl->F.active = TRUE;
 				if (GMT_getpen (GMT, opt->arg, &Ctrl->F.pen)) {
 					GMT_pen_syntax (GMT, 'F', " ");
 					n_errors++;
 				}
 				break;
 			case 'G':	/* Background/foreground color for 1-bit images */
-				Ctrl->G.active = true;
+				Ctrl->G.active = TRUE;
 				letter = (GMT_colorname2index (GMT, opt->arg) >= 0) ? 'x' : opt->arg[0];	/* If we have -G<colorname>, the x is used to bypass the case F|f|B|b switching below */
 				switch (letter) {
 					case 'f':
@@ -218,25 +211,25 @@ int GMT_psimage_parse (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *Ctrl, struct G
 				}
 				break;
 			case 'I':	/* Invert 1-bit images */
-				Ctrl->I.active = true;
+				Ctrl->I.active = TRUE;
 				break;
 			case 'M':	/* Monochrome image */
-				Ctrl->M.active = true;
+				Ctrl->M.active = TRUE;
 				break;
 			case 'N':	/* Replicate image */
-				Ctrl->N.active = true;
-				n = sscanf (opt->arg, "%d/%d", &Ctrl->N.nx, &Ctrl->N.ny);
+				Ctrl->N.active = TRUE;
+				n = sscanf (opt->arg, "%" GMT_LL "d/%" GMT_LL "d", &Ctrl->N.nx, &Ctrl->N.ny);
 				if (n == 1) Ctrl->N.ny = Ctrl->N.nx;
 				n_errors += GMT_check_condition (GMT, n < 1, "Syntax error -N option: Must values for replication\n");
 				break;
 			case 'W':	/* Image width */
-				Ctrl->W.active = true;
+				Ctrl->W.active = TRUE;
 				n = sscanf (opt->arg, "%[^/]/%s", txt_a, txt_b);
 				Ctrl->W.width = GMT_to_inch (GMT, txt_a);
 				if (n == 2) Ctrl->W.height = GMT_to_inch (GMT, txt_b);
 				if (Ctrl->W.width < 0.0) {
 					Ctrl->W.width = -Ctrl->W.width;
-					Ctrl->W.interpolate = true;
+					Ctrl->W.interpolate = TRUE;
 				}
 				break;
 
@@ -263,7 +256,7 @@ int GMT_psimage_parse (struct GMT_CTRL *GMT, struct PSIMAGE_CTRL *Ctrl, struct G
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
 
-int file_is_known (struct GMT_CTRL *GMT, char *file)
+GMT_LONG file_is_known (struct GMT_CTRL *GMT, char *file)
 {	/* Returns 1 if it is an EPS file, 2 if a Sun rasterfile; 0 for any other file.
        Returns -1 on read error */
 	FILE *fp = NULL;
@@ -276,11 +269,11 @@ int file_is_known (struct GMT_CTRL *GMT, char *file)
 	if (j && file[j+1] == 'b') file[j] = '\0';			/* Temporarily strip the band request string so that the opening test doesn't fail */
 
 	if ((fp = GMT_fopen (GMT, file, "rb")) == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Cannot open file %s\n", file);
+		GMT_report (GMT, GMT_MSG_FATAL, "Cannot open file %s\n", file);
 		return (-1);
 	}
-	if (GMT_fread (c, 1U, 4U, fp) != 4U) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Could not read 4 bytes from file %s\n", file);
+	if (GMT_fread (c, (size_t)1, (size_t)4, fp) != (size_t)4) {
+		GMT_report (GMT, GMT_MSG_FATAL, "Could not read 4 bytes from file %s\n", file);
 		return (-1);
 	}
 	GMT_fclose (GMT, fp);
@@ -293,16 +286,15 @@ int file_is_known (struct GMT_CTRL *GMT, char *file)
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
 #define Return(code) {Free_psimage_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_psimage (void *V_API, int mode, void *args)
+GMT_LONG GMT_psimage (struct GMTAPI_CTRL *API, GMT_LONG mode, void *args)
 {
-	int i, j, n, justify, PS_interpolate = 1, PS_transparent = 1, known = 0, error = 0;
-	unsigned int row, col;
-	bool free_GMT = false, did_gray = false;
+	GMT_LONG i, j, n, justify, PS_interpolate = 1, PS_transparent = 1;
+	GMT_LONG error = FALSE, free_GMT = FALSE, known = 0;
 
 	double x, y, wesn[4];
 
 	unsigned char *picture = NULL, *buffer = NULL;
-
+	
 	char *format[2] = {"EPS", "Sun raster"};
 
 	struct imageinfo header;
@@ -311,52 +303,50 @@ int GMT_psimage (void *V_API, int mode, void *args)
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
 	struct GMT_OPTION *options = NULL;
 	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
-#ifdef HAVE_GDAL
+#ifdef USE_GDAL
 	struct GMT_IMAGE *I = NULL;		/* A GMT image datatype, if GDAL is used */
 #endif
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_psimage_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	if (API == NULL) return (GMT_Report_Error (API, GMT_NOT_A_SESSION));
+	options = GMT_Prep_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_psimage_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_psimage_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMTAPI_OPT_USAGE) bailout (GMT_psimage_usage (API, GMTAPI_USAGE));	/* Return the usage message */
+	if (options->option == GMTAPI_OPT_SYNOPSIS) bailout (GMT_psimage_usage (API, GMTAPI_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments; return if errors are encountered */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	GMT = GMT_begin_module (API, "GMT_psimage", &GMT_cpy);	/* Save current state */
+	if (GMT_Parse_Common (API, "-VJR", "KOPUXxYycpt>", options)) Return (API->error);
 	Ctrl = New_psimage_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_psimage_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_psimage_parse (API, Ctrl, options))) Return (error);
+	PSL = GMT->PSL;		/* This module also needs PSL */
 
 	/*---------------------------- This is the psimage main code ----------------------------*/
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input EPS or Sun rasterfile\n");
 	PS_interpolate = (Ctrl->W.interpolate) ? -1 : +1;
+	GMT_memset (&header, 1, struct imageinfo);
 
 	known = file_is_known (GMT, Ctrl->In.file);	/* Determine if this is an EPS file, Sun rasterfile, or other */
 	if (known < 0) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Cannot find/open/read file %s\n", Ctrl->In.file);
+		GMT_report (GMT, GMT_MSG_FATAL, "Cannot find/open/read file %s\n", Ctrl->In.file);
 		Return (EXIT_FAILURE);
 	}
-
-	memset (&header, 0, sizeof(struct imageinfo)); /* initialize struct */
+	
 	if (known) {	/* Read an EPS or Sun raster file */
 		if (PSL_loadimage (PSL, Ctrl->In.file, &header, &picture)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Trouble loading %s file %s!\n", format[known-1], Ctrl->In.file);
+			GMT_report (GMT, GMT_MSG_FATAL, "Trouble loading %s file %s!\n", format[known-1], Ctrl->In.file);
 			Return (EXIT_FAILURE);
 		}
 	}
-#ifdef HAVE_GDAL
+#ifdef USE_GDAL
 	else  {	/* Read a raster image */
-		GMT_set_pad (GMT, 0U);	/* Temporary turn off padding (and thus BC setting) since we will use image exactly as is */
-		if ((I = GMT_Read_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {
+		GMT_set_pad (GMT, 0);	/* Temporary turn off padding (and thus BC setting) since we will use image exactly as is */
+		if ((I = GMT_Read_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, NULL, GMT_GRID_ALL, Ctrl->In.file, NULL)) == NULL) {
 			Return (API->error);
 		}
-		GMT_set_pad (GMT, API->pad);	/* Reset to GMT default */
+		GMT_set_pad (GMT, 2);	/* Reset to GMT default */
 
 		if (I->ColorMap != NULL) {
 			unsigned char *r_table = NULL, *g_table = NULL, *b_table = NULL;
@@ -369,8 +359,8 @@ int GMT_psimage (void *V_API, int mode, void *args)
 				b_table[n] = I->ColorMap[n*4 + 2];
 			}
 			I->data = GMT_memory (GMT, I->data, 3 * I->header->nm, unsigned char);	/* Expand to reuse */
-			n = (int)(3 * I->header->nm - 1);
-			for (j = (int)I->header->nm - 1; j >= 0; j--) {
+			n = 3 * I->header->nm - 1;
+			for (j = I->header->nm - 1; j >= 0; j--) {
 				I->data[n--] = b_table[I->data[j]];
 				I->data[n--] = g_table[I->data[j]];
 				I->data[n--] = r_table[I->data[j]];	/* Now we can overwrite this value */
@@ -386,20 +376,19 @@ int GMT_psimage (void *V_API, int mode, void *args)
 	}
 #else
 	else {	/* Without GDAL we can only read EPS and Sun raster */
-		GMT_Report (API, GMT_MSG_NORMAL, "Unsupported file format for file %s!\n", Ctrl->In.file);
+		GMT_report (GMT, GMT_MSG_FATAL, "Unsupported file format for file %s!\n", Ctrl->In.file);
 		Return (EXIT_FAILURE);
 	}
 #endif
 	
 	if (Ctrl->M.active && header.depth == 24) {	/* Downgrade to grayshade image */
-		did_gray = true;
 		n = 3 * header.width * header.height;
 		buffer = psl_gray_encode (PSL, &n, picture);
 		header.depth = 8;
 		if (known) PSL_free (picture); /* EPS or Sun raster file */
-#ifdef HAVE_GDAL
+#ifdef USE_GDAL
 		else {	/* Got it via GMT_Read_Data */
-			if (GMT_Destroy_Data (API, &I) != GMT_OK) {
+			if (GMT_Destroy_Data (API, GMT_ALLOCATED, &I) != GMT_OK) {
 				Return (API->error);
 			}
 		}
@@ -417,18 +406,18 @@ int GMT_psimage (void *V_API, int mode, void *args)
 		buffer = GMT_memory (GMT, NULL, n, unsigned char);
 		for (i = 0; i < j; i++) buffer[i] = (unsigned char)Ctrl->G.t_rgb[i];
 		GMT_memcpy (&(buffer[j]), picture, n, unsigned char);
-#ifdef HAVE_GDAL
-		if (GMT_Destroy_Data (API, &I) != GMT_OK) {	/* If I is NULL then nothing is done */
+#ifdef USE_GDAL
+		if (GMT_Destroy_Data (API, GMT_ALLOCATED, &I) != GMT_OK) {	/* If I is NULL then nothing is done */
 			Return (API->error);
 		}
 #else
 		PSL_free (picture);
 #endif
 		picture = buffer;
-		free_GMT = true;
+		free_GMT = TRUE;
 	}
 	else
-		GMT_Report (API, GMT_MSG_NORMAL, "Can only do transparent color for 8- or 24-bit images. -Gt ignored\n");
+		GMT_report (GMT, GMT_MSG_FATAL, "Can only do transparent color for 8- or 24-bit images. -Gt ignored\n");
 
 	if (Ctrl->E.dpi > 0.0) Ctrl->W.width = (double) header.width / Ctrl->E.dpi;
 	if (Ctrl->W.height == 0.0) Ctrl->W.height = header.height * Ctrl->W.width / header.width;
@@ -440,33 +429,33 @@ int GMT_psimage (void *V_API, int mode, void *args)
 
 	GMT_memset (wesn, 4, double);
 	if (!(GMT->common.R.active && GMT->common.J.active)) {	/* When no projection specified, use fake linear projection */
-		GMT->common.R.active = true;
-		GMT->common.J.active = false;
+		GMT->common.R.active = TRUE;
+		GMT->common.J.active = FALSE;
 		GMT_parse_common_options (GMT, "J", 'J', "X1i");
 		wesn[XHI] = Ctrl->C.x + Ctrl->N.nx * Ctrl->W.width;	wesn[YHI] = Ctrl->C.y + Ctrl->N.ny * Ctrl->W.height;
 		GMT_err_fail (GMT, GMT_map_setup (GMT, wesn), "");
-		PSL = GMT_plotinit (GMT, options);
+		GMT_plotinit (GMT, options);
 		GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
 	}
 	else {	/* First use current projection, project, then use fake projection */
 		if (GMT_err_pass (GMT, GMT_map_setup (GMT, GMT->common.R.wesn), "")) Return (GMT_RUNTIME_ERROR);
-		PSL = GMT_plotinit (GMT, options);
+		GMT_plotinit (GMT, options);
 		GMT_plane_perspective (GMT, GMT->current.proj.z_project.view_plane, GMT->current.proj.z_level);
-		GMT->common.J.active = false;
+		GMT->common.J.active = FALSE;
 		GMT_parse_common_options (GMT, "J", 'J', "X1i");
 		wesn[XHI] = Ctrl->C.x + Ctrl->N.nx * Ctrl->W.width;	wesn[YHI] = Ctrl->C.y + Ctrl->N.ny * Ctrl->W.height;
-		GMT->common.R.active = GMT->common.J.active = true;
+		GMT->common.R.active = GMT->common.J.active = TRUE;
 		GMT_err_fail (GMT, GMT_map_setup (GMT, wesn), "");
 	}
 
-	for (row = 0; row < Ctrl->N.ny; row++) {
-		y = Ctrl->C.y + row * Ctrl->W.height;
-		if (Ctrl->N.ny > 1) GMT_Report (API, GMT_MSG_VERBOSE, "Replicating image %d times for row %d\n", Ctrl->N.nx, row);
-		for (col = 0; col < Ctrl->N.nx; col++) {
-			x = Ctrl->C.x + col * Ctrl->W.width;
+	for (j = 0; j < Ctrl->N.ny; j++) {
+		y = Ctrl->C.y + j * Ctrl->W.height;
+		if (Ctrl->N.ny > 1) GMT_report (GMT, GMT_MSG_NORMAL, "Replicating image %ld times for row %ld\n", Ctrl->N.nx, j);
+		for (i = 0; i < Ctrl->N.nx; i++) {
+			x = Ctrl->C.x + i * Ctrl->W.width;
 			if (header.depth == 0)
-				PSL_plotepsimage (PSL, x, y, Ctrl->W.width, Ctrl->W.height, PSL_BL, picture, header.length, 
-						header.width, header.height, header.xorigin, header.yorigin);
+				PSL_plotepsimage (PSL, x, y, Ctrl->W.width, Ctrl->W.height, PSL_BL, picture, (GMT_LONG)header.length, 
+						header.width, header.height, (GMT_LONG)header.xorigin, (GMT_LONG)header.yorigin);
 			else if (header.depth == 1) {
 				/* Invert is opposite from what is expected. This is to match the behaviour of -Gp */
 				if (Ctrl->I.active)
@@ -483,7 +472,7 @@ int GMT_psimage (void *V_API, int mode, void *args)
 	}
 
  	if (Ctrl->F.active) {	/* Draw frame */
- 		GMT_setfill (GMT, NULL, true);
+ 		GMT_setfill (GMT, NULL, TRUE);
 		GMT_setpen (GMT, &Ctrl->F.pen);
  		PSL_plotbox (PSL, Ctrl->C.x, Ctrl->C.y, Ctrl->C.x + Ctrl->N.nx * Ctrl->W.width, Ctrl->C.y + Ctrl->N.ny * Ctrl->W.height);
  	}
@@ -491,15 +480,15 @@ int GMT_psimage (void *V_API, int mode, void *args)
 	GMT_plane_perspective (GMT, -1, 0.0);
 	GMT_plotend (GMT);
 
-#ifdef HAVE_GDAL
-	if (I && GMT_Destroy_Data (API, &I) != GMT_OK) {
+#ifdef USE_GDAL
+	if (GMT_Destroy_Data (API, GMT_ALLOCATED, &I) != GMT_OK) {
 		Return (API->error);	/* If I is NULL then nothing is done */
 	}
 #endif
 	if (free_GMT) {
 		GMT_free (GMT, picture);
 	}
-	else if (known || did_gray)
+	else if (known)
 		PSL_free (picture);
 
 	Return (GMT_OK);

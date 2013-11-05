@@ -2,18 +2,18 @@
  *
  *  $Id$
  *
- *  Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo,
+ *  Copyright (c) 1991-2011 by P. Wessel, W. H. F. Smith, R. Scharroo,
  *  F. Wobbe, and J. Luis
  *  See LICENSE.TXT file for copying and redistribution conditions.
  *
  *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published by
- *  the Free Software Foundation; version 3 or any later version.
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; version 2 or any later version.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
+ *  GNU General Public License for more details.
  *
  *  Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------
@@ -38,6 +38,6 @@
 #	endif /* ifdef _WIN32 */
 
 /* By default, we use the standard "extern" declarations. */
-#	define EXTERN_MSC extern LIBSPEC
+#		define EXTERN_MSC extern LIBSPEC
 
 #endif /* _DECLSPEC_H_ */

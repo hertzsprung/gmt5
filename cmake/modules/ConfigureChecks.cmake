@@ -25,67 +25,29 @@ endif(NOT DEFINED _INCLUDED_CHECK_MACROS_)
 # Check if compiler supports -traditional-cpp
 #
 
-if (NOT HAVE_TRADITIONAL_CPP)
-	if (MSVC)
-		# Visual C++
-		set (_cpp_cmdline /EP)
-	elseif (CMAKE_C_COMPILER_ID MATCHES "(GNU|Clang|Intel)")
-		# GCC, Clang, or ICC
-		set (_cpp_cmdline -E -w -P -nostdinc -traditional-cpp)
-	endif (MSVC)
-	message (STATUS "Performing Test HAVE_TRADITIONAL_CPP")
-	execute_process (COMMAND ${CMAKE_C_COMPILER} ${_cpp_cmdline}
-		${GMT_SOURCE_DIR}/config.h.in # can be any header file
-		RESULT_VARIABLE _cpp_traditional_result
-		OUTPUT_QUIET ERROR_QUIET)
-	if (_cpp_traditional_result EQUAL 0)
-		set (HAVE_TRADITIONAL_CPP TRUE CACHE INTERNAL "Test HAVE_TRADITIONAL_CPP")
-		message (STATUS "Performing Test HAVE_TRADITIONAL_CPP - Success")
-	else (_cpp_traditional_result EQUAL 0)
-		set (HAVE_TRADITIONAL_CPP "" CACHE INTERNAL "Test HAVE_TRADITIONAL_CPP")
-		message (STATUS "Performing Test HAVE_TRADITIONAL_CPP - Failed")
-	endif (_cpp_traditional_result EQUAL 0)
-endif (NOT HAVE_TRADITIONAL_CPP)
-
-#
-# Check if compiler supports __func__ or __FUNCTION__ identifier
-#
-
-check_c_source_compiles (
-	"
-	int main (){char *function_name = __func__; return 0;}
-	"
-	HAVE___FUNC__)
-check_c_source_compiles (
-	"
-	int main (){char *function_name = __FUNCTION__; return 0;}
-	"
-	HAVE___FUNCTION__)
-
-
-#
-# Check if compiler supports inline functions
-# This test is adapted from Jack Kelly on the CMake mailing list
-#
-
-cmake_push_check_state() # save state of CMAKE_REQUIRED_*
-foreach (KEYWORD "inline" "__inline" "__inline__")
-	if (NOT DEFINED HAVE_C_INLINE)
-		set (CMAKE_REQUIRED_DEFINITIONS -Dinline=${KEYWORD})
-		check_c_source_compiles(
-			"
-			typedef int foo_t;
-			static inline foo_t static_foo () {return 0;}
-			foo_t foo () {return 0;}
-			int main (int argc, char *argv[]) {return 0;}
-			"
-			HAVE_C_${KEYWORD})
-		if (HAVE_C_${KEYWORD})
-			set (HAVE_C_INLINE TRUE)
-		endif (HAVE_C_${KEYWORD})
-	endif (NOT DEFINED HAVE_C_INLINE)
-endforeach (KEYWORD)
-cmake_pop_check_state() # restore state of CMAKE_REQUIRED_*
+if (MSVC)
+	if (NOT HAVE_TRADITIONAL_CPP)
+		# Microsoft compiler
+		message (STATUS "Performing Test HAVE_TRADITIONAL_CPP")
+		execute_process (COMMAND ${CMAKE_C_COMPILER} /EP
+			${GMT_SOURCE_DIR}/config.h.cmake # can be any header file
+			RESULT_VARIABLE _mscl_ep
+			OUTPUT_QUIET ERROR_QUIET)
+		if (_mscl_ep EQUAL 0)
+			set (HAVE_TRADITIONAL_CPP TRUE CACHE INTERNAL "Test HAVE_TRADITIONAL_CPP")
+			message (STATUS "Performing Test HAVE_TRADITIONAL_CPP - Success")
+		else (_mscl_ep EQUAL 0)
+			set (HAVE_TRADITIONAL_CPP "" CACHE INTERNAL "Test HAVE_TRADITIONAL_CPP")
+			message (STATUS "Performing Test HAVE_TRADITIONAL_CPP - Failed")
+		endif (_mscl_ep EQUAL 0)
+	endif (NOT HAVE_TRADITIONAL_CPP)
+elseif (CMAKE_COMPILER_IS_GNUCC OR __COMPILER_GNU)
+	# GCC or Clang
+	cmake_push_check_state() # save state of CMAKE_REQUIRED_*
+	set (CMAKE_REQUIRED_FLAGS "-E -w -P -nostdinc -traditional-cpp")
+	check_c_source_compiles ("#define TEST" HAVE_TRADITIONAL_CPP)
+	cmake_pop_check_state() # restore state of CMAKE_REQUIRED_*
+endif (MSVC)
 
 #
 # Check for windows header
@@ -96,21 +58,19 @@ check_include_file (direct.h            HAVE_DIRECT_H_)
 check_include_file (process.h           HAVE_PROCESS_H_)
 
 #
-# Check for C99 and libc extensions
+# Check for C90, C99 and POSIX conformity
 #
 
-# strdup, sincos, ... are GNU/BSD/Sun extensions:
+# Since glibc 2.12 strdup is only declared if
+# _POSIX_C_SOURCE >= 200809L || _XOPEN_SOURCE >= 500
+# and sincos is a GNU extension:
 cmake_push_check_state()
 set (CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS}
-	-D_GNU_SOURCE
-	-D__EXTENSIONS__
-	-D_LARGEFILE_SOURCE
-	-D_LARGEFILE64_SOURCE)
+	-D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE)
 
 check_include_file (assert.h            HAVE_ASSERT_H_)
 check_include_file (dirent.h            HAVE_DIRENT_H_)
 check_include_file (errno.h             HAVE_ERRNO_H_)
-check_include_file (execinfo.h          HAVE_EXECINFO_H_)
 check_include_file (fcntl.h             HAVE_FCNTL_H_)
 check_include_file (stdbool.h           HAVE_STDBOOL_H_)
 check_include_file (sys/dir.h           HAVE_SYS_DIR_H_)
@@ -119,103 +79,40 @@ check_include_file (unistd.h            HAVE_UNISTD_H_)
 
 check_function_exists (fopen64          HAVE_FOPEN64)
 check_function_exists (fseeko           HAVE_FSEEKO)
+check_function_exists (fseeko64         HAVE_FSEEKO64)
+check_function_exists (_fseeki64        HAVE__FSEEKI64)
 check_function_exists (ftello           HAVE_FTELLO)
+check_function_exists (ftello64         HAVE_FTELLO64)
+check_function_exists (_ftelli64        HAVE__FTELLI64)
 check_function_exists (getopt           HAVE_GETOPT)
 check_function_exists (getpwuid         HAVE_GETPWUID)
-check_function_exists (abs              HAVE_ABS)
 check_function_exists (llabs            HAVE_LLABS)
-check_function_exists (pclose           HAVE_PCLOSE)
-check_function_exists (popen            HAVE_POPEN)
 check_function_exists (qsort_r          HAVE_QSORT_R)
-if (HAVE_QSORT_R)
-	# check qsort_r compatibility
-	check_c_source_runs (
-		"
-		#include <stdlib.h>
-		#include <assert.h>
-		int cmp(const void *a, const void*b, void *c) {
-		assert(c == NULL);
-		return *(int*)a - *(int*)b;
-		}
-		int main() {
-		int array[5] = {7,3,5,2,8};
-		int i;
-		qsort_r(array,5,sizeof(int),cmp,NULL);
-		for (i=0;i<4;++i) {
-		assert(array[i] < array[i+1]);
-		}
-		return 0;
-		}
-		"
-		HAVE_QSORT_R_GLIBC)
-endif (HAVE_QSORT_R)
-check_function_exists (strcasecmp       HAVE_STRCASECMP)
-check_function_exists (strncasecmp      HAVE_STRNCASECMP)
+check_function_exists (qsort_s          HAVE_QSORT_S)
 check_function_exists (stricmp          HAVE_STRICMP)
-check_function_exists (strnicmp         HAVE_STRNICMP)
 check_function_exists (strdup           HAVE_STRDUP)
-check_function_exists (strsep           HAVE_STRSEP)
 check_function_exists (strtod           HAVE_STRTOD)
-# Note: trailing underscore = GDAL workaround
-check_function_exists (strtof           HAVE_STRTOF_)
 check_function_exists (strtok_r         HAVE_STRTOK_R)
-
-if (WIN32)
-	check_function_exists (_fseeki64      HAVE__FSEEKI64)
-	check_function_exists (_ftelli64      HAVE__FTELLI64)
-	check_function_exists (_pclose        HAVE__PCLOSE)
-	check_function_exists (_popen         HAVE__POPEN)
-	check_function_exists (_stat          HAVE__STAT)
-	check_function_exists (_stati64       HAVE__STATI64)
-	check_function_exists (strtok_s       HAVE_STRTOK_S)
-endif (WIN32)
-
-# Check if these functions are declared (might not be the case although they
-# are build-in)
-check_symbol_exists (strdup    string.h DECLARED_STRDUP)
-check_symbol_exists (strsep    string.h DECLARED_STRSEP)
-
-check_symbol_exists (basename  libgen.h HAVE_BASENAME)
-check_symbol_exists (fileno    stdio.h  HAVE_FILENO)
-# Note: trailing underscore = GDAL workaround
-check_symbol_exists (snprintf  stdio.h  HAVE_SNPRINTF_)
-check_symbol_exists (vsnprintf stdio.h  HAVE_VSNPRINTF_)
+check_function_exists (strtok_s         HAVE_STRTOK_S)
 
 if (HAVE_UNISTD_H_)
 	check_symbol_exists (access  unistd.h HAVE_ACCESS)
-	check_symbol_exists (getpid  unistd.h HAVE_GETPID)
 else (HAVE_UNISTD_H_)
 	# in MinGW:
 	check_symbol_exists (access  io.h     HAVE_ACCESS)
+endif (HAVE_UNISTD_H_)
+check_symbol_exists (_access   io.h     HAVE__ACCESS)
+check_symbol_exists (basename  libgen.h HAVE_BASENAME)
+check_symbol_exists (fileno    stdio.h  HAVE_FILENO)
+check_symbol_exists (_fileno   stdio.h  HAVE__FILENO)
+check_symbol_exists (_getcwd   direct.h HAVE__GETCWD)
+if (HAVE_UNISTD_H_)
+	check_symbol_exists (getpid  unistd.h  HAVE_GETPID)
+elseif (HAVE_PROCESS_H_)
 	check_symbol_exists (_getpid process.h HAVE__GETPID)
 endif (HAVE_UNISTD_H_)
-
-if (WIN32)
-	check_symbol_exists (_access   io.h     HAVE__ACCESS)
-	check_symbol_exists (_fileno   stdio.h  HAVE__FILENO)
-	check_symbol_exists (_getcwd   direct.h HAVE__GETCWD)
-	check_symbol_exists (_mkdir    direct.h HAVE__MKDIR)
-	check_symbol_exists (_setmode  io.h     HAVE__SETMODE)
-	check_symbol_exists (_snprintf stdio.h  HAVE__SNPRINTF_)
-	check_symbol_exists (_vsnprintf stdio.h HAVE__VSNPRINTF_)
-endif (WIN32)
-
-if (UNIX)
-	# Check if -ldl is needed for dladdr
-	check_function_exists (dlopen HAVE_BUILTIN_DYNAMIC_LINKING_LOADER)
-	if (NOT HAVE_BUILTIN_DYNAMIC_LINKING_LOADER)
-		check_library_exists (dl dlopen "" HAVE_LIBDL)
-	endif (NOT HAVE_BUILTIN_DYNAMIC_LINKING_LOADER)
-	cmake_push_check_state() # save state of CMAKE_REQUIRED_*
-	if (HAVE_LIBDL)
-		set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} "-ldl")
-	endif (HAVE_LIBDL)
-	check_symbol_exists (dladdr    dlfcn.h  HAVE_DLADDR)
-	cmake_pop_check_state() # restore state of CMAKE_REQUIRED_*
-
-	check_symbol_exists (memalign       malloc.h HAVE_MEMALIGN)
-	check_symbol_exists (posix_memalign stdlib.h HAVE_POSIX_MEMALIGN)
-endif (UNIX)
+check_symbol_exists (_mkdir    direct.h HAVE__MKDIR)
+check_symbol_exists (_setmode  io.h     HAVE__SETMODE)
 
 #
 # Check c types
@@ -223,6 +120,7 @@ endif (UNIX)
 
 check_include_file (ctype.h             HAVE_CTYPE_H_)
 check_include_file (inttypes.h          HAVE_INTTYPES_H_)
+check_include_file (machine/endian.h    HAVE_MACHINE_ENDIAN_H_)
 #check_include_file (stddef.h            HAVE_STDDEF_H_)
 #check_include_file (stdint.h            HAVE_STDINT_H_)
 #check_include_file (sys/types.h         HAVE_SYS_TYPES_H_)
@@ -232,17 +130,13 @@ check_include_file (inttypes.h          HAVE_INTTYPES_H_)
 check_type_size (_Bool                  SIZEOF__BOOL)
 check_type_size (bool                   SIZEOF_BOOL)
 check_type_size (int                    SIZEOF_INT)
-set (CMAKE_EXTRA_INCLUDE_FILES sys/ucontext.h)
-check_type_size (greg_t                 SIZEOF_GREG_T)
-set (CMAKE_EXTRA_INCLUDE_FILES)
 check_type_size (long                   SIZEOF_LONG)
 check_type_size ("long long"            SIZEOF_LONG_LONG)
 check_type_size ("long double"          SIZEOF_LONG_DOUBLE)
+check_type_size (intmax_t               SIZEOF_INTMAX_T)
 check_type_size (mode_t                 SIZEOF_MODE_T)
-check_type_size (off_t                  SIZEOF_OFF_T)
-check_type_size (size_t                 SIZEOF_SIZE_T)
 check_type_size (wchar_t                SIZEOF_WCHAR_T)
-check_type_size ("void*"                SIZEOF_VOID_P)
+check_type_size (wint_t                 SIZEOF_WINT_T)
 
 # add suffix to prevent name clash with GDAL
 set (HAVE_STDDEF_H_ "${HAVE_STDDEF_H}"
@@ -253,34 +147,6 @@ set (HAVE_SYS_TYPES_H_ "${HAVE_SYS_TYPES_H}"
 	CACHE INTERNAL "Have include sys/types.h")
 
 test_big_endian (WORDS_BIGENDIAN)
-
-# Byte swapping functions
-check_c_source_runs (
-	"
-	int main(void) {
-		return !__builtin_bswap16(0xabcd) == 0xcdab;
-	}
-	"
-	HAVE___BUILTIN_BSWAP16)
-check_c_source_runs (
-	"
-	int main(void) {
-		return !__builtin_bswap32(0xdeadbeef) == 0xefbeadde;
-	}
-	"
-	HAVE___BUILTIN_BSWAP32)
-check_c_source_runs (
-	"
-	int main(void) {
-		return !__builtin_bswap64(0x1234567890abcdef) == 0xefcdab9078563412;
-	}
-	"
-	HAVE___BUILTIN_BSWAP64)
-if (WIN32)
-	check_function_exists (_byteswap_ushort HAVE__BYTESWAP_USHORT) # for uint16_t
-	check_function_exists (_byteswap_ulong  HAVE__BYTESWAP_ULONG)  # for uint32_t
-	check_function_exists (_byteswap_uint64 HAVE__BYTESWAP_UINT64) # for uint64_t
-endif (WIN32)
 
 #
 # Check math related stuff
@@ -310,25 +176,25 @@ if (HAVE_M_LIBRARY)
 	set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} "-lm")
 endif (HAVE_M_LIBRARY)
 
-# check symbols (double)
+# check symbols
 check_symbol_exists (acosh       "${_math_h}" HAVE_ACOSH)
+check_symbol_exists (alphasincos "${_math_h}" HAVE_ALPHASINCOS)
 check_symbol_exists (asinh       "${_math_h}" HAVE_ASINH)
 check_symbol_exists (atanh       "${_math_h}" HAVE_ATANH)
 check_symbol_exists (copysign    "${_math_h}" HAVE_COPYSIGN)
+check_symbol_exists (_copysign   "${_math_h}" HAVE__COPYSIGN)
 check_symbol_exists (erf         "${_math_h}" HAVE_ERF)
 check_symbol_exists (erfc        "${_math_h}" HAVE_ERFC)
 check_symbol_exists (hypot       "${_math_h}" HAVE_HYPOT)
-check_symbol_exists (isfinite    "${_math_h}" HAVE_ISFINITE)
-check_symbol_exists (isinf       "${_math_h}" HAVE_ISINF)
+check_symbol_exists (irint       "${_math_h}" HAVE_IRINT)
 check_symbol_exists (isnan       "${_math_h}" HAVE_ISNAN)
 check_symbol_exists (isnand      "${_math_h}" HAVE_ISNAND)
 check_symbol_exists (isnanf      "${_math_h}" HAVE_ISNANF)
-check_symbol_exists (isnormal    "${_math_h}" HAVE_ISNORMAL)
+check_symbol_exists (_isnan      "${_math_h}" HAVE__ISNAN)
+check_symbol_exists (_isnanf     "${_math_h}" HAVE__ISNANF)
 check_symbol_exists (j0          "${_math_h}" HAVE_J0)
 check_symbol_exists (j1          "${_math_h}" HAVE_J1)
 check_symbol_exists (jn          "${_math_h}" HAVE_JN)
-check_symbol_exists (lrint       "${_math_h}" HAVE_LRINT)
-check_symbol_exists (llrint      "${_math_h}" HAVE_LLRINT)
 check_symbol_exists (log1p       "${_math_h}" HAVE_LOG1P)
 check_symbol_exists (log2        "${_math_h}" HAVE_LOG2)
 check_symbol_exists (rint        "${_math_h}" HAVE_RINT)
@@ -336,51 +202,12 @@ check_symbol_exists (sincos      "${_math_h}" HAVE_SINCOS)
 check_symbol_exists (y0          "${_math_h}" HAVE_Y0)
 check_symbol_exists (y1          "${_math_h}" HAVE_Y1)
 check_symbol_exists (yn          "${_math_h}" HAVE_YN)
-# check symbols (float)
-check_symbol_exists (acosf       "${_math_h}" HAVE_ACOSF)
-check_symbol_exists (acoshf      "${_math_h}" HAVE_ACOSHF)
-check_symbol_exists (asinf       "${_math_h}" HAVE_ASINF)
-check_symbol_exists (asinhf      "${_math_h}" HAVE_ASINHF)
-check_symbol_exists (atanf       "${_math_h}" HAVE_ATANF)
-check_symbol_exists (atanhf      "${_math_h}" HAVE_ATANHF)
-check_symbol_exists (atan2f      "${_math_h}" HAVE_ATAN2F)
-check_symbol_exists (erff        "${_math_h}" HAVE_ERFF)
-check_symbol_exists (ceilf       "${_math_h}" HAVE_CEILF)
-check_symbol_exists (cosf        "${_math_h}" HAVE_COSF)
-check_symbol_exists (coshf       "${_math_h}" HAVE_COSHF)
-check_symbol_exists (erfcf       "${_math_h}" HAVE_ERFCF)
-check_symbol_exists (expf        "${_math_h}" HAVE_EXPF)
-check_symbol_exists (fabsf       "${_math_h}" HAVE_FABSF)
-check_symbol_exists (floorf      "${_math_h}" HAVE_FLOORF)
-check_symbol_exists (fmodf       "${_math_h}" HAVE_FMODF)
-check_symbol_exists (hypotf      "${_math_h}" HAVE_HYPOTF)
-check_symbol_exists (logf        "${_math_h}" HAVE_LOGF)
-check_symbol_exists (log2f       "${_math_h}" HAVE_LOG2F)
-check_symbol_exists (log10f      "${_math_h}" HAVE_LOG10F)
-check_symbol_exists (log1pf      "${_math_h}" HAVE_LOG1PF)
-check_symbol_exists (lrintf      "${_math_h}" HAVE_LRINTF)
-check_symbol_exists (llrintf     "${_math_h}" HAVE_LLRINTF)
-check_symbol_exists (powf        "${_math_h}" HAVE_POWF)
-check_symbol_exists (rintf       "${_math_h}" HAVE_RINTF)
-check_symbol_exists (sinf        "${_math_h}" HAVE_SINF)
-check_symbol_exists (sinhf       "${_math_h}" HAVE_SINHF)
-check_symbol_exists (sqrtf       "${_math_h}" HAVE_SQRTF)
-check_symbol_exists (tanf        "${_math_h}" HAVE_TANF)
-check_symbol_exists (tanhf       "${_math_h}" HAVE_TANHF)
-
-if (WIN32)
-	check_symbol_exists (_copysign "${_math_h}" HAVE__COPYSIGN)
-	check_symbol_exists (_finite   "${_math_h}" HAVE__FINITE)
-	check_symbol_exists (_fpclass  "${_math_h}" HAVE__FPCLASS)
-	check_symbol_exists (_isnan    "${_math_h}" HAVE__ISNAN)
-endif (WIN32)
 
 # test if sincos is buggy
 if (HAVE_SINCOS)
 	check_c_source_runs (
 		"
 		#define _GNU_SOURCE
-		#define __EXTENSIONS__
 		include <math.h>
 		int main () {
 		double s = 0.1, c = 0.2;
@@ -389,10 +216,7 @@ if (HAVE_SINCOS)
 		sincos (0.5, &s, &c);
 		return !(s == s1 || c == c1);} /* return TRUE if sincos works ok */
 		"
-		HAVE_BUGGY_SINCOS)
-	if (HAVE_BUGGY_SINCOS)
-		set (HAVE_SINCOS "" CACHE INTERNAL "disable sincos because it is buggy" FORCE)
-	endif (HAVE_BUGGY_SINCOS)
+		HAVE_SINCOS)
 endif (HAVE_SINCOS)
 
 # restore state of CMAKE_REQUIRED_*
@@ -474,39 +298,40 @@ cmake_pop_check_state()
 #check_include_file (ffi.h HAVE_FFI_H)
 #check_include_file (intrinsics.h HAVE_INTRINSICS_H)
 #check_include_file (sys/time.h have_hrtime_t)
-#check_include_file (mach-o/dyld.h HAVE_MACH_O_DYLD_H  )
-#check_include_file (mach/mach_time.h  HAVE_MACH_MACH_TIME_H)
-#check_include_file (machine/endian.h    HAVE_MACHINE_ENDIAN_H_)
-#check_include_file (argz.h HAVE_ARGZ_H)
-#check_include_file (io.h HAVE_IO_H)
-#check_include_file (limits.h HAVE_LIMITS_H)
-#check_include_file (locale.h HAVE_LOCALE_H)
-#check_include_file (memory.h HAVE_MEMORY_H)
-#check_include_file (ndir.h HAVE_NDIR_H)
-#check_include_file (pthread.h HAVE_PTHREAD_H)
-#check_include_file (stdlib.h HAVE_STDLIB_H)
-#check_include_file (string.h HAVE_STRING_H)
-#check_include_file (strings.h HAVE_STRINGS_H)
-#check_include_file (sys/dl.h HAVE_SYS_DL_H )
-#check_include_file (sys/socket.h HAVE_SYS_SOCKET_H)
-#check_include_file (sys/stat.h HAVE_SYS_STAT_H )
-#check_include_file (sys/stat.h HAVE_SYS_STAT_H)
-#check_include_file (sys/time.h HAVE_SYS_TIME_H )
-#check_include_file (sys/time.h HAVE_SYS_TIME_H)
-#check_include_file (sys/types.h HAVE_SYS_TYPES_H )
-#check_include_file (sys/types.h HAVE_SYS_TYPES_H)
-#check_include_file (sys/utime.h HAVE_SYS_UTIME_H)
-#check_include_file (utime.h HAVE_UTIME_H)
+#check_include_files ( mach-o/dyld.h HAVE_MACH_O_DYLD_H  )
+#check_include_files ( mach/mach_time.h  HAVE_MACH_MACH_TIME_H)
+#check_include_files (argz.h HAVE_ARGZ_H)
+#check_include_files (io.h HAVE_IO_H)
+#check_include_files (limits.h HAVE_LIMITS_H)
+#check_include_files (locale.h HAVE_LOCALE_H)
+#check_include_files (memory.h HAVE_MEMORY_H)
+#check_include_files (ndir.h HAVE_NDIR_H)
+#check_include_files (pthread.h HAVE_PTHREAD_H)
+#check_include_files (stdlib.h HAVE_STDLIB_H)
+#check_include_files (string.h HAVE_STRING_H)
+#check_include_files (strings.h HAVE_STRINGS_H)
+#check_include_files (sys/dl.h HAVE_SYS_DL_H )
+#check_include_files (sys/socket.h HAVE_SYS_SOCKET_H)
+#check_include_files (sys/stat.h HAVE_SYS_STAT_H )
+#check_include_files (sys/stat.h HAVE_SYS_STAT_H)
+#check_include_files (sys/time.h HAVE_SYS_TIME_H )
+#check_include_files (sys/time.h HAVE_SYS_TIME_H)
+#check_include_files (sys/types.h HAVE_SYS_TYPES_H )
+#check_include_files (sys/types.h HAVE_SYS_TYPES_H)
+#check_include_files (sys/utime.h HAVE_SYS_UTIME_H)
+#check_include_files (utime.h HAVE_UTIME_H)
 #check_library_exists (dl dl "/lib;/usr/lib;/usr/local/lib;/usr/pkg/lib" HAVE_LIBDL)
 #check_symbol_exists (LC_MESSAGES "locale.h" HAVE_LC_MESSAGES)
 #check_symbol_exists (asprintf "stdio.h" HAVE_ASPRINTF)
 #check_symbol_exists (intmax_t "inttypes.h" HAVE_INTTYPES_H_WITH_UINTMAX)
 #check_symbol_exists (pid_t "sys/types.h" HAVE_PID_T)
 #check_symbol_exists (printf "stdio.h" HAVE_POSIX_PRINTF)
+#check_symbol_exists (snprintf "stdio.h" HAVE_SNPRINTF)
 #check_symbol_exists (uintmax_t "stdint.h" HAVE_STDINT_H_WITH_UINTMAX)
 #check_symbol_exists (wprintf "stdio.h" HAVE_WPRINTF)
 #check_type_size ("long double"         SIZEOF_LONG_DOUBLE)
 #check_type_size ("long long" SIZEOF_LONG_LONG)
+#check_type_size ("void*" SIZEOF_VOID_P)
 #check_type_size (char           SIZEOF_CHAR)
 #check_type_size (double         SIZEOF_DOUBLE)
 #check_type_size (float         SIZEOF_FLOAT)

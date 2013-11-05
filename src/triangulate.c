@@ -1,17 +1,17 @@
  /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -32,56 +32,49 @@
  * Version:	5 API
  */
  
-#define THIS_MODULE_NAME	"triangulate"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Do optimal (Delaunay) triangulation and gridding of Cartesian table data"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>JRVbfhirs" GMT_OPT("FHm")
+#include "gmt.h"
 
 struct TRIANGULATE_CTRL {
 	struct D {	/* -Dx|y */
-		bool active;
-		unsigned int dir;
+		GMT_LONG active;
+		GMT_LONG dir;
 	} D;
 	struct E {	/* -E<value> */
-		bool active;
+		GMT_LONG active;
 		double value;
 	} E;
 	struct G {	/* -G<output_grdfile> */
-		bool active;
+		GMT_LONG active;
 		char *file;
 	} G;
 	struct I {	/* -Idx[/dy] */
-		bool active;
+		GMT_LONG active;
 		double inc[2];
 	} I;
 	struct M {	/* -M */
-		bool active;
+		GMT_LONG active;
 	} M;
-	struct N {	/* -N */
-		bool active;
-	} N;
 	struct Q {	/* -Q */
-		bool active;
+		GMT_LONG active;
 	} Q;
 	struct S {	/* -S */
-		bool active;
+		GMT_LONG active;
 	} S;
 	struct Z {	/* -Z */
-		bool active;
+		GMT_LONG active;
 	} Z;
 };
 
 struct TRIANGULATE_EDGE {
-	unsigned int begin, end;
+	GMT_LONG begin, end;
 };
 
 int compare_edge (const void *p1, const void *p2)
 {
-	const struct TRIANGULATE_EDGE *a = p1, *b = p2;
+	struct TRIANGULATE_EDGE *a, *b;
 
+	a = (struct TRIANGULATE_EDGE *)p1;
+	b = (struct TRIANGULATE_EDGE *)p2;
 	if (a->begin < b->begin) return (-1);
 	if (a->begin > b->begin) return (+1);
 	if (a->end < b->end) return (-1);
@@ -94,8 +87,8 @@ void *New_triangulate_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a
 	
 	C = GMT_memory (GMT, NULL, 1, struct TRIANGULATE_CTRL);
 	
-	/* Initialize values whose defaults are not 0/false/NULL */
-	C->D.dir = 2;	/* No derivatives */
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
+	C->D.dir = -1;	/* No derivatives */
 	return (C);
 }
 
@@ -105,39 +98,40 @@ void Free_triangulate_Ctrl (struct GMT_CTRL *GMT, struct TRIANGULATE_CTRL *C) {	
 	GMT_free (GMT, C);	
 }
 
-int GMT_triangulate_usage (struct GMTAPI_CTRL *API, int level)
+GMT_LONG GMT_triangulate_usage (struct GMTAPI_CTRL *C, GMT_LONG level)
 {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: triangulate [<table>] [-Dx|y] [-E<empty>] [-G<outgrid>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [-M] [-N] [-Q]\n", GMT_I_OPT, GMT_J_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [-S] [%s] [-Z] [%s]\n\t[%s] [%s]\n\t[%s] [%s] [%s] [%s]\n\n",
-		GMT_Rgeo_OPT, GMT_V_OPT, GMT_b_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_s_OPT, GMT_colon_OPT);
+	struct GMT_CTRL *GMT = C->GMT;
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	GMT_message (GMT, "triangulate %s [API] - Do optimal (Delaunay) triangulation and gridding of Cartesian table data\n\n", GMT_VERSION);
+	GMT_message (GMT, "usage: triangulate [<table>] [-Dx|y] [-E<empty>] [-G<outgrid>]\n");
+	GMT_message (GMT, "\t[%s] [%s] [-M[z]] [-Q]", GMT_I_OPT, GMT_J_OPT);
+	GMT_message (GMT, "\n\t[%s] [-S] [%s] [-Z] [%s] [%s]\n\t[%s] [%s] [%s] [%s]\n\n",
+		GMT_Rgeo_OPT, GMT_V_OPT, GMT_b_OPT, GMT_f_OPT, GMT_h_OPT, GMT_i_OPT, GMT_r_OPT, GMT_colon_OPT);
 
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Option (API, "<");   
-	GMT_Message (API, GMT_TIME_NONE, "\t-D Take derivative in the x- or y-direction (only with -G) [Default is z value].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Value to use for empty nodes [Default is NaN].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-G Grid data. Give name of output grid file and specify -R -I.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Cannot be used with -N, -Q, -S.\n");
-	GMT_Option (API, "I,J-");   
-	GMT_Message (API, GMT_TIME_NONE, "\t-M Output triangle edges as multiple segments separated by segment headers.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   [Default is to output the indices of vertices for each Delaunay triangle].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-N Write indices of vertices to stdout when -G is used [only write the grid].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Q Compute Voronoi polygon edges instead (requires -R and Shewchuk algorithm) [Delaunay triangulation].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Output triangle polygons as multiple segments separated by segment headers.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Cannot be used with -Q.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Z Expect (x,y,z) data on input (and output); automatically set if -G is used [Expect (x,y) data].\n");
-	GMT_Option (API, "R,V,bi2");
-	GMT_Message (API, GMT_TIME_NONE, "\t-bo Write binary (double) index table [Default is ASCII i/o].\n");
-	GMT_Option (API, "f,h,i,r,s,:,.");
+	if (level == GMTAPI_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_message (GMT, "\n\tOPTIONS:\n");
+	GMT_explain_options (GMT, "<");   
+	GMT_message (GMT, "\t-D Take derivative in the x- or y-direction (only with -G) [Default is z value].\n");
+	GMT_message (GMT, "\t-E Value to use for empty nodes [Default is NaN].\n");
+	GMT_message (GMT, "\t-G Grid data. Give name of output grid file and specify -R -I.\n");
+	GMT_message (GMT, "\t   Cannot be used with -Q.\n");
+	GMT_inc_syntax (GMT, 'I', 0);
+	GMT_explain_options (GMT, "J");   
+	GMT_message (GMT, "\t-M Output triangle edges as multiple segments separated by segment headers.\n");
+	GMT_message (GMT, "\t   [Default is to output the indices of vertices for each Delaunay triangle].\n");
+	GMT_message (GMT, "\t-Q Compute Voronoi polygon edges instead (requires -R and Shewchuk algorithm) [Delaunay triangulation].\n");
+	GMT_message (GMT, "\t-S Output triangle polygons as multiple segments separated by segment headers.\n");
+	GMT_message (GMT, "\t   Cannot be used with -Q.\n");
+	GMT_message (GMT, "\t-Z Expect (x,y,z) data on input (and output); automatically set if -G is used [Expect (x,y) data].\n");
+	GMT_explain_options (GMT, "RVC2");
+	GMT_message (GMT, "\t-bo Write binary (double) index table [Default is ASCII i/o].\n");
+	GMT_explain_options (GMT, "fhiF:.");
 	
 	return (EXIT_FAILURE);
 }
 
-int GMT_triangulate_parse (struct GMT_CTRL *GMT, struct TRIANGULATE_CTRL *Ctrl, struct GMT_OPTION *options)
+GMT_LONG GMT_triangulate_parse (struct GMTAPI_CTRL *C, struct TRIANGULATE_CTRL *Ctrl, struct GMT_OPTION *options)
 {
 	/* This parses the options provided to triangulate and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
@@ -145,69 +139,60 @@ int GMT_triangulate_parse (struct GMT_CTRL *GMT, struct TRIANGULATE_CTRL *Ctrl, 
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0;
+	GMT_LONG n_errors = 0;
 	struct GMT_OPTION *opt = NULL;
-	struct GMTAPI_CTRL *API = GMT->parent;
+	struct GMT_CTRL *GMT = C->GMT;
 
 	for (opt = options; opt; opt = opt->next) {
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
 
 			case 'D':
-				Ctrl->D.active = true;
+				Ctrl->D.active = TRUE;
 				switch (opt->arg[0]) {
 					case 'x': case 'X':
 						Ctrl->D.dir = GMT_X; break;
 					case 'y': case 'Y':
 						Ctrl->D.dir = GMT_Y; break;
 					default:
-						GMT_Report (API, GMT_MSG_NORMAL, "Syntax error: Give -Dx or -Dy\n");
+						GMT_report (GMT, GMT_MSG_FATAL, "Syntax error: Give -Dx or -Dy\n");
 						n_errors++; break;
 				}
 				break;
 			case 'E':
-				Ctrl->E.active = true;
+				Ctrl->E.active = TRUE;
 				Ctrl->E.value = (opt->arg[0] == 'N' || opt->arg[0] == 'n') ? GMT->session.d_NaN : atof (opt->arg);
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
-					Ctrl->G.file = strdup (opt->arg);
-				else
-					n_errors++;
+				Ctrl->G.active = TRUE;
+				Ctrl->G.file = strdup (opt->arg);
 				break;
 			case 'I':
-				Ctrl->I.active = true;
+				Ctrl->I.active = TRUE;
 				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
 					GMT_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
 				break;
+#ifdef GMT_COMPAT
 			case 'm':
-				if (GMT_compat_check (GMT, 4)) /* Warn and fall through */
-					GMT_Report (API, GMT_MSG_COMPAT, "Warning: -m option is deprecated and reverted back to -M.\n");
-				else {
-					n_errors += GMT_default_error (GMT, opt->option);
-					break;
-				}
+				GMT_report (GMT, GMT_MSG_COMPAT, "Warning: -m option is deprecated and reverted back to -M.\n");
+#endif
 			case 'M':
-				Ctrl->M.active = true;
-				break;
-			case 'N':
-				Ctrl->N.active = true;
+				Ctrl->M.active = TRUE;
 				break;
 			case 'Q':
-				Ctrl->Q.active = true;
+				Ctrl->Q.active = TRUE;
 				break;
 			case 'S':
-				Ctrl->S.active = true;
+				Ctrl->S.active = TRUE;
 				break;
 			case 'Z':
-				Ctrl->Z.active = true;
+				Ctrl->Z.active = TRUE;
 				break;
 
 			default:	/* Report bad options */
@@ -216,17 +201,17 @@ int GMT_triangulate_parse (struct GMT_CTRL *GMT, struct TRIANGULATE_CTRL *Ctrl, 
 		}
 	}
 
-	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.registration, &Ctrl->I.active);
+	GMT_check_lattice (GMT, Ctrl->I.inc, &GMT->common.r.active, &Ctrl->I.active);
 
 	n_errors += GMT_check_binary_io (GMT, 2);
+	n_errors += GMT_check_condition (GMT, Ctrl->D.active && (Ctrl->D.dir < GMT_X || Ctrl->D.dir > GMT_Y), "Syntax error -D option: Must specify x or y\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->I.active && (Ctrl->I.inc[GMT_X] <= 0.0 || Ctrl->I.inc[GMT_Y] <= 0.0), "Syntax error -I option: Must specify positive increment(s)\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->G.active && !Ctrl->G.file, "Syntax error -G option: Must specify file name\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->G.active && (Ctrl->I.active + GMT->common.R.active) != 2, "Syntax error: Must specify -R, -I, -G for gridding\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->G.active && Ctrl->Q.active, "Syntax error -G option: Cannot be used with -Q\n");
-	n_errors += GMT_check_condition (GMT, Ctrl->N.active && !Ctrl->G.active, "Syntax error -N option: Only required with -G\n");
+	n_errors += GMT_check_condition (GMT, Ctrl->S.active && Ctrl->Q.active, "Syntax error -G option: Cannot be used with -S\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->Q.active && !GMT->common.R.active, "Syntax error -Q option: Requires -R\n");
 	n_errors += GMT_check_condition (GMT, Ctrl->Q.active && GMT->current.setting.triangulate == GMT_TRIANGLE_WATSON, "Syntax error -Q option: Requires Shewchck triangulation algorithm\n");
-	if (!(Ctrl->M.active || Ctrl->Q.active || Ctrl->S.active || Ctrl->N.active)) Ctrl->N.active = !Ctrl->G.active;	/* The default action */
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
@@ -234,24 +219,20 @@ int GMT_triangulate_parse (struct GMT_CTRL *GMT, struct TRIANGULATE_CTRL *Ctrl, 
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
 #define Return(code) {Free_triangulate_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_triangulate (void *V_API, int mode, void *args)
+GMT_LONG GMT_triangulate (struct GMTAPI_CTRL *API, GMT_LONG mode, void *args)
 {
-	int *link = NULL;	/* Must remain int and not int due to triangle function */
+	int *link = NULL;	/* Must remain int and not GMT_LONG due to triangle function */
 	
-	uint64_t ij, ij1, ij2, ij3, np, i, j, k, n_edge, p, n = 0;
-	unsigned int n_input, n_output;
-	int row, col, col_min, col_max, row_min, row_max, error = 0;
-	bool triplets[2] = {false, false}, map_them = false;
-	
-	size_t n_alloc;
-	
+	GMT_LONG ij, ij1, ij2, ij3, np, n_alloc, n = 0, i, j, k, n_edge;
+	GMT_LONG col_min, col_max, row_min, row_max, p, n_output;
+	GMT_LONG row, col, n_input, triplets[2] = {FALSE, FALSE}, error = FALSE, map_them = FALSE;
+
 	double zj, zk, zl, zlj, zkj, xp, yp, a, b, c, f;
 	double xkj, xlj, ykj, ylj, out[3], vx[4], vy[4];
 	double *xx = NULL, *yy = NULL, *zz = NULL, *in = NULL;
 	double *xe = NULL, *ye = NULL;
 
 	char *tri_algorithm[2] = {"Watson", "Shewchuk"};
-	char record[GMT_BUFSIZ];
 
 	struct GMT_GRID *Grid = NULL;
 
@@ -259,40 +240,39 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 	struct TRIANGULATE_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_triangulate_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	if (API == NULL) return (GMT_Report_Error (API, GMT_NOT_A_SESSION));
+	options = GMT_Prep_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_triangulate_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_triangulate_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMTAPI_OPT_USAGE) bailout (GMT_triangulate_usage (API, GMTAPI_USAGE));/* Return the usage message */
+	if (options->option == GMTAPI_OPT_SYNOPSIS) bailout (GMT_triangulate_usage (API, GMTAPI_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	GMT = GMT_begin_module (API, "GMT_triangulate", &GMT_cpy);		/* Save current state */
+	if (GMT_Parse_Common (API, "-VJRbf:", "hirs>" GMT_OPT("FHm"), options)) Return (API->error);
 	Ctrl = New_triangulate_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_triangulate_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_triangulate_parse (API, Ctrl, options))) Return (error);
 
 	/*---------------------------- This is the triangulate main code ----------------------------*/
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
-	GMT_Report (API, GMT_MSG_LONG_VERBOSE, "%s triangulation algoritm selected\n", tri_algorithm[GMT->current.setting.triangulate]);
+	GMT_report (GMT, GMT_MSG_VERBOSE, "%s triangulation algoritm selected\n", tri_algorithm[GMT->current.setting.triangulate]);
 	
 	if (Ctrl->G.active) {
-		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_HEADER_ONLY, NULL, NULL, Ctrl->I.inc, \
-			GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, NULL)) == NULL) Return (API->error);
+		GMT_grd_init (GMT, Grid->header, options, FALSE);
+		/* Completely determine the header for the new grid; croak if there are issues.  No memory is allocated here. */
+		GMT_err_fail (GMT, GMT_init_newgrid (GMT, Grid, GMT->common.R.wesn, Ctrl->I.inc, GMT->common.r.active), Ctrl->G.file);
 	}
-	if (Ctrl->Q.active && Ctrl->Z.active) GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Warning: We will read (x,y,z), but only (x,y) will be output when -Q is used\n");
+	if (Ctrl->Q.active && Ctrl->Z.active) GMT_report (GMT, GMT_MSG_VERBOSE, "Warning: We will read (x,y,z), but only (x,y) will be output when -Q is used\n");
 	n_output = ((Ctrl->M.active || Ctrl->S.active) && (Ctrl->Q.active || !Ctrl->Z.active)) ? 2 : 3;
 	triplets[GMT_OUT] = (n_output == 3);
 	if ((error = GMT_set_cols (GMT, GMT_OUT, n_output))) Return (error);
 	
 	if (GMT->common.R.active && GMT->common.J.active) { /* Gave -R -J */
-		map_them = true;
+		map_them = TRUE;
 		GMT_err_fail (GMT, GMT_map_setup (GMT, Grid->header->wesn), "");
 	}
 
@@ -304,10 +284,10 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 	}
 
 	/* Initialize the i/o since we are doing record-by-record reading/writing */
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN, GMT_REG_DEFAULT, options) != GMT_OK) {	/* Establishes data input */
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN) != GMT_OK) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
 
@@ -341,13 +321,13 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 			if (triplets[GMT_IN]) zz = GMT_memory (GMT, zz, n_alloc, double);
 		}
 		if (n == INT_MAX) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: Cannot triangulate more than %d points\n", INT_MAX);
+			GMT_report (GMT, GMT_MSG_FATAL, "Error: Cannot triangulate more than %d points\n", INT_MAX);
 			GMT_free (GMT, xx);
 			GMT_free (GMT, yy);
 			if (triplets[GMT_IN]) GMT_free (GMT, zz);
 			Return (EXIT_FAILURE);
 		}
-	} while (true);
+	} while (TRUE);
 	
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 		Return (API->error);
@@ -364,7 +344,7 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 		yyp = GMT_memory (GMT, NULL, n, double);
 		for (i = 0; i < n; i++) GMT_geo_to_xy (GMT, xx[i], yy[i], &xxp[i], &yyp[i]);
 
-		GMT_Report (API, GMT_MSG_VERBOSE, "Do Delaunay optimal triangulation on projected coordinates\n");
+		GMT_report (GMT, GMT_MSG_NORMAL, "Do Delaunay optimal triangulation on projected coordinates\n");
 
 		if (Ctrl->Q.active) {
 			double we[2];
@@ -378,7 +358,7 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 		GMT_free (GMT, yyp);
 	}
 	else {
-		GMT_Report (API, GMT_MSG_VERBOSE, "Do Delaunay optimal triangulation on given coordinates\n");
+		GMT_report (GMT, GMT_MSG_NORMAL, "Do Delaunay optimal triangulation on given coordinates\n");
 
 		if (Ctrl->Q.active) {
 			double we[2];
@@ -390,16 +370,16 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 	}
 
 	if (Ctrl->Q.active)
-		GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " Voronoi edges found\n", np);
+		GMT_report (GMT, GMT_MSG_NORMAL, "%ld Voronoi edges found\n", np);
 	else
-		GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " Delaunay triangles found\n", np);
+		GMT_report (GMT, GMT_MSG_NORMAL, "%ld Delaunay triangles found\n", np);
 	
 
 	if (Ctrl->G.active) {	/* Grid via planar triangle segments */
-		int nx = Grid->header->nx, ny = Grid->header->ny;	/* Signed versions */
-		if (GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_GRID, GMT_GRID_DATA_ONLY, NULL, NULL, NULL, 0, 0, Grid) == NULL) Return (API->error);
+
+		Grid->data = GMT_memory (GMT, NULL, Grid->header->size, float);
 		if (!Ctrl->E.active) Ctrl->E.value = GMT->session.d_NaN;
-		for (p = 0; p < Grid->header->size; p++) Grid->data[p] = (float)Ctrl->E.value;	/* initialize grid */
+		for (i = 0; i < Grid->header->size; i++) Grid->data[i] = (float)Ctrl->E.value;	/* initialize grid */
 
 		for (k = ij = 0; k < np; k++) {
 
@@ -422,21 +402,21 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 			   in the -R region (Grid->header->wesn[XLO]/x_max etc.)  Always, col_min <= col_max, row_min <= row_max.
 			 */
 
-			xp = MIN (MIN (vx[0], vx[1]), vx[2]);	col_min = (int)GMT_grd_x_to_col (GMT, xp, Grid->header);
-			xp = MAX (MAX (vx[0], vx[1]), vx[2]);	col_max = (int)GMT_grd_x_to_col (GMT, xp, Grid->header);
-			yp = MAX (MAX (vy[0], vy[1]), vy[2]);	row_min = (int)GMT_grd_y_to_row (GMT, yp, Grid->header);
-			yp = MIN (MIN (vy[0], vy[1]), vy[2]);	row_max = (int)GMT_grd_y_to_row (GMT, yp, Grid->header);
+			xp = MIN (MIN (vx[0], vx[1]), vx[2]);	col_min = GMT_grd_x_to_col (GMT, xp, Grid->header);
+			xp = MAX (MAX (vx[0], vx[1]), vx[2]);	col_max = GMT_grd_x_to_col (GMT, xp, Grid->header);
+			yp = MAX (MAX (vy[0], vy[1]), vy[2]);	row_min = GMT_grd_y_to_row (GMT, yp, Grid->header);
+			yp = MIN (MIN (vy[0], vy[1]), vy[2]);	row_max = GMT_grd_y_to_row (GMT, yp, Grid->header);
 
 			/* Adjustments for triangles outside -R region. */
 			/* Triangle to the left or right. */
-			if ((col_max < 0) || (col_min >= nx)) continue;
+			if ((col_max < 0) || (col_min >= Grid->header->nx)) continue;
 			/* Triangle Above or below */
-			if ((row_max < 0) || (row_min >= ny)) continue;
+			if ((row_max < 0) || (row_min >= Grid->header->ny)) continue;
 
 			/* Triangle covers boundary, left or right. */
-			if (col_min < 0) col_min = 0;       if (col_max >= nx) col_max = Grid->header->nx - 1;
+			if (col_min < 0) col_min = 0;       if (col_max >= Grid->header->nx) col_max = Grid->header->nx - 1;
 			/* Triangle covers boundary, top or bottom. */
-			if (row_min < 0) row_min = 0;       if (row_max >= ny) row_max = Grid->header->ny - 1;
+			if (row_min < 0) row_min = 0;       if (row_max >= Grid->header->ny) row_max = Grid->header->ny - 1;
 
 			for (row = row_min; row <= row_max; row++) {
 				yp = GMT_grd_row_to_y (GMT, row, Grid->header);
@@ -455,94 +435,94 @@ int GMT_triangulate (void *V_API, int mode, void *args)
 				}
 			}
 		}
-		if (GMT_Set_Comment (API, GMT_IS_GRID, GMT_COMMENT_IS_OPTION | GMT_COMMENT_IS_COMMAND, options, Grid)) Return (API->error);
-		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->G.file, Grid) != GMT_OK) {
+		if (GMT_Write_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, NULL, GMT_GRID_ALL, Ctrl->G.file, Grid) != GMT_OK) {
 			Return (API->error);
 		}
-		GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
 	}
 	
-	if (Ctrl->M.active || Ctrl->Q.active || Ctrl->S.active || Ctrl->N.active) {	/* Requires output to stdout */
-		if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
-			Return (API->error);
-		}
-		if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
-			Return (API->error);
-		}
-		if (Ctrl->M.active || Ctrl->Q.active) {	/* Must find unique edges to output only once */
-			GMT_set_segmentheader (GMT, GMT_OUT, true);
-			if (Ctrl->Q.active) {	/* Voronoi edges */
-				for (i = j = 0; i < np; i++) {
-					sprintf (record, "Edge %" PRIu64, i);
-					GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, record);
-					out[GMT_X] = xe[j];	out[GMT_Y] = ye[j++];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
-					out[GMT_X] = xe[j];	out[GMT_Y] = ye[j++];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
-				}
-				GMT_free (GMT, xe);
-				GMT_free (GMT, ye);
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_REG_DEFAULT, options) != GMT_OK) {	/* Establishes data output */
+		Return (API->error);
+	}
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT) != GMT_OK) {	/* Enables data output and sets access mode */
+		Return (API->error);
+	}
+	if (Ctrl->M.active) {	/* Must find unique edges to output only once */
+		if (Ctrl->Q.active) {	/* Voronoi edges */
+			for (i = j = 0; i < np; i++) {
+				GMT_fprintf (GMT->session.std[GMT_OUT], "%c Edge %ld\n", GMT->current.setting.io_seg_marker[GMT_OUT], i);
+				out[GMT_X] = xe[j];	out[GMT_Y] = ye[j++];
+				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				out[GMT_X] = xe[j];	out[GMT_Y] = ye[j++];
+				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
 			}
-			else {	/* Triangle edges */
-				n_edge = 3 * np;
-				edge = GMT_memory (GMT, NULL, n_edge, struct TRIANGULATE_EDGE);
-				for (i = ij1 = 0, ij2 = 1, ij3 = 2; i < np; i++, ij1 += 3, ij2 += 3, ij3 += 3) {
-					edge[ij1].begin = link[ij1];	edge[ij1].end = link[ij2];
-					edge[ij2].begin = link[ij2];	edge[ij2].end = link[ij3];
-					edge[ij3].begin = link[ij1];	edge[ij3].end = link[ij3];
-				}
-				for (i = 0; i < n_edge; i++) if (edge[i].begin > edge[i].end) int_swap (edge[i].begin, edge[i].end);
-
-				qsort (edge, n_edge, sizeof (struct TRIANGULATE_EDGE), compare_edge);
-				for (i = 1, j = 0; i < n_edge; i++) {
-					if (edge[i].begin != edge[j].begin || edge[i].end != edge[j].end) j++;
-					edge[j] = edge[i];
-				}
-				n_edge = j + 1;
-
-				GMT_Report (API, GMT_MSG_VERBOSE, "%" PRIu64 " unique triangle edges\n", n_edge);
-
-				for (i = 0; i < n_edge; i++) {
-					sprintf (record, "Edge %d-%d", edge[i].begin, edge[i].end);
-					GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, record);
-					out[GMT_X] = xx[edge[i].begin];	out[GMT_Y] = yy[edge[i].begin];	if (triplets[GMT_OUT]) out[GMT_Z] = zz[edge[i].begin];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
-					out[GMT_X] = xx[edge[i].end];	out[GMT_Y] = yy[edge[i].end];	if (triplets[GMT_OUT]) out[GMT_Z] = zz[edge[i].end];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
-				}
-				GMT_free (GMT, edge);
-			}
+			GMT_free (GMT, xe);
+			GMT_free (GMT, ye);
 		}
-		else if (Ctrl->S.active)  {	/* Write triangle polygons */
-			GMT_set_segmentheader (GMT, GMT_OUT, true);
-			for (i = ij = 0; i < np; i++, ij += 3) {
-				sprintf (record, "Polygon %d-%d-%d", link[ij], link[ij+1], link[ij+2]);
-				GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, record);
-				for (k = 0; k < 3; k++) {	/* Three vertices */
-					out[GMT_X] = xx[link[ij+k]];	out[GMT_Y] = yy[link[ij+k]];	if (triplets[GMT_OUT]) out[GMT_Z] = zz[link[ij+k]];
-					GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
-				}
+		else {	/* Triangle edges */
+			n_edge = 3 * np;
+			edge = GMT_memory (GMT, NULL, n_edge, struct TRIANGULATE_EDGE);
+			for (i = ij1 = 0, ij2 = 1, ij3 = 2; i < np; i++, ij1 += 3, ij2 += 3, ij3 += 3) {
+				edge[ij1].begin = link[ij1];	edge[ij1].end = link[ij2];
+				edge[ij2].begin = link[ij2];	edge[ij2].end = link[ij3];
+				edge[ij3].begin = link[ij1];	edge[ij3].end = link[ij3];
 			}
+			for (i = 0; i < n_edge; i++) if (edge[i].begin > edge[i].end) l_swap (edge[i].begin, edge[i].end);
+
+			qsort (edge, (size_t)n_edge, sizeof (struct TRIANGULATE_EDGE), compare_edge);
+			for (i = 1, j = 0; i < n_edge; i++) {
+				if (edge[i].begin != edge[j].begin || edge[i].end != edge[j].end) j++;
+				edge[j] = edge[i];
+			}
+			n_edge = j + 1;
+
+			GMT_report (GMT, GMT_MSG_NORMAL, "%ld unique triangle edges\n", n_edge);
+
+			for (i = 0; i < n_edge; i++) {
+				GMT_fprintf (GMT->session.std[GMT_OUT], "%c Edge %ld-%ld\n", GMT->current.setting.io_seg_marker[GMT_OUT], edge[i].begin, edge[i].end);
+				out[GMT_X] = xx[edge[i].begin];	out[GMT_Y] = yy[edge[i].begin];	if (triplets[GMT_OUT]) out[GMT_Z] = zz[edge[i].begin];
+				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+				out[GMT_X] = xx[edge[i].end];	out[GMT_Y] = yy[edge[i].end];	if (triplets[GMT_OUT]) out[GMT_Z] = zz[edge[i].end];
+				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);
+			}
+			GMT_free (GMT, edge);
 		}
-		else if (Ctrl->N.active) {	/* Write table of indices */
-			/* Set output format to regular float */
-			GMT_set_cartesian (GMT, GMT_OUT);	/* Since output is no longer lon/lat */
-			GMT->current.io.col_type[GMT_OUT][GMT_Z] = GMT_IS_FLOAT;
-			for (i = ij = 0; i < np; i++, ij += 3) {
-				for (k = 0; k < 3; k++) out[k] = (double)link[ij+k];
+	}
+	else if (Ctrl->S.active)  {	/* Write triangle polygons */
+		for (i = ij = 0; i < np; i++, ij += 3) {
+			GMT_fprintf (GMT->session.std[GMT_OUT], "%c Polygon %d-%d-%d\n", GMT->current.setting.io_seg_marker[GMT_OUT], link[ij], link[ij+1], link[ij+2]);
+			for (k = 0; k < 3; k++) {	/* Three vertices */
+				out[GMT_X] = xx[link[ij+k]];	out[GMT_Y] = yy[link[ij+k]];	if (triplets[GMT_OUT]) out[GMT_Z] = zz[link[ij+k]];
 				GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
 			}
 		}
-		if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
-			Return (API->error);
+	}
+	else {	/* Write table of indices */
+		for (i = ij = 0; i < np; i++, ij += 3) {
+			for (k = 0; k < 3; k++) out[k] = (double)link[ij+k];
+			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
 		}
+	}
+	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+		Return (API->error);
 	}
 
 	GMT_free (GMT, xx);
 	GMT_free (GMT, yy);
 	if (triplets[GMT_IN]) GMT_free (GMT, zz);
-	if (!Ctrl->Q.active) GMT_delaunay_free (GMT, &link);
-	GMT_Report (API, GMT_MSG_VERBOSE, "Done!\n");
+#ifdef TRIANGLE_D
+#ifdef DEBUG
+	/* Shewchuk's function allocated the memory separately */
+	if (GMT->current.setting.triangulate == GMT_TRIANGLE_SHEWCHUK) GMT_memtrack_off (GMT, GMT_mem_keeper);
+#endif
+#endif
+	if (!Ctrl->Q.active) GMT_free (GMT, link);
+#ifdef TRIANGLE_D
+#ifdef DEBUG
+	if (GMT->current.setting.triangulate == GMT_TRIANGLE_SHEWCHUK) GMT_memtrack_on (GMT, GMT_mem_keeper);
+#endif
+#endif
+
+	GMT_report (GMT, GMT_MSG_NORMAL, "Done!\n");
 
 	Return (GMT_OK);
 }

@@ -2,33 +2,32 @@
 # $Id$
 #
 # - Generates Mac .dSYM bundle
-# CREATE_DEBUG_SYM ( DESTINATION TARGETS )
+# CREATE_DEBUG_SYM ( TARGETS )
 #
-#  DESTINATION - destination directory for installed targets
-#  TARGETS     - list of targets
+#  TARGETS - list of targets
 #
-# Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2011 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; version 3 or any later version.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# GNU General Public License for more details.
 #
 # Contact info: gmt.soest.hawaii.edu
 #-------------------------------------------------------------------------------
 
+set (_debug_build)
 string(TOLOWER ${CMAKE_BUILD_TYPE} _build_type)
-if (_build_type MATCHES "debug|relwithdebinfo")
-	set (DEBUG_BUILD TRUE)
-endif ()
-set (_build_type)
+if (DEBUG_BUILD OR _build_type STREQUAL "relwithdebinfo")
+	set (_debug_build TRUE)
+endif (DEBUG_BUILD OR _build_type STREQUAL "relwithdebinfo")
 
-if (APPLE AND DEBUG_BUILD)
+if (APPLE AND _debug_build)
 
 	# usefull macros
 	include (GmtHelperMacros)
@@ -37,77 +36,59 @@ if (APPLE AND DEBUG_BUILD)
 	find_program(DSYMUTIL dsymutil)
 
 	# Macro for generating Mac debugging symbols
-	macro (CREATE_DEBUG_SYM DESTINATION)
+	macro (CREATE_DEBUG_SYM _TARGETS)
 		if (DSYMUTIL AND "${CMAKE_GENERATOR}" MATCHES "Make")
-			# create tag from current dirname
-			tag_from_current_source_dir (_tag "_")
 
 			# generator
-			foreach (target ${ARGN}) # get all args past the last expected
+			foreach (target ${ARGV}) # instead of _TARGETS we use ARGV to get all args
 				add_custom_command (TARGET ${target}
 					POST_BUILD
 					COMMAND ${DSYMUTIL} $<TARGET_FILE:${target}>
 					COMMENT "Generating .dSYM bundle for ${target}"
-					VERBATIM)
-
-				# clean target
-				get_target_property (_location ${target} LOCATION)
-				get_target_property (_type ${target} TYPE)
-				get_target_property (_version ${target} VERSION)
-				get_filename_component (_path ${_location} PATH)
-				get_filename_component (_name ${_location} NAME)
-				if (_type STREQUAL "SHARED_LIBRARY")
-					string (REPLACE ".dylib" ".${_version}.dylib" _name "${_name}")
-				endif (_type STREQUAL "SHARED_LIBRARY")
-				set (_dsym_bundle "${_path}/${_name}.dSYM")
-				add_custom_target (_dsym_clean_${target}
-					COMMAND ${RM} -rf ${_dsym_bundle}
-					COMMENT "Removing .dSYM bundle")
-				add_depend_to_target (dsym_clean${_tag} _dsym_clean_${target})
-
-				# install target
-				install (DIRECTORY ${_dsym_bundle}
-					DESTINATION ${DESTINATION}
-					COMPONENT Debug)
+					VERBATIM
+					)
 			endforeach (target)
 
+			# create tag from current dirname
+			tag_from_current_source_dir (_tag "_")
+
+			# clean target
+			add_custom_target (dsym_clean${_tag}
+				COMMAND ${RM} -rf *.dSYM
+				COMMENT "Removing .dSYM bundles")
+
 			# register with spotless target
-			add_depend_to_target (spotless dsym_clean${_tag})
+			add_depend_to_spotless (dsym_clean${_tag})
 
 		endif (DSYMUTIL AND "${CMAKE_GENERATOR}" MATCHES "Make")
 	endmacro (CREATE_DEBUG_SYM _TARGETS)
 
-elseif (MSVC AND DEBUG_BUILD)
+elseif (MSVC AND _debug_build)
 	# Macro for installing MSVC debugging symbol files
-	macro (CREATE_DEBUG_SYM DESTINATION)
+	macro (CREATE_DEBUG_SYM _TARGETS)
+		foreach (target ${ARGV}) # instead of _TARGETS we use ARGV to get all args
+			install (FILES ${target}.pdb
+				DESTINATION ${GMT_BINDIR}
+				COMPONENT Debug
+				OPTIONAL)
+		endforeach (target)
+
 		# create tag from current dirname
 		tag_from_current_source_dir (_tag "_")
 
-		foreach (target ${ARGN}) # get all args past the last expected
-			# clean target
-			get_target_property (_location ${target} LOCATION)
-			get_filename_component (_path ${_location} PATH)
-			get_filename_component (_name ${_location} NAME_WE)
-			set (_pdb_file "${_path}/${_name}.pdb")
-			add_custom_target (_pdb_clean_${target}
-				COMMAND ${CMAKE_COMMAND} remove -f ${_pdb_file}
-				COMMENT "Removing .pdb file")
-			add_depend_to_target (pdb_clean${_tag} _pdb_clean_${target})
-
-			# install target
-			install (FILES ${_pdb_file}
-				DESTINATION ${DESTINATION}
-				COMPONENT Debug)
-		endforeach (target)
+		# clean target
+		add_custom_target (pdb_clean${_tag}
+			COMMAND ${CMAKE_COMMAND} remove *.pdb
+			COMMENT "Removing .pdb files")
 
 		# register with spotless target
-		add_depend_to_target (spotless pdb_clean${_tag})
+		add_depend_to_spotless (_clean${_tag})
 	endmacro (CREATE_DEBUG_SYM _TARGETS)
 
-else (APPLE AND DEBUG_BUILD)
+else (APPLE AND _debug_build)
 	macro (CREATE_DEBUG_SYM _TARGETS)
 		# do nothing
 	endmacro (CREATE_DEBUG_SYM _TARGETS)
-endif (APPLE AND DEBUG_BUILD)
+endif (APPLE AND _debug_build)
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

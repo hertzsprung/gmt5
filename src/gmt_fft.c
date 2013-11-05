@@ -1,1050 +1,91 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
 /*
  * Here are various ways to perform 1-D and 2-D Fourier transforms.
  * Most of these were provided by other people, as indicated below.
+ * The GMT configure script will select one approach that is the fastest
+ * on the particular hardware we are compiling for.  The default FFT
+ * is the one we have had for a long time: a C-translation of the old
+ * and venerable Norman Brenner (MIT) Fortran code.
+ * Configure is expected to set constant GMT_FFT to one of these values:
+ * FFTPACK	: Link with the FFT Pack of Swarztrauber, supplied here
+ * FFTW		: Link with the FFTW library (supplied externally)
+ * SUN4		: Link with the Sun4 performance library (Sun only)
+ * VECLIB	: Link with the OSX Accelerate Framework (OSX only)
+ * 
+ * If not set we default to GMTs Brenner algorithm.
  *
- *
- * Author:  Paul Wessel
- * Date:    1-APR-2011
- * Version: 5
- *
- * Major overhaul, Florian Wobbe, 2012-07-09:
- *  Added free Kiss FFT (kissfft) to GMT code base.
- *  Superceeded Norman Brenner's ancient Cooley-Tukey FFT implementation
- *    Kiss FFT. Brenner still available as a legacy/compativility choice.
- *  Support for Paul Swarztrauber's ancient FFTPACK and for Sun Performance
- *    Library (perflib) have been removed too because they are not maintained
- *    anymore.
- *
- *  FFTW    : FFTW library (supplied externally)
- *  vDSP    : OSX Accelerate Framework (OSX only)
- *  Kiss FFT: Free FFT, based on the principle "Keep It Simple, Stupid"
- *  Configure the implementation with gmtset GMT_FFT.
- *
- *--------------------------------------------------------------------------
- * These prototypes are declared in gmt.h and coded in gmt_api.c
- *
- * GMT_FFT_Option     : Lets user code display FFT options
- * GMT_FFT_Parse      : Allows parsing of user option for the FFT settings
- * GMT_FFT_Create     : Initializes the 1-D or 2-D FFT machinery, preps the table/grid.
- * GMT_FFT            : 1-D or 2-D FFT
- * GMT_FFT_Wavenumber : Return any wavenumber given index
- * GMT_FFT_Destroy    : Frees the FFT machinery.
- *
+ * Author:	Paul Wessel
+ * Date:	1-APR-2011
+ * Version:	5
+ * THIS CODE IS NOT SET UP FOR 64-BIT; IT HAS A LOT OF INTS ETC
  */
 
-#include "gmt_dev.h"
+#define GMT_WITH_NO_PS
+#include "gmt.h"
 #include "gmt_internals.h"
 
-static inline struct GMTAPI_CTRL * gmt_get_api_ptr (struct GMTAPI_CTRL *ptr) {return (ptr);}
-
-static char *GMT_fft_algo[] = {
-	"Auto-Select",
-	"Accelerate Framework",
-	"FFTW",
-	"Kiss FFT",
-	"Brenner FFT [Legacy]"
-};
-
-/* Functions that fascilitating setting up FFT operations, like determining optimal dimension,
- * setting wavenumber functions, apply interior or exterior taper to grids, save pre-fft grid
- * to file, save fft grid (real and imag or mag,hypot) to two files.  Programs that wish to
- * operate on data in the wavenumber domain will need to use some of these functions; see
- * grdfft.c and potential/gravfft.c as examples.
- */
-
-/* first 2 cols from table III of Singleton's paper on fft.... */
-#define N_SINGLETON_LIST	117
-int Singleton_list[N_SINGLETON_LIST] = {
-	64,72,75,80,81,90,96,100,108,120,125,128,135,144,150,160,162,180,192,200,
-	216,225,240,243,250,256,270,288,300,320,324,360,375,384,400,405,432,450,480,
-	486,500,512,540,576,600,625,640,648,675,720,729,750,768,800,810,864,900,960,
-	972,1000,1024,1080,1125,1152,1200,1215,1250,1280,1296,1350,1440,1458,1500,
-	1536,1600,1620,1728,1800,1875,1920,1944,2000,2025,2048,2160,2187,2250,2304,
-	2400,2430,2500,2560,2592,2700,2880,2916,3000,3072,3125,3200,3240,3375,3456,
-	3600,3645,3750,3840,3888,4000,4096,4320,4374,4500,4608,4800,4860,5000};
-
-void gmt_fft_Singleton_list (struct GMTAPI_CTRL *API) {
-	unsigned int k;
-	char message[GMT_LEN16] = {""};
-	GMT_Message (API, GMT_TIME_NONE, "\t\"Good\" numbers for FFT dimensions [Singleton, 1967]:\n");
-	for (k = 0; k < N_SINGLETON_LIST; k++) {
-		sprintf (message, "\t%d", Singleton_list[k]);
-		if ((k+1) % 10 == 0 || k == (N_SINGLETON_LIST-1)) strcat (message, "\n");
-		GMT_Message (API, GMT_TIME_NONE, message);
-	}
-}
-
-uint64_t get_non_symmetric_f (unsigned int *f, unsigned int n)
-{
-	/* Return the product of the non-symmetric factors in f[]  */
-	unsigned int i = 0, j = 1, retval = 1;
-
-	if (n == 1) return (f[0]);
-
-	while (i < n) {
-		while (j < n && f[j] == f[i]) j++;
-		if ((j-i)%2) retval *= f[i];
-		i = j;
-		j = i + 1;
-	}
-	if (retval == 1) retval = 0;	/* There are no non-sym factors  */
-	return (retval);
-}
-
-#ifndef FSIGNIF
-#define FSIGNIF			24
-#endif
-
-void gmt_fourt_stats (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny, unsigned int *f, double *r, size_t *s, double *t)
-{
-	/* Find the proportional run time, t, and rms relative error, r,
-	 * of a Fourier transform of size nx,ny.  Also gives s, the size
-	 * of the workspace that will be needed by the transform.
-	 * To use this routine for a 1-D transform, set ny = 1.
-	 * 
-	 * This is all based on the comments in Norman Brenner's code
-	 * FOURT, from which our C codes are translated.
-	 * Brenner says:
-	 * r = 3 * pow(2, -FSIGNIF) * sum{ pow(prime_factors, 1.5) }
-	 * where FSIGNIF is the smallest bit in the floating point fraction.
-	 * 
-	 * Let m = largest prime factor in the list of factors.
-	 * Let p = product of all primes which appear an odd number of
-	 * times in the list of prime factors.  Then the worksize needed
-	 * s = max(m,p).  However, we know that if n is radix 2, then no
-	 * work is required; yet this formula would say we need a worksize
-	 * of at least 2.  So I will return s = 0 when max(m,p) = 2.
-	 *
-	 * I have two different versions of the comments in FOURT, with
-	 * different formulae for t.  The simple formula says 
-	 * 	t = n * (sum of prime factors of n).
-	 * The more complicated formula gives coefficients in microsecs
-	 * on a cdc3300 (ancient history, but perhaps proportional):
-	 *	t = 3000 + n*(500 + 43*s2 + 68*sf + 320*nf),
-	 * where s2 is the sum of all factors of 2, sf is the sum of all
-	 * factors greater than 2, and nf is the number of factors != 2.
-	 * We know that factors of 2 are very good to have, and indeed,
-	 * Brenner's code calls different routines depending on whether
-	 * the transform is of size 2 or not, so I think that the second
-	 * formula is more correct, using proportions of 43:68 for 2 and
-	 * non-2 factors.  So I will use the more complicated formula.
-	 * However, I realize that the actual numbers are wrong for today's
-	 * architectures, and the relative proportions may be wrong as well.
-	 * 
-	 * W. H. F. Smith, 26 February 1992.
-	 *  */
-
-	unsigned int n_factors, i, sum2, sumnot2, nnot2;
-	uint64_t nonsymx, nonsymy, nonsym, storage, ntotal;
-	double err_scale;
-
-	/* Find workspace needed.  First find non_symmetric factors in nx, ny  */
-	n_factors = GMT_get_prime_factors (GMT, nx, f);
-	nonsymx = get_non_symmetric_f (f, n_factors);
-	n_factors = GMT_get_prime_factors (GMT, ny, f);
-	nonsymy = get_non_symmetric_f (f, n_factors);
-	nonsym = MAX (nonsymx, nonsymy);
-
-	/* Now get factors of ntotal  */
-	ntotal = GMT_get_nm (GMT, nx, ny);
-	n_factors = GMT_get_prime_factors (GMT, ntotal, f);
-	storage = MAX (nonsym, f[n_factors-1]);
-	*s = (storage == 2) ? 0 : storage;
-
-	/* Now find time and error estimates */
-
-	err_scale = 0.0;
-	sum2 = sumnot2 = nnot2 = 0;
-	for(i = 0; i < n_factors; i++) {
-		if (f[i] == 2)
-			sum2 += f[i];
-		else {
-			sumnot2 += f[i];
-			nnot2++;
-		}
-		err_scale += pow ((double)f[i], 1.5);
-	}
-	*t = 1.0e-06 * (3000.0 + ntotal * (500.0 + 43.0 * sum2 + 68.0 * sumnot2 + 320.0 * nnot2));
-	*r = err_scale * 3.0 * pow (2.0, -FSIGNIF);
-
-	return;
-}
-
-void GMT_suggest_fft_dim (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny, struct GMT_FFT_SUGGESTION *fft_sug, bool do_print)
-{
-	unsigned int f[32], xstop, ystop;
-	unsigned int nx_best_t, ny_best_t;
-	unsigned int nx_best_e, ny_best_e;
-	unsigned int nx_best_s, ny_best_s;
-	unsigned int nxg, nyg;       /* Guessed by this routine  */
-	unsigned int nx2, ny2, nx3, ny3, nx5, ny5;   /* For powers  */
-	size_t current_space, best_space, e_space, t_space, given_space;
-	double current_time, best_time, given_time, s_time, e_time;
-	double current_err, best_err, given_err, s_err, t_err;
-
-	gmt_fourt_stats (GMT, nx, ny, f, &given_err, &given_space, &given_time);
-	given_space += nx * ny;
-	given_space *= 8;
-	if (do_print)
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, " Data dimension\t%d %d\ttime factor %.8g\trms error %.8e\tbytes %" PRIuS "\n", nx, ny, given_time, given_err, given_space);
-
-	best_err = s_err = t_err = given_err;
-	best_time = s_time = e_time = given_time;
-	best_space = t_space = e_space = given_space;
-	nx_best_e = nx_best_t = nx_best_s = nx;
-	ny_best_e = ny_best_t = ny_best_s = ny;
-
-	xstop = 2 * nx;
-	ystop = 2 * ny;
-
-	for (nx2 = 2; nx2 <= xstop; nx2 *= 2) {
-	  	for (nx3 = 1; nx3 <= xstop; nx3 *= 3) {
-		    for (nx5 = 1; nx5 <= xstop; nx5 *= 5) {
-		        nxg = nx2 * nx3 * nx5;
-		        if (nxg < nx || nxg > xstop) continue;
-
-		        for (ny2 = 2; ny2 <= ystop; ny2 *= 2) {
-		          for (ny3 = 1; ny3 <= ystop; ny3 *= 3) {
-		            for (ny5 = 1; ny5 <= ystop; ny5 *= 5) {
-		                nyg = ny2 * ny3 * ny5;
-		                if (nyg < ny || nyg > ystop) continue;
-
-			gmt_fourt_stats (GMT, nxg, nyg, f, &current_err, &current_space, &current_time);
-			current_space += nxg*nyg;
-			current_space *= 8;
-			if (current_err < best_err) {
-				best_err = current_err;
-				nx_best_e = nxg;
-				ny_best_e = nyg;
-				e_time = current_time;
-				e_space = current_space;
-			}
-			if (current_time < best_time) {
-				best_time = current_time;
-				nx_best_t = nxg;
-				ny_best_t = nyg;
-				t_err = current_err;
-				t_space = current_space;
-			}
-			if (current_space < best_space) {
-				best_space = current_space;
-				nx_best_s = nxg;
-				ny_best_s = nyg;
-				s_time = current_time;
-				s_err = current_err;
-			}
-
-		    }
-		  }
-		}
-
-	    }
-	  }
-	}
-
-	if (do_print) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, " Highest speed\t%d %d\ttime factor %.8g\trms error %.8e\tbytes %" PRIuS "\n",
-			nx_best_t, ny_best_t, best_time, t_err, t_space);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, " Most accurate\t%d %d\ttime factor %.8g\trms error %.8e\tbytes %" PRIuS "\n",
-			nx_best_e, ny_best_e, e_time, best_err, e_space);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, " Least storage\t%d %d\ttime factor %.8g\trms error %.8e\tbytes %" PRIuS "\n",
-			nx_best_s, ny_best_s, s_time, s_err, best_space);
-	}
-	/* Fastest solution */
-	fft_sug[0].nx = nx_best_t;
-	fft_sug[0].ny = ny_best_t;
-	fft_sug[0].worksize = (t_space/8) - (nx_best_t * ny_best_t);
-	fft_sug[0].totalbytes = t_space;
-	fft_sug[0].run_time = best_time;
-	fft_sug[0].rms_rel_err = t_err;
-	/* Most accurate solution */
-	fft_sug[1].nx = nx_best_e;
-	fft_sug[1].ny = ny_best_e;
-	fft_sug[1].worksize = (e_space/8) - (nx_best_e * ny_best_e);
-	fft_sug[1].totalbytes = e_space;
-	fft_sug[1].run_time = e_time;
-	fft_sug[1].rms_rel_err = best_err;
-	/* Least storage solution */
-	fft_sug[2].nx = nx_best_s;
-	fft_sug[2].ny = ny_best_s;
-	fft_sug[2].worksize = (best_space/8) - (nx_best_s * ny_best_s);
-	fft_sug[2].totalbytes = best_space;
-	fft_sug[2].run_time = s_time;
-	fft_sug[2].rms_rel_err = s_err;
-
-	return;
-}
-
-double GMT_fft_kx (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
-	/* Return the value of kx given k,
-	 * where kx = 2 pi / lambda x,
-	 * and k refers to the position
-	 * in the complex data array Grid->data[k].  */
-
-	int64_t ii = (k/2)%(K->nx2);
-	if (ii > (K->nx2)/2) ii -= (K->nx2);
-	return (ii * K->delta_kx);
-}
-
-double GMT_fft_ky (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
-	/* Return the value of ky given k,
-	 * where ky = 2 pi / lambda y,
-	 * and k refers to the position
-	 * in the complex data array Grid->data[k].  */
-
-	int64_t jj = (k/2)/(K->nx2);
-	if (jj > (K->ny2)/2) jj -= (K->ny2);
-	return (jj * K->delta_ky);
-}
-
-double GMT_fft_kr (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
-	/* Return the value of sqrt(kx*kx + ky*ky),
-	 * where k refers to the position
-	 * in the complex data array Grid->data[k].  */
-
-	return (hypot (GMT_fft_kx (k, K), GMT_fft_ky (k, K)));
-}
-
-double GMT_fft_get_wave (uint64_t k, struct GMT_FFT_WAVENUMBER *K)
-{
-	/* Return the value of kx, ky. or kr,
-	 * where k refers to the position
-	 * in the complex data array Grid->data[k].
-	 * GMT_fft_init sets the pointer */
-
-	return (K->k_ptr (k, K));
-}
-
-double GMT_fft_any_wave (uint64_t k, unsigned int mode, struct GMT_FFT_WAVENUMBER *K)
-{	/* Lets you specify which wavenumber you want */
-	double wave = 0.0;
-
-	switch (mode) {	/* Select which wavenumber we need */
-		case GMT_FFT_K_IS_KX: wave = GMT_fft_kx (k, K); break;
-		case GMT_FFT_K_IS_KY: wave = GMT_fft_ky (k, K); break;
-		case GMT_FFT_K_IS_KR: wave = GMT_fft_kr (k, K); break;
-	}
-	return (wave);
-}
-
-int GMT_fft_set_wave (struct GMT_CTRL *GMT, unsigned int mode, struct GMT_FFT_WAVENUMBER *K)
-{
-	/* Change wavenumber selection */
-	switch (mode) {	/* Select which wavenumber we need */
-		case GMT_FFT_K_IS_KX: K->k_ptr = GMT_fft_kx; break;
-		case GMT_FFT_K_IS_KY: K->k_ptr = GMT_fft_ky; break;
-		case GMT_FFT_K_IS_KR: K->k_ptr = GMT_fft_kr; break;
-		default:
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Bad mode selected (%u) - exit\n", mode);
-			GMT_exit (GMT, GMT_RUNTIME_ERROR); return GMT_RUNTIME_ERROR;
-			break;
-	}
-	return GMT_OK;
-}
-
-void gmt_fft_taper (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, struct GMT_FFT_INFO *F)
-{
-	/* mode sets if and how tapering will be performed [see GMT_FFT_EXTEND_* constants].
-	 * width is relative width in percent of the margin that will be tapered [100]. */
-	int il1, ir1, il2, ir2, jb1, jb2, jt1, jt2, im, jm, j, end_i, end_j, min_i, min_j, one;
-	int i, i_data_start, j_data_start, mx, i_width, j_width, width_percent;
-	unsigned int ju, start_component = 0, stop_component = 0, component;
-	uint64_t off;
-	char *method[2] = {"edge-point", "mirror"}, *comp[2] = {"real", "imaginary"};
-	float *datac = Grid->data, scale, cos_wt;
-	double width;
-	struct GMT_GRID_HEADER *h = Grid->header;	/* For shorthand */
-
-	width_percent = irint (F->taper_width);
-
-	if ((Grid->header->nx == F->nx && Grid->header->ny == F->ny) || F->taper_mode == GMT_FFT_EXTEND_NONE) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Data and FFT dimensions are equal - no data extension will take place\n");
-		/* But there may still be interior tapering */
-		if (F->taper_mode != GMT_FFT_EXTEND_NONE) {	/* Nothing to do since no outside pad */
-			GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Data and FFT dimensions are equal - no tapering will be performed\n");
-			return;
-		}
-		if (F->taper_mode == GMT_FFT_EXTEND_NONE && width_percent == 100) {	/* No interior taper specified */
-			GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "No interior tapering will be performed\n");
-			return;
-		}
-	}
-	
-	if (Grid->header->arrangement == GMT_GRID_IS_INTERLEAVED) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Demultiplexing complex grid before tapering can take place.\n");
-		GMT_grd_mux_demux (GMT, Grid->header, Grid->data, GMT_GRID_IS_SERIAL);
-	}
-	
-	/* Note that if nx2 = nx+1 and ny2 = ny + 1, then this routine
-	 * will do nothing; thus a single row/column of zeros may be
-	 * added to the bottom/right of the input array and it cannot
-	 * be tapered.  But when (nx2 - nx)%2 == 1 or ditto for y,
-	 * this is zero anyway.  */
-
-	i_data_start = GMT->current.io.pad[XLO];	/* Some shorthands for readability */
-	j_data_start = GMT->current.io.pad[YHI];
-	mx = h->mx;
-	one = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? 0 : 1;	/* 0 is the boundry point which we want to taper to 0 for the interior taper */
-	
-	if (width_percent == 0) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Tapering has been disabled via +t0\n");
-	}
-	if (width_percent == 100 && F->taper_mode == GMT_FFT_EXTEND_NONE) {	/* Means user set +n but did not specify +t<taper> as 100% is unreasonable for interior */
-		width_percent = 0;
-		width = 0.0;
-	}
-	else
-		width = F->taper_width / 100.0;	/* Was percent, now fraction */
-	
-	if (F->taper_mode == GMT_FFT_EXTEND_NONE) {	/* No extension, just tapering inside the data grid */
-		i_width = irint (Grid->header->nx * width);	/* Interior columns over which tapering will take place */
-		j_width = irint (Grid->header->ny * width);	/* Extended rows over which tapering will take place */
-	}
-	else {	/* We wish to extend data into the margin pads between FFT grid and data grid */
-		i_width = irint (i_data_start * width);	/* Extended columns over which tapering will take place */
-		j_width = irint (j_data_start * width);	/* Extended rows over which tapering will take place */
-	}
-	if (i_width == 0 && j_width == 0) one = 1;	/* So we do nothing further down */
-
-	/* Determine how many complex components (1 or 2) to taper, and which one(s) */
-	start_component = (Grid->header->complex_mode & GMT_GRID_IS_COMPLEX_REAL) ? 0 : 1;
-	stop_component  = (Grid->header->complex_mode & GMT_GRID_IS_COMPLEX_IMAG) ? 1 : 0;
-
-	for (component = start_component; component <= stop_component; component++) {	/* Loop over 1 or 2 components */
-		off = component * Grid->header->size / 2;	/* offset to start of this component in grid */
-
-		/* First reflect about xmin and xmax, either point symmetric about edge point OR mirror symmetric */
-
-		if (F->taper_mode != GMT_FFT_EXTEND_NONE) {
-			for (im = 1; im <= i_width; im++) {
-				il1 = -im;	/* Outside xmin; left of edge 1  */
-				ir1 = im;	/* Inside xmin; right of edge 1  */
-				il2 = il1 + h->nx - 1;	/* Inside xmax; left of edge 2  */
-				ir2 = ir1 + h->nx - 1;	/* Outside xmax; right of edge 2  */
-				for (ju = 0; ju < h->ny; ju++) {
-					if (F->taper_mode == GMT_FFT_EXTEND_POINT_SYMMETRY) {
-						datac[GMT_IJP(h,ju,il1)+off] = 2.0f * datac[GMT_IJP(h,ju,0)+off]       - datac[GMT_IJP(h,ju,ir1)+off];
-						datac[GMT_IJP(h,ju,ir2)+off] = 2.0f * datac[GMT_IJP(h,ju,h->nx-1)+off] - datac[GMT_IJP(h,ju,il2)+off];
-					}
-					else {	/* Mirroring */
-						datac[GMT_IJP(h,ju,il1)+off] = datac[GMT_IJP(h,ju,ir1)+off];
-						datac[GMT_IJP(h,ju,ir2)+off] = datac[GMT_IJP(h,ju,il2)+off];
-					}
-				}
-			}
-		}
-
-		/* Next, reflect about ymin and ymax.
-		 * At the same time, since x has been reflected,
-		 * we can use these vals and taper on y edges */
-
-		scale = (float)(M_PI / (j_width + 1));	/* Full 2*pi over y taper range */
-		min_i = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? 0 : -i_width;
-		end_i = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? (int)Grid->header->nx : mx - i_width;
-		for (jm = one; jm <= j_width; jm++) {	/* Loop over width of strip to taper */
-			jb1 = -jm;	/* Outside ymin; bottom side of edge 1  */
-			jt1 = jm;	/* Inside ymin; top side of edge 1  */
-			jb2 = jb1 + h->ny - 1;	/* Inside ymax; bottom side of edge 2  */
-			jt2 = jt1 + h->ny - 1;	/* Outside ymax; bottom side of edge 2  */
-			cos_wt = 0.5f * (1.0f + cosf (jm * scale));
-			if (F->taper_mode == GMT_FFT_EXTEND_NONE) cos_wt = 1.0f - cos_wt;	/* Reverse weights for the interior */
-			for (i = min_i; i < end_i; i++) {
-				if (F->taper_mode == GMT_FFT_EXTEND_POINT_SYMMETRY) {
-					datac[GMT_IJP(h,jb1,i)+off] = cos_wt * (2.0f * datac[GMT_IJP(h,0,i)+off]       - datac[GMT_IJP(h,jt1,i)+off]);
-					datac[GMT_IJP(h,jt2,i)+off] = cos_wt * (2.0f * datac[GMT_IJP(h,h->ny-1,i)+off] - datac[GMT_IJP(h,jb2,i)+off]);
-				}
-				else if (F->taper_mode == GMT_FFT_EXTEND_MIRROR_SYMMETRY) {
-					datac[GMT_IJP(h,jb1,i)+off] = cos_wt * datac[GMT_IJP(h,jt1,i)+off];
-					datac[GMT_IJP(h,jt2,i)+off] = cos_wt * datac[GMT_IJP(h,jb2,i)+off];
-				}
-				else {	/* Interior tapering only */
-					datac[GMT_IJP(h,jt1,i)+off] *= cos_wt;
-					datac[GMT_IJP(h,jb2,i)+off] *= cos_wt;
-				}
-			}
-		}
-		/* Now, cos taper the x edges */
-		scale = (float)(M_PI / (i_width + 1));	/* Full 2*pi over x taper range */
-		end_j = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? h->ny : h->my - j_data_start;
-		min_j = (F->taper_mode == GMT_FFT_EXTEND_NONE) ? 0 : -j_width;
-		for (im = one; im <= i_width; im++) {
-			il1 = -im;
-			ir1 = im;
-			il2 = il1 + h->nx - 1;
-			ir2 = ir1 + h->nx - 1;
-			cos_wt = (float)(0.5f * (1.0f + cosf (im * scale)));
-			if (F->taper_mode == GMT_FFT_EXTEND_NONE) cos_wt = 1.0f - cos_wt;	/* Switch to weights for the interior */
-			for (j = min_j; j < end_j; j++) {
-				if (F->taper_mode == GMT_FFT_EXTEND_NONE) {
-					datac[GMT_IJP(h,j,ir1)+off] *= cos_wt;
-					datac[GMT_IJP(h,j,il2)+off] *= cos_wt;
-				}
-				else {
-					datac[GMT_IJP(h,j,il1)+off] *= cos_wt;
-					datac[GMT_IJP(h,j,ir2)+off] *= cos_wt;
-				}
-			}
-		}
-
-		if (F->taper_mode == GMT_FFT_EXTEND_NONE)
-			GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Grid margin (%s component) tapered to zero over %d %% of data width and height\n", comp[component], width_percent);
-		else
-			GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Grid (%s component) extended via %s symmetry at all edges, then tapered to zero over %d %% of extended area\n", comp[component], method[F->taper_mode], width_percent);
-	}
-}
-
-char *file_name_with_suffix (struct GMT_CTRL *GMT, char *name, char *suffix)
-{
-	static char file[GMT_BUFSIZ];
-	uint64_t i, j;
-	size_t len;
-	
-	if ((len = strlen (name)) == 0) {	/* Grids that are being created have no filename yet */
-		sprintf (file, "tmpgrid_%s.grd", suffix);
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Created grid has no name to derive new names from; choose %s\n", file);
-		return (file);
-	}
-	for (i = len; i > 0 && name[i] != '/'; i--);	/* i points to 1st char in name after slash, or 0 if no leading dirs */
-	if (i) i++;	/* Move to 1st char after / */
-	for (j = len; j > 0 && name[j] != '.'; j--);	/* j points to period before extension, or it is 0 if no extension */
-	strcpy (file, &name[i]);			/* Make a full copy of filename without leading directories */
-	len = strlen (file);
-	for (i = len; i > 0 && file[i] != '.'; i--);	/* i now points to period before extension in file, or it is 0 if no extension */
-	if (i) file[i] = '\0';	/* Truncate at the extension */
-	strcat (file, "_");
-	strcat (file, suffix);
-	if (j) strcat (file, &name[j]);
-	return (file);
-}
-
-void gmt_grd_save_taper (struct GMT_CTRL *GMT, struct GMT_GRID *Grid, char *suffix)
-{
-	/* Write the intermediate grid that will be passed to the FFT to file.
-	 * This grid may have been a mean, mid-value, or plane removed, may
-	 * have data filled into an extended margin, and may have been taperer.
-	 * Normally, the complex grid will be in serial layout, but just in case
-	 * we check and add a demux step if required.  The FFT will also check
-	 * and multiplex the grid (again) if needed.
-	 */
-	unsigned int pad[4];
-	struct GMT_GRID_HEADER save;
-	char *file = NULL;
-	
-	if (Grid->header->arrangement == GMT_GRID_IS_INTERLEAVED) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Demultiplexing complex grid before saving can take place.\n");
-		GMT_grd_mux_demux (GMT, Grid->header, Grid->data, GMT_GRID_IS_SERIAL);
-	}
-	GMT_memcpy (&save, Grid->header, 1U, struct GMT_GRID_HEADER);	/* Save what we have before messing around */
-	GMT_memcpy (pad, Grid->header->pad, 4U, unsigned int);		/* Save current pad, then set pad to zero */
-	/* Extend w/e/s/n to what it would be if the pad was not present */
-	Grid->header->wesn[XLO] -= Grid->header->pad[XLO] * Grid->header->inc[GMT_X];
-	Grid->header->wesn[XHI] += Grid->header->pad[XHI] * Grid->header->inc[GMT_X];
-	Grid->header->wesn[YLO] -= Grid->header->pad[YLO] * Grid->header->inc[GMT_Y];
-	Grid->header->wesn[YHI] += Grid->header->pad[YHI] * Grid->header->inc[GMT_Y];
-	GMT_memset (Grid->header->pad,   4U, unsigned int);	/* Set header pad to {0,0,0,0} */
-	GMT_memset (GMT->current.io.pad, 4U, unsigned int);	/* set GMT default pad to {0,0,0,0} */
-	GMT_set_grddim (GMT, Grid->header);	/* Recompute all dimensions */
-	if ((file = file_name_with_suffix (GMT, Grid->header->name, suffix)) == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to get file name for file %s\n", Grid->header->name);
-		return;
-	}
-	
-	if (GMT_Write_Data (GMT->parent, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY | GMT_GRID_IS_COMPLEX_REAL, NULL, file, Grid) != GMT_OK)
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Intermediate detrended, extended, and tapered grid could not be written to %s\n", file);
-	else
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Intermediate detrended, extended, and tapered grid written to %s\n", file);
-	
-	GMT_memcpy (Grid->header, &save, 1U, struct GMT_GRID_HEADER);	/* Restore original, including the original pad */
-	GMT_memcpy (GMT->current.io.pad, pad, 4U, unsigned int);	/* Restore GMT default pad */
-}
-
-void gmt_grd_save_fft (struct GMT_CTRL *GMT, struct GMT_GRID *G, struct GMT_FFT_INFO *F)
-{
-	/* Save the raw spectrum as two files (real,imag) or (mag,phase), depending on mode.
-	 * We must first do an "fftshift" operation as in Matlab, to put the 0 frequency
-	 * value in the center of the grid. */
-	uint64_t row, col, i_ij, o_ij;
-	unsigned int nx_2, ny_2, k, pad[4], mode, wmode[2] = {GMT_GRID_IS_COMPLEX_REAL, GMT_GRID_IS_COMPLEX_IMAG};
-	double wesn[4], inc[2];
-	float re, im;
-	char *file = NULL, *suffix[2][2] = {{"real", "imag"}, {"mag", "phase"}};
-	struct GMT_GRID *Grid = NULL;
-	struct GMT_FFT_WAVENUMBER *K = F->K;
-
-	if (K == NULL) return;
-	
-	mode = (F->polar) ? 1 : 0;
-
-	GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Write components of complex raw spectrum with file suffiz %s and %s\n", suffix[mode][0], suffix[mode][1]);
-
-	if (G->header->arrangement == GMT_GRID_IS_SERIAL) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Cannot save complex grid unless it is interleaved.\n");
-		return;
-	}
-	/* Prepare wavenumber domain limits and increments */
-	nx_2 = K->nx2 / 2;	ny_2 = K->ny2 / 2;
-	wesn[XLO] = -K->delta_kx * nx_2;	wesn[XHI] =  K->delta_kx * (nx_2 - 1);
-	wesn[YLO] = -K->delta_ky * (ny_2 - 1);	wesn[YHI] =  K->delta_ky * ny_2;
-	inc[GMT_X] = K->delta_kx;		inc[GMT_Y] = K->delta_ky;
-	GMT_memcpy (pad, GMT->current.io.pad, 4U, unsigned int);	/* Save current GMT pad */
-	for (k = 0; k < 4; k++) GMT->current.io.pad[k] = 0;		/* No pad is what we need for this application */
-
-	/* Set up and allocate the temporary grid. */
-	if ((Grid = GMT_Create_Data (GMT->parent, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc, \
-		G->header->registration | GMT_GRID_IS_COMPLEX_REAL, 0, NULL)) == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to create complex output grid for %s\n", Grid->header->name);
-		return;
-	}
-			
-	strcpy (Grid->header->x_units, "m^(-1)");	strcpy (Grid->header->y_units, "m^(-1)");
-	strcpy (Grid->header->z_units, G->header->z_units);
-	strcpy (Grid->header->remark, "Applied fftshift: kx = 0 at (nx/2 + 1) and ky = 0 at ny/2");
-
-	for (row = 0; row < ny_2; row++) {	/* Swap values from 1/3 and 2/4 quadrants */
-		for (col = 0; col < nx_2; col++) {
-			i_ij = 2*GMT_IJ0 (Grid->header, row, col);
-			o_ij = 2*GMT_IJ0 (Grid->header, row+ny_2, col+nx_2);
-			re = Grid->data[i_ij]; im = Grid->data[i_ij+1];
-			if (F->polar) {	/* Want magnitude and phase */
-				Grid->data[i_ij]   = (float)hypot (G->data[o_ij], G->data[o_ij+1]);
-				Grid->data[i_ij+1] = (float)d_atan2 (G->data[o_ij+1], G->data[o_ij]);
-				Grid->data[o_ij]   = (float)hypot (re, im);
-				Grid->data[o_ij+1] = (float)d_atan2 (im, re);
-			}
-			else {		/* Retain real and imag components as is */
-				Grid->data[i_ij] = G->data[o_ij];	Grid->data[i_ij+1] = G->data[o_ij+1];
-				Grid->data[o_ij] = re;	Grid->data[o_ij+1] = im;
-			}
-			i_ij = 2*GMT_IJ0 (Grid->header, row+ny_2, col);
-			o_ij = 2*GMT_IJ0 (Grid->header, row, col+nx_2);
-			re = Grid->data[i_ij]; im = Grid->data[i_ij+1];
-			if (F->polar) {	/* Want magnitude and phase */
-				Grid->data[i_ij]   = (float)hypot (G->data[o_ij], G->data[o_ij+1]);
-				Grid->data[i_ij+1] = (float)d_atan2 (G->data[o_ij+1], G->data[o_ij]);
-				Grid->data[o_ij]   = (float)hypot (re, im);
-				Grid->data[o_ij+1] = (float)d_atan2 (im, re);
-			}
-			else {		/* Retain real and imag components as is */
-				Grid->data[i_ij] = G->data[o_ij];	Grid->data[i_ij+1] = G->data[o_ij+1];
-				Grid->data[o_ij] = re;	Grid->data[o_ij+1] = im;
-			}
-		}
-	}
-	for (k = 0; k < 2; k++) {	/* Write the two grids */
-		if ((file = file_name_with_suffix (GMT, Grid->header->name, suffix[mode][k])) == NULL) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to get file name for file %s\n", Grid->header->name);
-			return;
-		}
-		sprintf (Grid->header->title, "The %s part of FFT transformed input grid %s", suffix[mode][k], Grid->header->name);
-		if (k == 1 && mode) strcpy (Grid->header->z_units, "radians");
-		if (GMT_Write_Data (GMT->parent, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_DATA_ONLY | wmode[k], NULL, file, Grid) != GMT_OK) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "%s could not be written\n", file);
-			return;
-		}
-	}
-	if (GMT_Destroy_Data (GMT->parent, &Grid) != GMT_OK) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error freeing temporary grid\n");
-	}
-
-	GMT_memcpy (GMT->current.io.pad, pad, 4U, unsigned int);	/* Restore GMT pad */
-}
-
-void gmt_fft_save2d (struct GMT_CTRL *GMT, struct GMT_GRID *G, unsigned int direction, struct GMT_FFT_WAVENUMBER *K)
-{
-	/* Handle the writing of the grid going into the FFT and comping out of the FFT, per F settings */
-
-	if (G == NULL || (K == NULL ||  K->info == NULL)) return;
-	if (direction == GMT_IN  && K->info->save[GMT_IN])  gmt_grd_save_taper (GMT, G, K->info->suffix);
-	if (direction == GMT_OUT && K->info->save[GMT_OUT]) gmt_grd_save_fft (GMT, G, K->info);
-}
-
-static inline uint64_t propose_radix2 (uint64_t n) {
-	/* Returns the smallest base 2 exponent, log2n, that satisfies: 2^log2n >= n */
-	uint64_t log2n = 1;
-	while ( 1ULL<<log2n < n ) ++log2n; /* log2n = 1<<(unsigned)ceil(log2(n)); */
-	return log2n;
-}
-
-static inline uint64_t radix2 (uint64_t n) {
-	/* Returns the base 2 exponent that represents 'n' if 'n' is a power of 2,
-	 * 0 otherwise */
-	uint64_t log2n = 1ULL;
-	while ( 1ULL<<log2n < n ) ++log2n; /* log2n = 1<<(unsigned)ceil(log2(n)); */
-	if (n == 1ULL<<log2n)
-		return log2n;
-	return 0ULL;
-}
-
-#ifdef HAVE_FFTW3F
-
-#include <fftw3.h>
-
-#define FFTWF_WISDOM_FILENAME "fftwf_wisdom"
-
-char *gmt_fftwf_wisdom_filename (struct GMT_CTRL *GMT) {
-	static char wisdom_file[PATH_MAX+256] = "\0";
-	char hostname[257];
-	if (*wisdom_file == '\0') { /* wisdom_file has not been set yet */
-		if (GMT->session.USERDIR == NULL || access (GMT->session.USERDIR, R_OK|W_OK|X_OK))
-			/* USERDIR does not exist, or not writable */
-			return NULL;
-		else {
-			/* create wisdom file in USERDIR */
-			strncpy (wisdom_file, GMT->session.USERDIR, PATH_MAX);
-			strcat (wisdom_file, "/" FFTWF_WISDOM_FILENAME "_");
-			/* cat hostname */
-			memset (hostname, '\0', 257); /* in case gethostname does not null-terminate string */
-			gethostname (hostname, 256);
-			strcat (wisdom_file, hostname);
-		}
-	}
-	return wisdom_file;
-}
-
-/* Wrapper around fftwf_import_wisdom_from_filename */
-void gmt_fftwf_import_wisdom_from_filename (struct GMT_CTRL *GMT) {
-	static bool already_imported = false;
-	char *filenames[3], **filename = filenames;
-	int status;
-
-	if (already_imported) /* nothing to do */
-		return;
-
-	fftwf_import_system_wisdom (); /* read wisdom from implementation-defined standard file */
-
-	/* Initialize filenames */
-	filenames[0] = FFTWF_WISDOM_FILENAME; /* 1st try importing wisdom from file in current dir */
-	filenames[1] = gmt_fftwf_wisdom_filename(GMT); /* 2nd try wisdom file in USERDIR */
-	filenames[2] = NULL; /* end of array */
-
-	while (*filename != NULL) {
-		if (!access (*filename, R_OK)) {
-			status = fftwf_import_wisdom_from_filename (*filename);
-			if (status)
-				GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Imported FFTW Wisdom from file: %s\n", *filename);
-			else
-				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Importing FFTW Wisdom from file failed: %s\n", *filename);
-		}
-		++filename; /* advance to next file in array */
-	}
-
-	already_imported = true;
-}
-
-/* Wrapper around fftwf_export_wisdom_to_filename */
-void gmt_fftwf_export_wisdom_to_filename (struct GMT_CTRL *GMT) {
-	char *filename = gmt_fftwf_wisdom_filename(GMT);
-	int status;
-
-	if (filename == NULL)
-		/* USERDIR does not exist, write wisdom to file in current directory */
-		filename = FFTWF_WISDOM_FILENAME;
-
-	status = fftwf_export_wisdom_to_filename (filename);
-	if (status)
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Exported FFTW Wisdom to file: %s\n", filename);
-	else
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Exporting FFTW Wisdom to file failed: %s\n", filename);
-}
-
-fftwf_plan gmt_fftwf_plan_dft(struct GMT_CTRL *GMT, unsigned ny, unsigned nx, fftwf_complex *data, int direction) {
-	/* The first two arguments, n0 and n1, are the size of the two-dimensional
-	 * transform you are trying to compute. The size n can be any positive
-	 * integer, but sizes that are products of small factors are transformed
-	 * most efficiently.
-	 *
-	 * The next two arguments are pointers to the input and output arrays of the
-	 * transform. These pointers can be equal, indicating an in-place transform.
-	 *
-	 * The fourth argument, sign, can be either FFTW_FORWARD (-1) or
-	 * FFTW_BACKWARD (+1), and indicates the direction of the transform you are
-	 * interested in; technically, it is the sign of the exponent in the
-	 * transform.
-	 *
-	 * The flags argument is usually either FFTW_MEASURE or FFTW_ESTIMATE.
-	 * FFTW_MEASURE instructs FFTW to run and measure the execution time of
-	 * several FFTs in order to find the best way to compute the transform of
-	 * size n. This process takes some time (usually a few seconds), depending
-	 * on your machine and on the size of the transform.
-	 *
-	 * FFTW planner flags supported by the planner routines in FFTW
-	 * FFTW_ESTIMATE:   pick a (probably sub-optimal) plan quickly
-	 * FFTW_MEASURE:    find optimal plan by computing several FFTs and measuring
-	 *                  their execution time
-	 * FFTW_PATIENT:    like FFTW_MEASURE, but considers a wider range of algorithms
-	 * FFTW_EXHAUSTIVE: like FFTW_PATIENT, but considers an even wider range of
-	 *                  algorithms
-	 *
-	 * Important: the planner overwrites the input array during planning unless
-	 * a saved plan (see Wisdom) is available for that problem, so you should
-	 * initialize your input data after creating the plan. The only exceptions
-	 * to this are the FFTW_ESTIMATE and FFTW_WISDOM_ONLY flags. */
-
-	int sign;
-	fftwf_complex *cin, *cout;
-	fftwf_plan plan = NULL;
-
-	sign = direction == GMT_FFT_FWD ? FFTW_FORWARD : FFTW_BACKWARD;
-	cin  = data;
-	cout = cin; /* in-place transform */
-
-	if (GMT->current.setting.fftw_plan != FFTW_ESTIMATE) {
-		gmt_fftwf_import_wisdom_from_filename (GMT);
-		if (ny == 0) /* 1d DFT */
-			plan = fftwf_plan_dft_1d(nx, cin, cout, sign, FFTW_WISDOM_ONLY | GMT->current.setting.fftw_plan);
-		else /* 2d DFT */
-			plan = fftwf_plan_dft_2d(ny, nx, cin, cout, sign, FFTW_WISDOM_ONLY | GMT->current.setting.fftw_plan);
-		if (plan == NULL) {
-			/* No Wisdom available
-			 * Need extra memory to prevent overwriting data while planning */
-			fftwf_complex *in_place_tmp = fftwf_malloc (2 * (ny == 0 ? 1 : ny) * nx * sizeof(float));
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Generating new FFTW Wisdom, be patient...\n");
-			if (ny == 0) /* 1d DFT */
-				plan = fftwf_plan_dft_1d(nx, in_place_tmp, in_place_tmp, sign, GMT->current.setting.fftw_plan);
-			else /* 2d DFT */
-				plan = fftwf_plan_dft_2d(ny, nx, in_place_tmp, in_place_tmp, sign, GMT->current.setting.fftw_plan);
-			fftwf_destroy_plan(plan); /* deallocate plan */
-			plan = NULL;
-			fftwf_free (in_place_tmp);
-			/* Save new Wisdom */
-			gmt_fftwf_export_wisdom_to_filename (GMT);
-		}
-		else
-			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Using preexisting FFTW Wisdom.\n");
-	} /* GMT->current.setting.fftw_plan != FFTW_ESTIMATE */
-	else
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Picking a (probably sub-optimal) FFTW plan quickly.\n");
-
-	if (plan == NULL) { /* If either FFTW_ESTIMATE or new Wisdom generated */
-		if (ny == 0) /* 1d DFT */
-			plan = fftwf_plan_dft_1d(nx, cin, cout, sign, GMT->current.setting.fftw_plan);
-		else /* 2d DFT */
-			plan = fftwf_plan_dft_2d(ny, nx, cin, cout, sign, GMT->current.setting.fftw_plan);
-	}
-
-	if (plan == NULL) { /* There was a problem creating a plan */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Could not create FFTW plan.\n");
-		GMT_exit (GMT, EXIT_FAILURE); return NULL;
-	}
-
-	return plan;
-}
-
-int GMT_fft_1d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode) {
-	fftwf_plan plan = NULL;
-
-	/* Generate FFTW plan for complex 1d DFT */
-	plan = gmt_fftwf_plan_dft(GMT, 0, n, (fftwf_complex*)data, direction);
-	fftwf_execute(plan);      /* do transform */
-	fftwf_destroy_plan(plan); /* deallocate plan */
-
-	return GMT_NOERROR;
-}
-
-int GMT_fft_2d_fftwf (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode) {
-	fftwf_plan plan = NULL;
-
-	/* Generate FFTW plan for complex 2d DFT */
-	plan = gmt_fftwf_plan_dft(GMT, ny, nx, (fftwf_complex*)data, direction);
-	fftwf_execute(plan);      /* do transform */
-	fftwf_destroy_plan(plan); /* deallocate plan */
-
-	return GMT_NOERROR;
-}
-
-#endif /* HAVE_FFTW3F */
-
-#ifdef __APPLE__ /* Accelerate framework */
-
-void GMT_fft_1d_vDSP_reset (struct GMT_FFT_HIDDEN *Z)
-{
-	if (Z->setup_1d) {	/* Free single-precision FFT data structure and arrays */
-		vDSP_destroy_fftsetup (Z->setup_1d);
-		free (Z->dsp_split_complex_1d.realp);
-		free (Z->dsp_split_complex_1d.imagp);
-	}
-}
-
-int GMT_fft_1d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode)
-{
-	FFTDirection fft_direction = direction == GMT_FFT_FWD ?
-			kFFTDirection_Forward : kFFTDirection_Inverse;
-	DSPComplex *dsp_complex = (DSPComplex *)data;
-
-	/* Base 2 exponent that specifies the largest power of
-	 * two that can be processed by fft: */
-	vDSP_Length log2n = radix2 (n);
-
-	if (log2n == 0) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Need Radix-2 input try: %u [n]\n", 1U<<propose_radix2 (n));
-		return -1;
-	}
-
-	if (GMT->current.fft.n_1d != n) {	/* Must update the FFT setup arrays */
-		/* Build data structure that contains precalculated data for use by
-		 * single-precision FFT functions: */
-		GMT_fft_1d_vDSP_reset (&GMT->current.fft);
-		GMT->current.fft.setup_1d = vDSP_create_fftsetup (log2n, kFFTRadix2);
-		GMT->current.fft.dsp_split_complex_1d.realp = malloc (n * sizeof(float));
-		GMT->current.fft.dsp_split_complex_1d.imagp = malloc (n * sizeof(float));
-		if (GMT->current.fft.dsp_split_complex_1d.realp == NULL || GMT->current.fft.dsp_split_complex_1d.imagp == NULL) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to allocate dsp_split_complex array of length %u\n", n);
-			return -1; /* out of memory */
-		}
-		GMT->current.fft.n_1d = n;
-	}
-	vDSP_ctoz (dsp_complex, 2, &GMT->current.fft.dsp_split_complex_1d, 1, n);
-
-	vDSP_fft_zip (GMT->current.fft.setup_1d, &GMT->current.fft.dsp_split_complex_1d, 1, log2n, fft_direction);
-
-	vDSP_ztoc (&GMT->current.fft.dsp_split_complex_1d, 1, dsp_complex, 2, n);
-
-	return GMT_NOERROR;
-}
-
-void GMT_fft_2d_vDSP_reset (struct GMT_FFT_HIDDEN *Z)
-{
-	if (Z->setup_2d) {	/* Free single-precision 2D FFT data structure and arrays */
-		vDSP_destroy_fftsetup (Z->setup_2d);
-		free (Z->dsp_split_complex_2d.realp);
-		free (Z->dsp_split_complex_2d.imagp);
-	}
-}
-
-int GMT_fft_2d_vDSP (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode)
-{
-	FFTDirection fft_direction = direction == GMT_FFT_FWD ?
-			kFFTDirection_Forward : kFFTDirection_Inverse;
-	DSPComplex *dsp_complex = (DSPComplex *)data;
-
-	/* Base 2 exponent that specifies the largest power of
-	 * two that can be processed by fft: */
-	vDSP_Length log2nx = radix2 (nx);
-	vDSP_Length log2ny = radix2 (ny);
-	unsigned int n_xy = nx * ny;
-
-	if (log2nx == 0 || log2ny == 0) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Need Radix-2 input try: %u/%u [nx/ny]\n",
-				1U<<propose_radix2 (nx), 1U<<propose_radix2 (ny));
-		return -1;
-	}
-
-	if (GMT->current.fft.n_2d != n_xy) {	/* Must update the 2-D FFT setup arrays */
-		/* Build data structure that contains precalculated data for use by
-	 	* single-precision FFT functions: */
-		GMT_fft_2d_vDSP_reset (&GMT->current.fft);
-		GMT->current.fft.setup_2d = vDSP_create_fftsetup (MAX (log2nx, log2ny), kFFTRadix2);
-		GMT->current.fft.dsp_split_complex_2d.realp = malloc (n_xy * sizeof(float));
-		GMT->current.fft.dsp_split_complex_2d.imagp = malloc (n_xy * sizeof(float));
-		if (GMT->current.fft.dsp_split_complex_2d.realp == NULL || GMT->current.fft.dsp_split_complex_2d.imagp == NULL) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Unable to allocate dsp_split_complex array of length %u\n", n_xy);
-			return -1; /* out of memory */
-		}
-		GMT->current.fft.n_2d = n_xy;
-	}
-	vDSP_ctoz (dsp_complex, 2, &GMT->current.fft.dsp_split_complex_2d, 1, n_xy);
-
-	/* complex: */
-	vDSP_fft2d_zip (GMT->current.fft.setup_2d, &GMT->current.fft.dsp_split_complex_2d, 1, 0, log2ny, log2nx, fft_direction);
-	/* real:
-	vDSP_fft2d_zrip (setup, &GMT->current.fft.dsp_split_complex_2d, 1, 0, log2ny, log2nx, fft_direction); */
-
-	vDSP_ztoc (&GMT->current.fft.dsp_split_complex_2d, 1, dsp_complex, 2, n_xy);
-
-	return GMT_NOERROR;
-}
-#endif /* APPLE Accelerate framework */
-
-/* Kiss FFT */
-
-#include "kiss_fft/kiss_fftnd.h"
-
-int GMT_fft_1d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode)
-{
-	kiss_fft_cpx *fin, *fout;
-	kiss_fft_cfg config;
-
-	/* Initialize a FFT (or IFFT) config/state data structure */
-	config = kiss_fft_alloc(n, direction == GMT_FFT_INV, NULL, NULL);
-	fin = fout = (kiss_fft_cpx *)data;
-	kiss_fft (config, fin, fout); /* do transform */
-	free (config); /* Free config data structure */
-
-	return GMT_NOERROR;
-}
-
-int GMT_fft_2d_kiss (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode)
-{
-	const int dim[2] = {ny, nx}; /* dimensions of fft */
-	const int dimcount = 2;      /* number of dimensions */
-	kiss_fft_cpx *fin, *fout;
-	kiss_fftnd_cfg config;
-
-	/* Initialize a FFT (or IFFT) config/state data structure */
-	config = kiss_fftnd_alloc (dim, dimcount, direction == GMT_FFT_INV, NULL, NULL);
-
-	fin = fout = (kiss_fft_cpx *)data;
-	kiss_fftnd (config, fin, fout); /* do transform */
-	free (config); /* Free config data structure */
-
-	return GMT_NOERROR;
-}
-
-
-int BRENNER_fourt_ (float *data, int *nn, int *ndim, int *ksign, int *iform, float *work)
+static char *GMT_fft_algo[N_GMT_FFT] = {"OS/X Accelerate Framework", "Fastest Fourier Transform in the West", "Sun Performance Library", \
+	"Paul N. Swarztrauber's FFT pack", "Fortran-to-C translation of FOURT by Norman Brenner, MIT"};
+
+/* Default GMT FFT which we always compile in */
+
+/*--------------------------------------------------------------------
+ *	Translation of old fourt.f FORTRAN code to C using the automatic
+ *	translator f2c written by S.I. Feldman, David M. Gay, Mark W. Maimone,
+ *	and N.L. Schryer.  Translated version provided by Andrew MacRae
+ *	at the University of Calgary.  I've cleaned up the resulting code
+ *	since much of the f2c.h include stuff was unnecessary for this
+ *	function.
+ *
+ *	P. Wessel, last century sometime
+ *--------------------------------------------------------------------*/
+
+GMT_LONG BRENNER_fourt_ (float *data, GMT_LONG *nn, GMT_LONG *ndim, GMT_LONG *ksign, GMT_LONG *iform, float *work)
 {
 
-    /* System generated locals */
-    int i__1, i__2, i__3, i__4, i__5, i__6, i__7, i__8, i__9, i__10, i__11, i__12;
+	/* System generated locals */
+	GMT_LONG i__1, i__2, i__3, i__4, i__5, i__6, i__7, i__8, i__9, i__10, i__11, i__12;
 
-    /* Builtin functions */
+	/* Local variables */
 
-    double cos(double), sin(double);
+	static GMT_LONG j1rg2, idiv, irem, ipar, kmin, imin, jmin, lmax, mmax, imax, jmax;
+	static GMT_LONG ntwo, j1cnj, np1hf, np2hf, j1min, i1max, i1rng, j1rng, j2min, j3max;
+	static GMT_LONG j1max, j2max, i2max, non2t, j2stp, i, j, k, l, m, n, icase, ifact[32];
+	static GMT_LONG nhalf, krang, kconj, kdif, idim, ntot, kstep, k2, k3, k4, nprev, iquot;
+	static GMT_LONG i2, i1, i3, j3, k1, j2, j1, if_, np0, np1, np2, ifp1, ifp2, non2;
 
-    /* Local variables */
-
-    static int j1rg2, idiv, irem, ipar, kmin, imin, jmin, lmax, mmax, imax, jmax;
-    static int ntwo, j1cnj, np1hf, np2hf, j1min, i1max, i1rng, j1rng, j2min, j3max;
-    static int j1max, j2max, i2max, non2t, j2stp, i, j, k, l, m, n, icase, ifact[32];
-    static int nhalf, krang, kconj, kdif, idim, ntot, kstep, k2, k3, k4, nprev, iquot;
-    static int i2, i1, i3, j3, k1, j2, j1, if_, np0, np1, np2, ifp1, ifp2, non2;
-
-    static float theta, oldsi, tempi, oldsr, sinth, difi, difr, sumi, sumr, tempr, twopi;
-    static float wstpi, wstpr, twowr, wi, wr, u1i, w2i, w3i, u2i, u3i, u4i, t2i, u1r;
-    static float u2r, u3r, w2r, w3r, u4r, t2r, t3r, t3i, t4r, t4i;
-    static double wrd, wid;
+	static float theta, oldsi, tempi, oldsr, sinth, difi, difr, sumi, sumr, tempr, twopi;
+	static float wstpi, wstpr, twowr, wi, wr, u1i, w2i, w3i, u2i, u3i, u4i, t2i, u1r;
+	static float u2r, u3r, w2r, w3r, u4r, t2r, t3r, t3i, t4r, t4i;
+	static double wrd, wid;
 
 /*---------------------------------------------------------------------------
-       ARGUMENTS :
-		DATA - COMPLEX ARRAY, LENGTH NN
-		NN - ARRAY OF NUMBER OF POINTS IN EACH DIMENSION
-		NDIM - NUMBER OF DIMENSIONS (FOR OUR PURPOSES, NDIM=1)
-		KSIGN - +1 FOR INVERSE TRANSFORM (FREQ TO GMT_TIME DOMAIN)
-			-1 FOR FORWARD TRANSFORM (GMT_TIME TO FREQ DOMAIN)
-		IFORM - 0 REAL DATA
-			+1 COMPLEX DATA
-		WORK - 0 IF ALL DIMENSIONS ARE RADIX 2
-		COMPLEX ARRAY, LARGE AS LARGEST NON-RADIX 2 DIMENSI0N
+	ARGUMENTS :
+	DATA - COMPLEX ARRAY, LENGTH NN
+	NN - ARRAY OF NUMBER OF POINTS IN EACH DIMENSION
+	NDIM - NUMBER OF DIMENSIONS (FOR OUR PURPOSES, NDIM=1)
+	KSIGN - +1 FOR INVERSE TRANSFORM (FREQ TO GMT_TIME DOMAIN)
+		-1 FOR FORWARD TRANSFORM (GMT_TIME TO FREQ DOMAIN)
+	IFORM - 0 REAL DATA
+		+1 COMPLEX DATA
+	WORK - 0 IF ALL DIMENSIONS ARE RADIX 2
+	COMPLEX ARRAY, LARGE AS LARGEST NON-RADIX 2 DIMENSI0N
 
 	PROGRAM BY NORMAN BRENNER FROM THE BASIC PROGRAM BY CHARLES
 	RADER.  RALPH ALTER SUGGESTED THE IDEA FOR THE DIGIT REVERSAL.
@@ -1052,42 +93,42 @@ int BRENNER_fourt_ (float *data, int *nn, int *ndim, int *ksign, int *iform, flo
 
 ---------------------------------------------------------------------------*/
 
-   /* Parameter adjustments */
-    --work;
-    --nn;
-    --data;
+	/* Parameter adjustments */
+	--work;
+	--nn;
+	--data;
 
-    /* Function Body */
-    wr = wi = wstpr = wstpi = (float)0.0;
-    twopi = (float)6.283185307;
-    if (*ndim - 1 >= 0) {
-	goto L1;
-    } else {
-	goto L920;
-    }
-L1:
-    ntot = 2;
-    i__1 = *ndim;
-    for (idim = 1; idim <= i__1; ++idim) {
-	if (nn[idim] <= 0) {
-	    goto L920;
+	/* Function Body */
+	wr = wi = wstpr = wstpi = (float)0.0;
+	twopi = (float)6.283185307;
+	if (*ndim - 1 >= 0) {
+		goto L1;
 	} else {
-	    goto L2;
+		goto L920;
+	}
+L1:
+	ntot = 2;
+	i__1 = *ndim;
+	for (idim = 1; idim <= i__1; ++idim) {
+	if (nn[idim] <= 0) {
+		goto L920;
+	} else {
+		goto L2;
 	}
 L2:
 	ntot *= nn[idim];
-    }
-    np1 = 2;
-    i__1 = *ndim;
-    for (idim = 1; idim <= i__1; ++idim) {
+	}
+	np1 = 2;
+	i__1 = *ndim;
+	for (idim = 1; idim <= i__1; ++idim) {
 	n = nn[idim];
 	np2 = np1 * n;
 	if ((i__2 = n - 1) < 0) {
-	    goto L920;
+		goto L920;
 	} else if (i__2 == 0) {
-	    goto L900;
+		goto L900;
 	} else {
-	    goto L5;
+		goto L5;
 	}
 L5:
 	m = n;
@@ -1098,15 +139,15 @@ L10:
 	iquot = m / idiv;
 	irem = m - idiv * iquot;
 	if (iquot - idiv >= 0) {
-	    goto L11;
+		goto L11;
 	} else {
-	    goto L50;
+		goto L50;
 	}
 L11:
 	if (irem != 0) {
-	    goto L20;
+		goto L20;
 	} else {
-	    goto L12;
+		goto L12;
 	}
 L12:
 	ntwo += ntwo;
@@ -1118,15 +159,15 @@ L30:
 	iquot = m / idiv;
 	irem = m - idiv * iquot;
 	if (iquot - idiv >= 0) {
-	    goto L31;
+		goto L31;
 	} else {
-	    goto L60;
+		goto L60;
 	}
 L31:
 	if (irem != 0) {
-	    goto L40;
+		goto L40;
 	} else {
-	    goto L32;
+		goto L32;
 	}
 L32:
 	ifact[if_ - 1] = idiv;
@@ -1138,9 +179,9 @@ L40:
 	goto L30;
 L50:
 	if (irem != 0) {
-	    goto L60;
+		goto L60;
 	} else {
-	    goto L51;
+		goto L51;
 	}
 L51:
 	ntwo += ntwo;
@@ -1151,29 +192,29 @@ L70:
 	non2 = np1 * (np2 / ntwo);
 	icase = 1;
 	if (idim - 4 >= 0) {
-	    goto L90;
+		goto L90;
 	} else {
-	    goto L71;
+		goto L71;
 	}
 L71:
 	if (*iform <= 0) {
-	    goto L72;
+		goto L72;
 	} else {
-	    goto L90;
+		goto L90;
 	}
 L72:
 	icase = 2;
 	if (idim - 1 <= 0) {
-	    goto L73;
+		goto L73;
 	} else {
-	    goto L90;
+		goto L90;
 	}
 L73:
 	icase = 3;
 	if (ntwo - np1 <= 0) {
-	    goto L90;
+		goto L90;
 	} else {
-	    goto L74;
+		goto L74;
 	}
 L74:
 	icase = 4;
@@ -1184,23 +225,23 @@ L74:
 	i = 3;
 	i__2 = ntot;
 	for (j = 2; j <= i__2; ++j) {
-	    data[j] = data[i];
-	    i += 2;
+		data[j] = data[i];
+		i += 2;
 	}
 L90:
 	i1rng = np1;
 	if (icase - 2 != 0) {
-	    goto L100;
+		goto L100;
 	} else {
-	    goto L95;
+		goto L95;
 	}
 L95:
 	i1rng = np0 * (nprev / 2 + 1);
 L100:
 	if (ntwo - np1 <= 0) {
-	    goto L600;
+		goto L600;
 	} else {
-	    goto L110;
+		goto L110;
 	}
 L110:
 	np2hf = np2 / 2;
@@ -1208,55 +249,55 @@ L110:
 	i__2 = np2;
 	i__3 = non2;
 	for (i2 = 1; i__3 < 0 ? i2 >= i__2 : i2 <= i__2; i2 += i__3) {
-	    if (j - i2 >= 0) {
+		if (j - i2 >= 0) {
 		goto L130;
-	    } else {
+		} else {
 		goto L120;
-	    }
+		}
 L120:
-	    i1max = i2 + non2 - 2;
-	    i__4 = i1max;
-	    for (i1 = i2; i1 <= i__4; i1 += 2) {
+		i1max = i2 + non2 - 2;
+		i__4 = i1max;
+		for (i1 = i2; i1 <= i__4; i1 += 2) {
 		i__5 = ntot;
 		i__6 = np2;
 		for (i3 = i1; i__6 < 0 ? i3 >= i__5 : i3 <= i__5; i3 += i__6) {
-		    j3 = j + i3 - i2;
-		    tempr = data[i3];
-		    tempi = data[i3 + 1];
-		    data[i3] = data[j3];
-		    data[i3 + 1] = data[j3 + 1];
-		    data[j3] = tempr;
-		    data[j3 + 1] = tempi;
+			j3 = j + i3 - i2;
+			tempr = data[i3];
+			tempi = data[i3 + 1];
+			data[i3] = data[j3];
+			data[i3 + 1] = data[j3 + 1];
+			data[j3] = tempr;
+			data[j3 + 1] = tempi;
 		}
-	    }
+		}
 L130:
-	    m = np2hf;
+		m = np2hf;
 L140:
-	    if (j - m <= 0) {
+		if (j - m <= 0) {
 		goto L150;
-	    } else {
+		} else {
 		goto L145;
-	    }
+		}
 L145:
-	    j -= m;
-	    m /= 2;
-	    if (m - non2 >= 0) {
+		j -= m;
+		m /= 2;
+		if (m - non2 >= 0) {
 		goto L140;
-	    } else {
+		} else {
 		goto L150;
-	    }
+		}
 L150:
-	    j += m;
+		j += m;
 	}
 	non2t = non2 + non2;
 	ipar = ntwo / np1;
 L310:
 	if ((i__3 = ipar - 2) < 0) {
-	    goto L350;
+		goto L350;
 	} else if (i__3 == 0) {
-	    goto L330;
+		goto L330;
 	} else {
-	    goto L320;
+		goto L320;
 	}
 L320:
 	ipar /= 4;
@@ -1264,45 +305,45 @@ L320:
 L330:
 	i__3 = i1rng;
 	for (i1 = 1; i1 <= i__3; i1 += 2) {
-	    i__2 = non2;
-	    i__6 = np1;
-	    for (j3 = i1; i__6 < 0 ? j3 >= i__2 : j3 <= i__2; j3 +=  i__6) {
+		i__2 = non2;
+		i__6 = np1;
+		for (j3 = i1; i__6 < 0 ? j3 >= i__2 : j3 <= i__2; j3 +=  i__6) {
 		i__5 = ntot;
 		i__4 = non2t;
 		for (k1 = j3; i__4 < 0 ? k1 >= i__5 : k1 <= i__5; k1 += i__4) {
-		    k2 = k1 + non2;
-		    tempr = data[k2];
-		    tempi = data[k2 + 1];
-		    data[k2] = data[k1] - tempr;
-		    data[k2 + 1] = data[k1 + 1] - tempi;
-		    data[k1] += tempr;
-		    data[k1 + 1] += tempi;
+			k2 = k1 + non2;
+			tempr = data[k2];
+			tempi = data[k2 + 1];
+			data[k2] = data[k1] - tempr;
+			data[k2 + 1] = data[k1 + 1] - tempi;
+			data[k1] += tempr;
+			data[k1 + 1] += tempi;
 		}
-	    }
+		}
 	}
 L350:
 	mmax = non2;
 L360:
 	if (mmax - np2hf >= 0) {
-	    goto L600;
+		goto L600;
 	} else {
-	    goto L370;
+		goto L370;
 	}
 L370:
 /* Computing MAX */
 	i__4 = non2t, i__5 = mmax / 2;
 	lmax = MAX(i__4,i__5);
 	if (mmax - non2 <= 0) {
-	    goto L405;
+		goto L405;
 	} else {
-	    goto L380;
+		goto L380;
 	}
 L380:
 	theta = -twopi * (float) non2 / (float) (mmax <<  2);
 	if (*ksign >= 0) {
-	    goto L390;
+		goto L390;
 	} else {
-	    goto L400;
+		goto L400;
 	}
 L390:
 	theta = -theta;
@@ -1316,45 +357,45 @@ L405:
 	i__4 = lmax;
 	i__5 = non2t;
 	for (l = non2; i__5 < 0 ? l >= i__4 : l <= i__4; l += i__5) {
-	    m = l;
-	    if (mmax - non2 <= 0) {
+		m = l;
+		if (mmax - non2 <= 0) {
 		goto L420;
-	    } else {
+		} else {
 		goto L410;
-	    }
+		}
 L410:
-	    w2r = wr * wr - wi * wi;
-	    w2i = (float)(wr * 2.0 * wi);
-	    w3r = w2r * wr - w2i * wi;
-	    w3i = w2r * wi + w2i * wr;
+		w2r = wr * wr - wi * wi;
+		w2i = (float)(wr * 2.0 * wi);
+		w3r = w2r * wr - w2i * wi;
+		w3i = w2r * wi + w2i * wr;
 L420:
-	    i__6 = i1rng;
-	    for (i1 = 1; i1 <= i__6; i1 += 2) {
+		i__6 = i1rng;
+		for (i1 = 1; i1 <= i__6; i1 += 2) {
 		i__2 = non2;
 		i__3 = np1;
 		for (j3 = i1; i__3 < 0 ? j3 >= i__2 : j3 <= i__2; j3  += i__3) {
-		    kmin = j3 + ipar * m;
-		    if (mmax - non2 <= 0) {
+			kmin = j3 + ipar * m;
+			if (mmax - non2 <= 0) {
 			goto L430;
-		    } else {
+			} else {
 			goto L440;
-		    }
+			}
 L430:
-		    kmin = j3;
+			kmin = j3;
 L440:
-		    kdif = ipar * mmax;
+			kdif = ipar * mmax;
 L450:
-		    kstep = kdif << 2;
-		    i__7 = ntot;
-		    i__8 = kstep;
-		    for (k1 = kmin; i__8 < 0 ? k1 >= i__7 : k1 <=  i__7; k1 += i__8) {
+			kstep = kdif << 2;
+			i__7 = ntot;
+			i__8 = kstep;
+			for (k1 = kmin; i__8 < 0 ? k1 >= i__7 : k1 <=  i__7; k1 += i__8) {
 			k2 = k1 + kdif;
 			k3 = k2 + kdif;
 			k4 = k3 + kdif;
 			if (mmax - non2 <= 0) {
-			    goto L460;
+				goto L460;
 			} else {
-			    goto L480;
+				goto L480;
 			}
 L460:
 			u1r = data[k1] + data[k2];
@@ -1364,9 +405,9 @@ L460:
 			u3r = data[k1] - data[k2];
 			u3i = data[k1 + 1] - data[k2 + 1];
 			if (*ksign >= 0) {
-			    goto L475;
+				goto L475;
 			} else {
-			    goto L470;
+				goto L470;
 			}
 L470:
 			u4r = data[k3 + 1] - data[k4 + 1];
@@ -1390,9 +431,9 @@ L480:
 			u3r = data[k1] - t2r;
 			u3i = data[k1 + 1] - t2i;
 			if (*ksign >= 0) {
-			    goto L500;
+				goto L500;
 			} else {
-			    goto L490;
+				goto L490;
 			}
 L490:
 			u4r = t3i - t4i;
@@ -1410,52 +451,52 @@ L510:
 			data[k3 + 1] = u1i - u2i;
 			data[k4] = u3r - u4r;
 			data[k4 + 1] = u3i - u4i;
-		    }
-		    kmin = ((kmin - j3) << 2) + j3;
-		    kdif = kstep;
-		    if (kdif - np2 >= 0) {
+			}
+			kmin = ((kmin - j3) << 2) + j3;
+			kdif = kstep;
+			if (kdif - np2 >= 0) {
 			goto L530;
-		    } else {
+			} else {
 			goto L450;
-		    }
+			}
 L530:
-		    ;
+			;
 		}
-	    }
-	    m = mmax - m;
-	    if (*ksign >= 0) {
+		}
+		m = mmax - m;
+		if (*ksign >= 0) {
 		goto L550;
-	    } else {
+		} else {
 		goto L540;
-	    }
+		}
 L540:
-	    tempr = wr;
-	    wr = -wi;
-	    wi = -tempr;
-	    goto L560;
+		tempr = wr;
+		wr = -wi;
+		wi = -tempr;
+		goto L560;
 L550:
-	    tempr = wr;
-	    wr = wi;
-	    wi = tempr;
+		tempr = wr;
+		wr = wi;
+		wi = tempr;
 L560:
-	    if (m - lmax <= 0) {
+		if (m - lmax <= 0) {
 		goto L565;
-	    } else {
+		} else {
 		goto L410;
-	    }
+		}
 L565:
-	    tempr = wr;
-	    wr = wr * wstpr - wi * wstpi + wr;
-	    wi = wi * wstpr + tempr * wstpi + wi;
+		tempr = wr;
+		wr = wr * wstpr - wi * wstpi + wr;
+		wi = wi * wstpr + tempr * wstpi + wi;
 	}
 	ipar = 3 - ipar;
 	mmax += mmax;
 	goto L360;
 L600:
 	if (ntwo - np2 >= 0) {
-	    goto L700;
+		goto L700;
 	} else {
-	    goto L605;
+		goto L605;
 	}
 L605:
 	ifp1 = non2;
@@ -1465,9 +506,9 @@ L610:
 	ifp2 = ifp1 / ifact[if_ - 1];
 	j1rng = np2;
 	if (icase - 3 != 0) {
-	    goto L612;
+		goto L612;
 	} else {
-	    goto L611;
+		goto L611;
 	}
 L611:
 	j1rng = (np2 + ifp1) / 2;
@@ -1476,60 +517,60 @@ L611:
 L612:
 	j2min = ifp2 + 1;
 	if (ifp1 - np2 >= 0) {
-	    goto L640;
+		goto L640;
 	} else {
-	    goto L615;
+		goto L615;
 	}
 L615:
 	i__5 = ifp1;
 	i__4 = ifp2;
 	for (j2 = j2min; i__4 < 0 ? j2 >= i__5 : j2 <= i__5; j2 +=  i__4) {
-	    theta = -twopi * (float) (j2 - 1) / (float)  np2;
-	    if (*ksign >= 0) {
+		theta = -twopi * (float) (j2 - 1) / (float)  np2;
+		if (*ksign >= 0) {
 		goto L620;
-	    } else {
+		} else {
 		goto L625;
-	    }
+		}
 L620:
-	    theta = -theta;
+		theta = -theta;
 L625:
-	    sinth = (float)sin((double)(0.5 * theta));
-	    wstpr = sinth * (float)(-2. * sinth);
-	    wstpi = (float)sin((double)theta);
-	    wr = wstpr + (float)1.0;
-	    wi = wstpi;
-	    j1min = j2 + ifp1;
-	    i__3 = j1rng;
-	    i__2 = ifp1;
-	    for (j1 = j1min; i__2 < 0 ? j1 >= i__3 : j1 <= i__3; j1 += i__2) {
+		sinth = (float)sin((double)(0.5 * theta));
+		wstpr = sinth * (float)(-2. * sinth);
+		wstpi = (float)sin((double)theta);
+		wr = wstpr + (float)1.0;
+		wi = wstpi;
+		j1min = j2 + ifp1;
+		i__3 = j1rng;
+		i__2 = ifp1;
+		for (j1 = j1min; i__2 < 0 ? j1 >= i__3 : j1 <= i__3; j1 += i__2) {
 
 		i1max = j1 + i1rng - 2;
 		i__6 = i1max;
 		for (i1 = j1; i1 <= i__6; i1 += 2) {
-		    i__8 = ntot;
-		    i__7 = np2;
-		    for (i3 = i1; i__7 < 0 ? i3 >= i__8 : i3 <= i__8; i3 += i__7) {
+			i__8 = ntot;
+			i__7 = np2;
+			for (i3 = i1; i__7 < 0 ? i3 >= i__8 : i3 <= i__8; i3 += i__7) {
 			j3max = i3 + ifp2 - np1;
 			i__9 = j3max;
 			i__10 = np1;
 			for (j3 = i3; i__10 < 0 ? j3 >= i__9 : j3 <= i__9; j3 += i__10) {
-			    tempr = data[j3];
-			    data[j3] = data[j3] * wr - data[j3 + 1] *  wi;
-			    data[j3 + 1] = tempr * wi + data[j3 + 1]  * wr;
+				tempr = data[j3];
+				data[j3] = data[j3] * wr - data[j3 + 1] *  wi;
+				data[j3 + 1] = tempr * wi + data[j3 + 1]  * wr;
 			}
-		    }
+			}
 		}
 		tempr = wr;
 		wr = wr * wstpr - wi * wstpi + wr;
 		wi = tempr * wstpi + wi * wstpr + wi;
-	    }
+		}
 	}
 L640:
 	theta = -twopi / (float) ifact[if_ - 1];
 	if (*ksign >= 0) {
-	    goto L645;
+		goto L645;
 	} else {
-	    goto L650;
+		goto L650;
 	}
 L645:
 	theta = -theta;
@@ -1541,99 +582,99 @@ L650:
 	krang = kstep * (ifact[if_ - 1] / 2) + 1;
 	i__2 = i1rng;
 	for (i1 = 1; i1 <= i__2; i1 += 2) {
-	    i__3 = ntot;
-	    i__4 = np2;
-	    for (i3 = i1; i__4 < 0 ? i3 >= i__3 : i3 <= i__3; i3 += i__4) {
+		i__3 = ntot;
+		i__4 = np2;
+		for (i3 = i1; i__4 < 0 ? i3 >= i__3 : i3 <= i__3; i3 += i__4) {
 		i__5 = krang;
 		i__10 = kstep;
 		for (kmin = 1; i__10 < 0 ? kmin >= i__5 : kmin <= i__5; kmin += i__10) {
-		    j1max = i3 + j1rng - ifp1;
-		    i__9 = j1max;
-		    i__7 = ifp1;
-		    for (j1 = i3; i__7 < 0 ? j1 >= i__9 : j1 <= i__9; j1 += i__7) {
+			j1max = i3 + j1rng - ifp1;
+			i__9 = j1max;
+			i__7 = ifp1;
+			for (j1 = i3; i__7 < 0 ? j1 >= i__9 : j1 <= i__9; j1 += i__7) {
 			j3max = j1 + ifp2 - np1;
 			i__8 = j3max;
 			i__6 = np1;
 			for (j3 = j1; i__6 < 0 ? j3 >= i__8 : j3 <= i__8; j3 += i__6) {
-			    j2max = j3 + ifp1 - ifp2;
-			    k = kmin + (j3 - j1 + (j1 - i3) / ifact[if_ - 1]) / np1hf;
-			    if (kmin - 1 <= 0) {
+				j2max = j3 + ifp1 - ifp2;
+				k = kmin + (j3 - j1 + (j1 - i3) / ifact[if_ - 1]) / np1hf;
+				if (kmin - 1 <= 0) {
 				goto L655;
-			    } else {
+				} else {
 				goto L665;
-			    }
+				}
 L655:
-			    sumr = (float)0.0;
-			    sumi = (float)0.0;
-			    i__11 = j2max;
-			    i__12 = ifp2;
-			    for (j2 = j3; i__12 < 0 ? j2 >= i__11 : j2 <= i__11; j2 += i__12) {
+				sumr = (float)0.0;
+				sumi = (float)0.0;
+				i__11 = j2max;
+				i__12 = ifp2;
+				for (j2 = j3; i__12 < 0 ? j2 >= i__11 : j2 <= i__11; j2 += i__12) {
 				sumr += data[j2];
 				sumi += data[j2 + 1];
-			    }
-			    work[k] = sumr;
-			    work[k + 1] = sumi;
-			    goto L680;
+				}
+				work[k] = sumr;
+				work[k + 1] = sumi;
+				goto L680;
 L665:
-			    kconj = k + ((n - kmin + 1) << 1);
-			    j2 = j2max;
-			    sumr = data[j2];
-			    sumi = data[j2 + 1];
-			    oldsr = (float)0.0;
-			    oldsi = (float)0.0;
-			    j2 -= ifp2;
+				kconj = k + ((n - kmin + 1) << 1);
+				j2 = j2max;
+				sumr = data[j2];
+				sumi = data[j2 + 1];
+				oldsr = (float)0.0;
+				oldsi = (float)0.0;
+				j2 -= ifp2;
 L670:
-			    tempr = sumr;
-			    tempi = sumi;
-			    sumr = twowr * sumr - oldsr + data[j2];
-			    sumi = twowr * sumi - oldsi + data[j2 + 1];
-			    oldsr = tempr;
-			    oldsi = tempi;
-			    j2 -= ifp2;
-			    if (j2 - j3 <= 0) {
+				tempr = sumr;
+				tempi = sumi;
+				sumr = twowr * sumr - oldsr + data[j2];
+				sumi = twowr * sumi - oldsi + data[j2 + 1];
+				oldsr = tempr;
+				oldsi = tempi;
+				j2 -= ifp2;
+				if (j2 - j3 <= 0) {
 				goto L675;
-			    } else {
+				} else {
 				goto L670;
-			    }
+				}
 L675:
-			    tempr = wr * sumr - oldsr + data[j2];
-			    tempi = wi * sumi;
-			    work[k] = tempr - tempi;
-			    work[kconj] = tempr + tempi;
-			    tempr = wr * sumi - oldsi + data[j2 + 1];
-			    tempi = wi * sumr;
-			    work[k + 1] = tempr + tempi;
-			    work[kconj + 1] = tempr - tempi;
+				tempr = wr * sumr - oldsr + data[j2];
+				tempi = wi * sumi;
+				work[k] = tempr - tempi;
+				work[kconj] = tempr + tempi;
+				tempr = wr * sumi - oldsi + data[j2 + 1];
+				tempi = wi * sumr;
+				work[k + 1] = tempr + tempi;
+				work[kconj + 1] = tempr - tempi;
 L680:
-			    ;
+				;
 			}
-		    }
-		    if (kmin - 1 <= 0) {
+			}
+			if (kmin - 1 <= 0) {
 			goto L685;
-		    } else {
+			} else {
 			goto L686;
-		    }
+			}
 L685:
-		    wr = wstpr + (float)1.0;
-		    wi = wstpi;
-		    goto L690;
+			wr = wstpr + (float)1.0;
+			wi = wstpi;
+			goto L690;
 L686:
-		    tempr = wr;
-		    wr = wr * wstpr - wi * wstpi + wr;
-		    wi = tempr * wstpi + wi * wstpr + wi;
+			tempr = wr;
+			wr = wr * wstpr - wi * wstpi + wr;
+			wi = tempr * wstpi + wi * wstpr + wi;
 L690:
-		    twowr = wr + wr;
+			twowr = wr + wr;
 		}
 		if (icase - 3 != 0) {
-		    goto L692;
+			goto L692;
 		} else {
-		    goto L691;
+			goto L691;
 		}
 L691:
 		if (ifp1 - np2 >= 0) {
-		    goto L692;
+			goto L692;
 		} else {
-		    goto L695;
+			goto L695;
 		}
 L692:
 		k = 1;
@@ -1641,9 +682,9 @@ L692:
 		i__10 = i2max;
 		i__5 = np1;
 		for (i2 = i3; i__5 < 0 ? i2 >= i__10 : i2 <= i__10; i2 += i__5) {
-		    data[i2] = work[k];
-		    data[i2 + 1] = work[k + 1];
-		    k += 2;
+			data[i2] = work[k];
+			data[i2 + 1] = work[k + 1];
+			k += 2;
 		}
 		goto L698;
 L695:
@@ -1651,57 +692,57 @@ L695:
 		i__5 = j3max;
 		i__10 = np1;
 		for (j3 = i3; i__10 < 0 ? j3 >= i__5 : j3 <= i__5; j3 += i__10) {
-		    j2max = j3 + np2 - j2stp;
-		    i__6 = j2max;
-		    i__8 = j2stp;
-		    for (j2 = j3; i__8 < 0 ? j2 >= i__6 : j2 <= i__6; j2 += i__8) {
+			j2max = j3 + np2 - j2stp;
+			i__6 = j2max;
+			i__8 = j2stp;
+			for (j2 = j3; i__8 < 0 ? j2 >= i__6 : j2 <= i__6; j2 += i__8) {
 			j1max = j2 + j1rg2 - ifp2;
 			j1cnj = j3 + j2max + j2stp - j2;
 			i__7 = j1max;
 			i__9 = ifp2;
 			for (j1 = j2; i__9 < 0 ? j1 >= i__7 : j1 <= i__7; j1 += i__9) {
-			    k = j1 + 1 - i3;
-			    data[j1] = work[k];
-			    data[j1 + 1] = work[k + 1];
-			    if (j1 - j2 <= 0) {
+				k = j1 + 1 - i3;
+				data[j1] = work[k];
+				data[j1 + 1] = work[k + 1];
+				if (j1 - j2 <= 0) {
 				goto L697;
-			    } else {
+				} else {
 				goto L696;
-			    }
+				}
 L696:
-			    data[j1cnj] = work[k];
-			    data[j1cnj + 1] = -work[k + 1];
+				data[j1cnj] = work[k];
+				data[j1cnj + 1] = -work[k + 1];
 L697:
-			    j1cnj -= ifp2;
+				j1cnj -= ifp2;
 			}
-		    }
+			}
 		}
 L698:
 		;
-	    }
+		}
 	}
 	++if_;
 	ifp1 = ifp2;
 	if (ifp1 - np1 <= 0) {
-	    goto L700;
+		goto L700;
 	} else {
-	    goto L610;
+		goto L610;
 	}
 L700:
 	switch ((int)icase) {
-	    case 1:  goto L900;
-	    case 2:  goto L800;
-	    case 3:  goto L900;
-	    case 4:  goto L701;
+		case 1:  goto L900;
+		case 2:  goto L800;
+		case 3:  goto L900;
+		case 4:  goto L701;
 	}
 L701:
 	nhalf = n;
 	n += n;
 	theta = -twopi / (float) n;
 	if (*ksign >= 0) {
-	    goto L702;
+		goto L702;
 	} else {
-	    goto L703;
+		goto L703;
 	}
 L702:
 	theta = -theta;
@@ -1719,17 +760,17 @@ L710:
 	i__4 = ntot;
 	i__3 = np2;
 	for (i = imin; i__3 < 0 ? i >= i__4 : i <= i__4; i += i__3) {
-	    sumr = (float)0.5 * (data[i] + data[j]);
-	    sumi = (float)0.5 * (data[i + 1] + data[j + 1]);
-	    difr = (float)0.5 * (data[i] - data[j]);
-	    difi = (float)0.5 * (data[i + 1] - data[j + 1]);
-	    tempr = wr * sumi + wi * difr;
-	    tempi = wi * sumi - wr * difr;
-	    data[i] = sumr + tempr;
-	    data[i + 1] = difi + tempi;
-	    data[j] = sumr - tempr;
-	    data[j + 1] = -difi + tempi;
-	    j += np2;
+		sumr = (float)0.5 * (data[i] + data[j]);
+		sumi = (float)0.5 * (data[i + 1] + data[j + 1]);
+		difr = (float)0.5 * (data[i] - data[j]);
+		difi = (float)0.5 * (data[i + 1] - data[j + 1]);
+		tempr = wr * sumi + wi * difr;
+		tempi = wi * sumi - wr * difr;
+		data[i] = sumr + tempr;
+		data[i + 1] = difi + tempi;
+		data[j] = sumr - tempr;
+		data[j + 1] = -difi + tempi;
+		j += np2;
 	}
 	imin += 2;
 	jmin += -2;
@@ -1738,23 +779,23 @@ L710:
 	wi = tempr * wstpi + wi * wstpr + wi;
 L725:
 	if ((i__3 = imin - jmin) < 0) {
-	    goto L710;
+		goto L710;
 	} else if (i__3 == 0) {
-	    goto L730;
+		goto L730;
 	} else {
-	    goto L740;
+		goto L740;
 	}
 L730:
 	if (*ksign >= 0) {
-	    goto L740;
+		goto L740;
 	} else {
-	    goto L731;
+		goto L731;
 	}
 L731:
 	i__3 = ntot;
 	i__4 = np2;
 	for (i = imin; i__4 < 0 ? i >= i__3 : i <= i__3; i += i__4) {
-	    data[i + 1] = -data[i + 1];
+		data[i + 1] = -data[i + 1];
 	}
 L740:
 	np2 += np2;
@@ -1772,17 +813,17 @@ L755:
 	i += 2;
 	j += -2;
 	if (i - imax >= 0) {
-	    goto L760;
+		goto L760;
 	} else {
-	    goto L750;
+		goto L750;
 	}
 L760:
 	data[j] = data[imin] - data[imin + 1];
 	data[j + 1] = (float)0.0;
 	if (i - j >= 0) {
-	    goto L780;
+		goto L780;
 	} else {
-	    goto L770;
+		goto L770;
 	}
 L765:
 	data[j] = data[i];
@@ -1791,9 +832,9 @@ L770:
 	i += -2;
 	j += -2;
 	if (i - imin <= 0) {
-	    goto L775;
+		goto L775;
 	} else {
-	    goto L765;
+		goto L765;
 	}
 L775:
 	data[j] = data[imin] + data[imin + 1];
@@ -1806,287 +847,2069 @@ L780:
 	goto L900;
 L800:
 	if (i1rng - np1 >= 0) {
-	    goto L900;
+		goto L900;
 	} else {
-	    goto L805;
+		goto L805;
 	}
 L805:
 	i__4 = ntot;
 	i__3 = np2;
 	for (i3 = 1; i__3 < 0 ? i3 >= i__4 : i3 <= i__4; i3 += i__3) {
-	    i2max = i3 + np2 - np1;
-	    i__2 = i2max;
-	    i__9 = np1;
-	    for (i2 = i3; i__9 < 0 ? i2 >= i__2 : i2 <= i__2; i2 += i__9) {
+		i2max = i3 + np2 - np1;
+		i__2 = i2max;
+		i__9 = np1;
+		for (i2 = i3; i__9 < 0 ? i2 >= i__2 : i2 <= i__2; i2 += i__9) {
 		imin = i2 + i1rng;
 		imax = i2 + np1 - 2;
 		jmax = (i3 << 1) + np1 - imin;
 		if (i2 - i3 <= 0) {
-		    goto L820;
+			goto L820;
 		} else {
-		    goto L810;
+			goto L810;
 		}
 L810:
 		jmax += np2;
 L820:
 		if (idim - 2 <= 0) {
-		    goto L850;
+			goto L850;
 		} else {
-		    goto L830;
+			goto L830;
 		}
 L830:
 		j = jmax + np0;
 		i__7 = imax;
 		for (i = imin; i <= i__7; i += 2) {
-		    data[i] = data[j];
-		    data[i + 1] = -data[j + 1];
-		    j += -2;
+			data[i] = data[j];
+			data[i + 1] = -data[j + 1];
+			j += -2;
 		}
 L850:
 		j = jmax;
 		i__7 = imax;
 		i__8 = np0;
 		for (i = imin; i__8 < 0 ? i >= i__7 : i <= i__7; i += i__8) {
-		    data[i] = data[j];
-		    data[i + 1] = -data[j + 1];
-		    j -= np0;
+			data[i] = data[j];
+			data[i + 1] = -data[j + 1];
+			j -= np0;
 		}
-	    }
+		}
 	}
 L900:
 	np0 = np1;
 	np1 = np2;
 	nprev = n;
-    }
+	}
 L920:
-    return 0;
+	return 0;
 } /* fourt_ */
 
-int gmt_get_non_symmetric_f (unsigned int *f, unsigned int n_in)
+GMT_LONG gmt_get_non_symmetric_f (GMT_LONG *f, GMT_LONG n)
 {
-        /* Return the product of the non-symmetric factors in f[]  */
-	
-        int i = 0, j = 1, retval = 1, n = n_in;
-	
-        if (n == 1) return (f[0]);
-        while (i < n) {
-                while (j < n && f[j] == f[i]) j++;
-                if ((j-i)%2) retval *= f[i];
-                i = j;
-                j = i + 1;
-        }
-        if (retval == 1) retval = 0;        /* There are no non-sym factors  */
-        return (retval);
+	/* Return the product of the non-symmetric factors in f[]  */
+	GMT_LONG i = 0, j = 1, retval = 1;
+
+	if (n == 1) return (f[0]);
+
+	while (i < n) {
+		while (j < n && f[j] == f[i]) j++;
+		if ((j-i)%2) retval *= f[i];
+		i = j;
+		j = i + 1;
+	}
+	if (retval == 1) retval = 0;	/* There are no non-sym factors  */
+	return (retval);
 }
 
-size_t brenner_worksize (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny)
+GMT_LONG brenner_worksize (struct GMT_CTRL *C, GMT_LONG nx, GMT_LONG ny)
 {
-        /* Find the size of the workspace that will be needed by the transform.
-         * To use this routine for a 1-D transform, set ny = 1.
-         * 
-         * This is all based on the comments in Norman Brenner's code
-         * FOURT, from which our C codes are translated.
-         * 
-         * Let m = largest prime factor in the list of factors.
-         * Let p = product of all primes which appear an odd number of
-         * times in the list of prime factors.  Then the worksize needed
-         * s = max(m,p).  However, we know that if n is radix 2, then no
-         * work is required; yet this formula would say we need a worksize
-         * of at least 2.  So I will return s = 0 when max(m,p) = 2.
-         *
-         * W. H. F. Smith, 26 February 1992.
-         *  */
-        unsigned int f[32], n_factors, nonsymx, nonsymy, nonsym;
-        size_t storage, ntotal;
-	
-        /* Find workspace needed.  First find non_symmetric factors in nx, ny  */
-        n_factors = GMT_get_prime_factors (GMT, nx, f);
-        nonsymx = gmt_get_non_symmetric_f (f, n_factors);
-        n_factors = GMT_get_prime_factors (GMT, ny, f);
-        nonsymy = gmt_get_non_symmetric_f (f, n_factors);
-        nonsym = MAX (nonsymx, nonsymy);
-	
-        /* Now get factors of ntotal  */
-        ntotal = GMT_get_nm (GMT, nx, ny);
-        n_factors = GMT_get_prime_factors (GMT, ntotal, f);
-        storage = MAX (nonsym, f[n_factors-1]);
-        if (storage != 2) storage *= 2;
+	/* Find the size of the workspace that will be needed by the transform.
+	 * To use this routine for a 1-D transform, set ny = 1.
+	 * 
+	 * This is all based on the comments in Norman Brenner's code
+	 * FOURT, from which our C codes are translated.
+	 * 
+	 * Let m = largest prime factor in the list of factors.
+	 * Let p = product of all primes which appear an odd number of
+	 * times in the list of prime factors.  Then the worksize needed
+	 * s = max(m,p).  However, we know that if n is radix 2, then no
+	 * work is required; yet this formula would say we need a worksize
+	 * of at least 2.  So I will return s = 0 when max(m,p) = 2.
+	 *
+	 * W. H. F. Smith, 26 February 1992.
+	 *  */
+
+	GMT_LONG f[32], n_factors, nonsymx, nonsymy, nonsym, storage, ntotal;
+
+	/* Find workspace needed.  First find non_symmetric factors in nx, ny  */
+	n_factors = GMT_get_prime_factors (C, nx, f);
+	nonsymx = gmt_get_non_symmetric_f (f, n_factors);
+	n_factors = GMT_get_prime_factors (C, ny, f);
+	nonsymy = gmt_get_non_symmetric_f (f, n_factors);
+	nonsym = MAX (nonsymx, nonsymy);
+
+	/* Now get factors of ntotal  */
+	ntotal = GMT_get_nm (C, nx, ny);
+        n_factors = GMT_get_prime_factors (C, ntotal, f);
+	storage = MAX (nonsym, f[n_factors-1]);
+	if (storage != 2) storage *= 2;
         if (storage < nx) storage = nx;
         if (storage < ny) storage = ny;
-        return (2 * storage);
-}
+	return (2 * storage);
+} 
 
-/* C-callable wrapper for BRENNER_fourt_ */
-int GMT_fft_1d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int n, int direction, unsigned int mode)
-{
-        /* void GMT_fourt (struct GMT_CTRL *GMT, float *data, int *nn, int ndim, int ksign, int iform, float *work) */
-        /* Data array */
-        /* Dimension array */
-        /* Number of dimensions */
-        /* Forward(-1) or Inverse(+1) */
-        /* Real(0) or complex(1) data */
-        /* Work array */
-	
-        int ksign, ndim = 1, n_signed = n, kmode = mode;
-        size_t work_size = 0;
-        float *work = NULL;
-	
-        ksign = (direction == GMT_FFT_INV) ? +1 : -1;
-        if ((work_size = brenner_worksize (GMT, n, 1))) work = GMT_memory (GMT, NULL, work_size, float);
-        (void) BRENNER_fourt_ (data, &n_signed, &ndim, &ksign, &kmode, work);
-        if (work_size) GMT_free (GMT, work);	
-        return (GMT_OK);
-}
-	
-int GMT_fft_2d_brenner (struct GMT_CTRL *GMT, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode)
-{
-        /* Data array */
-        /* Dimension array */
-        /* Number of dimensions */
-        /* Forward(-1) or Inverse(+1) */
-        /* Real(0) or complex(1) data */
-        /* Work array */
+#ifdef WITH_FFTPACK
 
-        int ksign, ndim = 2, nn[2] = {nx, ny}, kmode = mode;
-        size_t work_size = 0;
-        float *work = NULL;
+/*
+fftpack.c : A set of FFT routines in C.
+Algorithmically based on Fortran-77 FFTPACK by Paul N. Swarztrauber (Version 4, 1985).
+*/
 
-        ksign = (direction == GMT_FFT_INV) ? +1 : -1;
-        if ((work_size = brenner_worksize (GMT, nx, ny))) work = GMT_memory (GMT, NULL, work_size, float);
-        GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Brenner_fourt_ work size = %" PRIuS "\n", work_size);
-        (void) BRENNER_fourt_ (data, nn, &ndim, &ksign, &kmode, work);
-        if (work_size) GMT_free (GMT, work);
-        return (GMT_OK);
-}
+/* isign is +1 for backward and -1 for forward transforms */
 
-int gmt_fft_1d_selection (struct GMT_CTRL *GMT, uint64_t n) {
-	/* Returns the most suitable 1-D FFT for the job - or the one requested via GMT_FFT */
-	if (GMT->current.setting.fft != k_fft_auto) {
-		/* Specific selection requested */
-		if (GMT->session.fft1d[GMT->current.setting.fft])
-			return GMT->current.setting.fft; /* User defined FFT */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Desired FFT Algorithm (%s) not configured - choosing suitable alternative.\n", GMT_fft_algo[GMT->current.setting.fft]);
-	}
-	/* Here we want automatic selection from available candidates */
-	if (GMT->session.fft1d[k_fft_accelerate] && radix2 (n))
-		return k_fft_accelerate; /* Use if Radix-2 under OS/X */
-	if (GMT->session.fft1d[k_fft_fftw])
-		return k_fft_fftw;
-	return k_fft_kiss; /* Default/fallback general-purpose FFT */
-}
+/*
+#define DOUBLE
+*/
 
-int gmt_fft_2d_selection (struct GMT_CTRL *GMT, unsigned int nx, unsigned int ny) {
-	/* Returns the most suitable 2-D FFT for the job - or the one requested via GMT_FFT */
-	if (GMT->current.setting.fft != k_fft_auto) {
-		/* Specific selection requested */
-		if (GMT->session.fft2d[GMT->current.setting.fft])
-			return GMT->current.setting.fft; /* User defined FFT */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Desired FFT Algorithm (%s) not configured - choosing suitable alternative.\n", GMT_fft_algo[GMT->current.setting.fft]);
-	}
-	/* Here we want automatic selection from available candidates */
-	if (GMT->session.fft2d[k_fft_accelerate] && radix2 (nx) && radix2 (ny))
-		return k_fft_accelerate; /* Use if Radix-2 under OS/X */
-	if (GMT->session.fft2d[k_fft_fftw])
-		return k_fft_fftw;
-	return k_fft_kiss; /* Default/fallback general-purpose FFT */
-}
-
-int GMT_FFT_1D (void *V_API, float *data, uint64_t n, int direction, unsigned int mode) {
-	/* data is an array of length n (or 2*n for complex) data points
-	 * n is the number of data points
-	 * direction is either GMT_FFT_FWD (forward) or GMT_FFT_INV (inverse)
-	 * mode is either GMT_FFT_REAL or GMT_FFT_COMPLEX
-	 */
-	int status, use;
-	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);
-	struct GMT_CTRL *GMT = API->GMT;
-	assert (mode == GMT_FFT_COMPLEX); /* GMT_FFT_REAL not implemented yet */
-	use = gmt_fft_1d_selection (GMT, n);
-	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "1-D FFT using %s\n", GMT_fft_algo[use]);
-	status = GMT->session.fft1d[use] (GMT, data, (unsigned int)n, direction, mode);
-	if (direction == GMT_FFT_INV) {	/* Undo the 2/nm factor */
-		uint64_t nm = 2ULL * n;
-		GMT_scale_and_offset_f (GMT, data, nm, 2.0 / nm, 0);
-	}
-	return status;
-}
-
-int GMT_FFT_2D (void *V_API, float *data, unsigned int nx, unsigned int ny, int direction, unsigned int mode) {
-	/* data is an array of length nx*ny (or 2*nx*ny for complex) data points
-	 * nx, ny is the number of data nodes
-	 * direction is either GMT_FFT_FWD (forward) or GMT_FFT_INV (inverse)
-	 * mode is either GMT_FFT_REAL or GMT_FFT_COMPLEX
-	 */
-	int status, use;
-	struct GMTAPI_CTRL *API = gmt_get_api_ptr (V_API);
-	struct GMT_CTRL *GMT = API->GMT;
-	assert (mode == GMT_FFT_COMPLEX); /* GMT_FFT_REAL not implemented yet */
-	use = gmt_fft_2d_selection (GMT, nx, ny);
-	
-	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "2-D FFT using %s\n", GMT_fft_algo[use]);
-	status = GMT->session.fft2d[use] (GMT, data, nx, ny, direction, mode);
-	if (direction == GMT_FFT_INV) {	/* Undo the 2/nm factor */
-		uint64_t nm = 2ULL * nx * ny;
-		GMT_scale_and_offset_f (GMT, data, nm, 2.0 / nm, 0);
-	}
-	return status;
-}
-
-#if defined WIN32
-#include <windows.h>
-#endif
-
-void GMT_fft_initialization (struct GMT_CTRL *GMT) {
-	/* Called by GMT_begin and sets up pointers to the available FFT calls */
-#if defined HAVE_FFTW3F_THREADS
-	int n_cpu;
-#if defined WIN32
-	SYSTEM_INFO sysinfo;
-	GetSystemInfo ( &sysinfo );
-	n_cpu = sysinfo.dwNumberOfProcessors;
+#ifdef DOUBLE
+#define Treal double
 #else
-	n_cpu = (int)sysconf (_SC_NPROCESSORS_CONF);
+#define Treal float
 #endif
-	if (n_cpu > 1) {
-		/* one-time initialization required to use FFTW3 threads */
-		if ( fftwf_init_threads() ) {
-			fftwf_plan_with_nthreads(n_cpu);
-			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Initialize FFTW with %d threads.\n", n_cpu);
+
+#define ref(u,a) u[a]
+
+#define MAXFAC 13    /* maximum number of factors in factorization of n */
+
+/* ----------------------------------------------------------------------
+   passf2, passf3, passf4, passf5, passf. Complex FFT passes fwd and bwd.
+---------------------------------------------------------------------- */
+
+static void passf2(int ido, int l1, const Treal cc[], Treal ch[], const Treal wa1[], int isign)
+  /* isign==+1 for backward transform */
+  {
+    int i, k, ah, ac;
+    Treal ti2, tr2;
+    if (ido <= 2) {
+      for (k=0; k<l1; k++) {
+        ah = k*ido;
+        ac = 2*k*ido;
+        ch[ah]              = ref(cc,ac) + ref(cc,ac + ido);
+        ch[ah + ido*l1]     = ref(cc,ac) - ref(cc,ac + ido);
+        ch[ah+1]            = ref(cc,ac+1) + ref(cc,ac + ido + 1);
+        ch[ah + ido*l1 + 1] = ref(cc,ac+1) - ref(cc,ac + ido + 1);
+      }
+    } else {
+      for (k=0; k<l1; k++) {
+        for (i=0; i<ido-1; i+=2) {
+          ah = i + k*ido;
+          ac = i + 2*k*ido;
+          ch[ah]   = ref(cc,ac) + ref(cc,ac + ido);
+          tr2      = ref(cc,ac) - ref(cc,ac + ido);
+          ch[ah+1] = ref(cc,ac+1) + ref(cc,ac + 1 + ido);
+          ti2      = ref(cc,ac+1) - ref(cc,ac + 1 + ido);
+          ch[ah+l1*ido+1] = wa1[i]*ti2 + isign*wa1[i+1]*tr2;
+          ch[ah+l1*ido]   = wa1[i]*tr2 - isign*wa1[i+1]*ti2;
+        }
+      }
+    }
+  } /* passf2 */
+
+static void passf3(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[], int isign)
+  /* isign==+1 for backward transform */
+  {
+    static const Treal taur = -0.5;
+    static const Treal taui = 0.866025403784439;
+    int i, k, ac, ah;
+    Treal ci2, ci3, di2, di3, cr2, cr3, dr2, dr3, ti2, tr2;
+    if (ido == 2) {
+      for (k=1; k<=l1; k++) {
+        ac = (3*k - 2)*ido;
+        tr2 = ref(cc,ac) + ref(cc,ac + ido);
+        cr2 = ref(cc,ac - ido) + taur*tr2;
+        ah = (k - 1)*ido;
+        ch[ah] = ref(cc,ac - ido) + tr2;
+
+        ti2 = ref(cc,ac + 1) + ref(cc,ac + ido + 1);
+        ci2 = ref(cc,ac - ido + 1) + taur*ti2;
+        ch[ah + 1] = ref(cc,ac - ido + 1) + ti2;
+
+        cr3 = isign*taui*(ref(cc,ac) - ref(cc,ac + ido));
+        ci3 = isign*taui*(ref(cc,ac + 1) - ref(cc,ac + ido + 1));
+        ch[ah + l1*ido] = cr2 - ci3;
+        ch[ah + 2*l1*ido] = cr2 + ci3;
+        ch[ah + l1*ido + 1] = ci2 + cr3;
+        ch[ah + 2*l1*ido + 1] = ci2 - cr3;
+      }
+    } else {
+      for (k=1; k<=l1; k++) {
+        for (i=0; i<ido-1; i+=2) {
+          ac = i + (3*k - 2)*ido;
+          tr2 = ref(cc,ac) + ref(cc,ac + ido);
+          cr2 = ref(cc,ac - ido) + taur*tr2;
+          ah = i + (k-1)*ido;
+          ch[ah] = ref(cc,ac - ido) + tr2;
+          ti2 = ref(cc,ac + 1) + ref(cc,ac + ido + 1);
+          ci2 = ref(cc,ac - ido + 1) + taur*ti2;
+          ch[ah + 1] = ref(cc,ac - ido + 1) + ti2;
+          cr3 = isign*taui*(ref(cc,ac) - ref(cc,ac + ido));
+          ci3 = isign*taui*(ref(cc,ac + 1) - ref(cc,ac + ido + 1));
+          dr2 = cr2 - ci3;
+          dr3 = cr2 + ci3;
+          di2 = ci2 + cr3;
+          di3 = ci2 - cr3;
+          ch[ah + l1*ido + 1] = wa1[i]*di2 + isign*wa1[i+1]*dr2;
+          ch[ah + l1*ido] = wa1[i]*dr2 - isign*wa1[i+1]*di2;
+          ch[ah + 2*l1*ido + 1] = wa2[i]*di3 + isign*wa2[i+1]*dr3;
+          ch[ah + 2*l1*ido] = wa2[i]*dr3 - isign*wa2[i+1]*di3;
+        }
+      }
+    }
+  } /* passf3 */
+
+
+static void passf4(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[], const Treal wa3[], int isign)
+  /* isign == -1 for forward transform and +1 for backward transform */
+  {
+    int i, k, ac, ah;
+    Treal ci2, ci3, ci4, cr2, cr3, cr4, ti1, ti2, ti3, ti4, tr1, tr2, tr3, tr4;
+    if (ido == 2) {
+      for (k=0; k<l1; k++) {
+        ac = 4*k*ido + 1;
+        ti1 = ref(cc,ac) - ref(cc,ac + 2*ido);
+        ti2 = ref(cc,ac) + ref(cc,ac + 2*ido);
+        tr4 = ref(cc,ac + 3*ido) - ref(cc,ac + ido);
+        ti3 = ref(cc,ac + ido) + ref(cc,ac + 3*ido);
+        tr1 = ref(cc,ac - 1) - ref(cc,ac + 2*ido - 1);
+        tr2 = ref(cc,ac - 1) + ref(cc,ac + 2*ido - 1);
+        ti4 = ref(cc,ac + ido - 1) - ref(cc,ac + 3*ido - 1);
+        tr3 = ref(cc,ac + ido - 1) + ref(cc,ac + 3*ido - 1);
+        ah = k*ido;
+        ch[ah] = tr2 + tr3;
+        ch[ah + 2*l1*ido] = tr2 - tr3;
+        ch[ah + 1] = ti2 + ti3;
+        ch[ah + 2*l1*ido + 1] = ti2 - ti3;
+        ch[ah + l1*ido] = tr1 + isign*tr4;
+        ch[ah + 3*l1*ido] = tr1 - isign*tr4;
+        ch[ah + l1*ido + 1] = ti1 + isign*ti4;
+        ch[ah + 3*l1*ido + 1] = ti1 - isign*ti4;
+      }
+    } else {
+      for (k=0; k<l1; k++) {
+        for (i=0; i<ido-1; i+=2) {
+          ac = i + 1 + 4*k*ido;
+          ti1 = ref(cc,ac) - ref(cc,ac + 2*ido);
+          ti2 = ref(cc,ac) + ref(cc,ac + 2*ido);
+          ti3 = ref(cc,ac + ido) + ref(cc,ac + 3*ido);
+          tr4 = ref(cc,ac + 3*ido) - ref(cc,ac + ido);
+          tr1 = ref(cc,ac - 1) - ref(cc,ac + 2*ido - 1);
+          tr2 = ref(cc,ac - 1) + ref(cc,ac + 2*ido - 1);
+          ti4 = ref(cc,ac + ido - 1) - ref(cc,ac + 3*ido - 1);
+          tr3 = ref(cc,ac + ido - 1) + ref(cc,ac + 3*ido - 1);
+          ah = i + k*ido;
+          ch[ah] = tr2 + tr3;
+          cr3 = tr2 - tr3;
+          ch[ah + 1] = ti2 + ti3;
+          ci3 = ti2 - ti3;
+          cr2 = tr1 + isign*tr4;
+          cr4 = tr1 - isign*tr4;
+          ci2 = ti1 + isign*ti4;
+          ci4 = ti1 - isign*ti4;
+          ch[ah + l1*ido] = wa1[i]*cr2 - isign*wa1[i + 1]*ci2;
+          ch[ah + l1*ido + 1] = wa1[i]*ci2 + isign*wa1[i + 1]*cr2;
+          ch[ah + 2*l1*ido] = wa2[i]*cr3 - isign*wa2[i + 1]*ci3;
+          ch[ah + 2*l1*ido + 1] = wa2[i]*ci3 + isign*wa2[i + 1]*cr3;
+          ch[ah + 3*l1*ido] = wa3[i]*cr4 -isign*wa3[i + 1]*ci4;
+          ch[ah + 3*l1*ido + 1] = wa3[i]*ci4 + isign*wa3[i + 1]*cr4;
+        }
+      }
+    }
+  } /* passf4 */
+
+
+static void passf5(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[], const Treal wa3[], const Treal wa4[], int isign)
+  /* isign == -1 for forward transform and +1 for backward transform */
+  {
+    static const Treal tr11 = 0.309016994374947;
+    static const Treal ti11 = 0.951056516295154;
+    static const Treal tr12 = -0.809016994374947;
+    static const Treal ti12 = 0.587785252292473;
+    int i, k, ac, ah;
+    Treal ci2, ci3, ci4, ci5, di3, di4, di5, di2, cr2, cr3, cr5, cr4, ti2, ti3,
+        ti4, ti5, dr3, dr4, dr5, dr2, tr2, tr3, tr4, tr5;
+    if (ido == 2) {
+      for (k = 1; k <= l1; ++k) {
+        ac = (5*k - 4)*ido + 1;
+        ti5 = ref(cc,ac) - ref(cc,ac + 3*ido);
+        ti2 = ref(cc,ac) + ref(cc,ac + 3*ido);
+        ti4 = ref(cc,ac + ido) - ref(cc,ac + 2*ido);
+        ti3 = ref(cc,ac + ido) + ref(cc,ac + 2*ido);
+        tr5 = ref(cc,ac - 1) - ref(cc,ac + 3*ido - 1);
+        tr2 = ref(cc,ac - 1) + ref(cc,ac + 3*ido - 1);
+        tr4 = ref(cc,ac + ido - 1) - ref(cc,ac + 2*ido - 1);
+        tr3 = ref(cc,ac + ido - 1) + ref(cc,ac + 2*ido - 1);
+        ah = (k - 1)*ido;
+        ch[ah] = ref(cc,ac - ido - 1) + tr2 + tr3;
+        ch[ah + 1] = ref(cc,ac - ido) + ti2 + ti3;
+        cr2 = ref(cc,ac - ido - 1) + tr11*tr2 + tr12*tr3;
+        ci2 = ref(cc,ac - ido) + tr11*ti2 + tr12*ti3;
+        cr3 = ref(cc,ac - ido - 1) + tr12*tr2 + tr11*tr3;
+        ci3 = ref(cc,ac - ido) + tr12*ti2 + tr11*ti3;
+        cr5 = isign*(ti11*tr5 + ti12*tr4);
+        ci5 = isign*(ti11*ti5 + ti12*ti4);
+        cr4 = isign*(ti12*tr5 - ti11*tr4);
+        ci4 = isign*(ti12*ti5 - ti11*ti4);
+        ch[ah + l1*ido] = cr2 - ci5;
+        ch[ah + 4*l1*ido] = cr2 + ci5;
+        ch[ah + l1*ido + 1] = ci2 + cr5;
+        ch[ah + 2*l1*ido + 1] = ci3 + cr4;
+        ch[ah + 2*l1*ido] = cr3 - ci4;
+        ch[ah + 3*l1*ido] = cr3 + ci4;
+        ch[ah + 3*l1*ido + 1] = ci3 - cr4;
+        ch[ah + 4*l1*ido + 1] = ci2 - cr5;
+      }
+    } else {
+      for (k=1; k<=l1; k++) {
+        for (i=0; i<ido-1; i+=2) {
+          ac = i + 1 + (k*5 - 4)*ido;
+          ti5 = ref(cc,ac) - ref(cc,ac + 3*ido);
+          ti2 = ref(cc,ac) + ref(cc,ac + 3*ido);
+          ti4 = ref(cc,ac + ido) - ref(cc,ac + 2*ido);
+          ti3 = ref(cc,ac + ido) + ref(cc,ac + 2*ido);
+          tr5 = ref(cc,ac - 1) - ref(cc,ac + 3*ido - 1);
+          tr2 = ref(cc,ac - 1) + ref(cc,ac + 3*ido - 1);
+          tr4 = ref(cc,ac + ido - 1) - ref(cc,ac + 2*ido - 1);
+          tr3 = ref(cc,ac + ido - 1) + ref(cc,ac + 2*ido - 1);
+          ah = i + (k - 1)*ido;
+          ch[ah] = ref(cc,ac - ido - 1) + tr2 + tr3;
+          ch[ah + 1] = ref(cc,ac - ido) + ti2 + ti3;
+          cr2 = ref(cc,ac - ido - 1) + tr11*tr2 + tr12*tr3;
+
+          ci2 = ref(cc,ac - ido) + tr11*ti2 + tr12*ti3;
+          cr3 = ref(cc,ac - ido - 1) + tr12*tr2 + tr11*tr3;
+
+          ci3 = ref(cc,ac - ido) + tr12*ti2 + tr11*ti3;
+          cr5 = isign*(ti11*tr5 + ti12*tr4);
+          ci5 = isign*(ti11*ti5 + ti12*ti4);
+          cr4 = isign*(ti12*tr5 - ti11*tr4);
+          ci4 = isign*(ti12*ti5 - ti11*ti4);
+          dr3 = cr3 - ci4;
+          dr4 = cr3 + ci4;
+          di3 = ci3 + cr4;
+          di4 = ci3 - cr4;
+          dr5 = cr2 + ci5;
+          dr2 = cr2 - ci5;
+          di5 = ci2 - cr5;
+          di2 = ci2 + cr5;
+          ch[ah + l1*ido] = wa1[i]*dr2 - isign*wa1[i+1]*di2;
+          ch[ah + l1*ido + 1] = wa1[i]*di2 + isign*wa1[i+1]*dr2;
+          ch[ah + 2*l1*ido] = wa2[i]*dr3 - isign*wa2[i+1]*di3;
+          ch[ah + 2*l1*ido + 1] = wa2[i]*di3 + isign*wa2[i+1]*dr3;
+          ch[ah + 3*l1*ido] = wa3[i]*dr4 - isign*wa3[i+1]*di4;
+          ch[ah + 3*l1*ido + 1] = wa3[i]*di4 + isign*wa3[i+1]*dr4;
+          ch[ah + 4*l1*ido] = wa4[i]*dr5 - isign*wa4[i+1]*di5;
+          ch[ah + 4*l1*ido + 1] = wa4[i]*di5 + isign*wa4[i+1]*dr5;
+        }
+      }
+    }
+  } /* passf5 */
+
+
+static void passf(int *nac, int ido, int ip, int l1, int idl1,
+      Treal cc[], Treal ch[],
+      const Treal wa[], int isign)
+  /* isign is -1 for forward transform and +1 for backward transform */
+  {
+    int idij, idlj, idot, ipph, i, j, k, l, jc, lc, ik, nt, idj, idl, inc,idp;
+    Treal wai, war;
+
+    idot = ido / 2;
+    nt = ip*idl1;
+    ipph = (ip + 1) / 2;
+    idp = ip*ido;
+    if (ido >= l1) {
+      for (j=1; j<ipph; j++) {
+        jc = ip - j;
+        for (k=0; k<l1; k++) {
+          for (i=0; i<ido; i++) {
+            ch[i + (k + j*l1)*ido] =
+                ref(cc,i + (j + k*ip)*ido) + ref(cc,i + (jc + k*ip)*ido);
+            ch[i + (k + jc*l1)*ido] =
+                ref(cc,i + (j + k*ip)*ido) - ref(cc,i + (jc + k*ip)*ido);
+          }
+        }
+      }
+      for (k=0; k<l1; k++)
+        for (i=0; i<ido; i++)
+          ch[i + k*ido] = ref(cc,i + k*ip*ido);
+    } else {
+      for (j=1; j<ipph; j++) {
+        jc = ip - j;
+        for (i=0; i<ido; i++) {
+          for (k=0; k<l1; k++) {
+            ch[i + (k + j*l1)*ido] = ref(cc,i + (j + k*ip)*ido) + ref(cc,i + (jc + k*
+                ip)*ido);
+            ch[i + (k + jc*l1)*ido] = ref(cc,i + (j + k*ip)*ido) - ref(cc,i + (jc + k*
+                ip)*ido);
+          }
+        }
+      }
+      for (i=0; i<ido; i++)
+        for (k=0; k<l1; k++)
+          ch[i + k*ido] = ref(cc,i + k*ip*ido);
+    }
+
+    idl = 2 - ido;
+    inc = 0;
+    for (l=1; l<ipph; l++) {
+      lc = ip - l;
+      idl += ido;
+      for (ik=0; ik<idl1; ik++) {
+        cc[ik + l*idl1] = ch[ik] + wa[idl - 2]*ch[ik + idl1];
+        cc[ik + lc*idl1] = isign*wa[idl-1]*ch[ik + (ip-1)*idl1];
+      }
+      idlj = idl;
+      inc += ido;
+      for (j=2; j<ipph; j++) {
+        jc = ip - j;
+        idlj += inc;
+        if (idlj > idp) idlj -= idp;
+        war = wa[idlj - 2];
+        wai = wa[idlj-1];
+        for (ik=0; ik<idl1; ik++) {
+          cc[ik + l*idl1] += war*ch[ik + j*idl1];
+          cc[ik + lc*idl1] += isign*wai*ch[ik + jc*idl1];
+        }
+      }
+    }
+    for (j=1; j<ipph; j++)
+      for (ik=0; ik<idl1; ik++)
+        ch[ik] += ch[ik + j*idl1];
+    for (j=1; j<ipph; j++) {
+      jc = ip - j;
+      for (ik=1; ik<idl1; ik+=2) {
+        ch[ik - 1 + j*idl1] = cc[ik - 1 + j*idl1] - cc[ik + jc*idl1];
+        ch[ik - 1 + jc*idl1] = cc[ik - 1 + j*idl1] + cc[ik + jc*idl1];
+        ch[ik + j*idl1] = cc[ik + j*idl1] + cc[ik - 1 + jc*idl1];
+        ch[ik + jc*idl1] = cc[ik + j*idl1] - cc[ik - 1 + jc*idl1];
+      }
+    }
+    *nac = 1;
+    if (ido == 2) return;
+    *nac = 0;
+    for (ik=0; ik<idl1; ik++)
+      cc[ik] = ch[ik];
+    for (j=1; j<ip; j++) {
+      for (k=0; k<l1; k++) {
+        cc[(k + j*l1)*ido + 0] = ch[(k + j*l1)*ido + 0];
+        cc[(k + j*l1)*ido + 1] = ch[(k + j*l1)*ido + 1];
+      }
+    }
+    if (idot <= l1) {
+      idij = 0;
+      for (j=1; j<ip; j++) {
+        idij += 2;
+        for (i=3; i<ido; i+=2) {
+          idij += 2;
+          for (k=0; k<l1; k++) {
+            cc[i - 1 + (k + j*l1)*ido] =
+                wa[idij - 2]*ch[i - 1 + (k + j*l1)*ido] -
+                isign*wa[idij-1]*ch[i + (k + j*l1)*ido];
+            cc[i + (k + j*l1)*ido] =
+                wa[idij - 2]*ch[i + (k + j*l1)*ido] +
+                isign*wa[idij-1]*ch[i - 1 + (k + j*l1)*ido];
+          }
+        }
+      }
+    } else {
+      idj = 2 - ido;
+      for (j=1; j<ip; j++) {
+        idj += ido;
+        for (k = 0; k < l1; k++) {
+          idij = idj;
+          for (i=3; i<ido; i+=2) {
+            idij += 2;
+            cc[i - 1 + (k + j*l1)*ido] =
+                wa[idij - 2]*ch[i - 1 + (k + j*l1)*ido] -
+                isign*wa[idij-1]*ch[i + (k + j*l1)*ido];
+            cc[i + (k + j*l1)*ido] =
+                wa[idij - 2]*ch[i + (k + j*l1)*ido] +
+                isign*wa[idij-1]*ch[i - 1 + (k + j*l1)*ido];
+          }
+        }
+      }
+    }
+  } /* passf */
+
+
+  /* ----------------------------------------------------------------------
+radf2,radb2, radf3,radb3, radf4,radb4, radf5,radb5, radfg,radbg.
+Treal FFT passes fwd and bwd.
+---------------------------------------------------------------------- */
+
+static void radf2(int ido, int l1, const Treal cc[], Treal ch[], const Treal wa1[])
+  {
+    int i, k, ic;
+    Treal ti2, tr2;
+    for (k=0; k<l1; k++) {
+      ch[2*k*ido] =
+          ref(cc,k*ido) + ref(cc,(k + l1)*ido);
+      ch[(2*k+1)*ido + ido-1] =
+          ref(cc,k*ido) - ref(cc,(k + l1)*ido);
+    }
+    if (ido < 2) return;
+    if (ido != 2) {
+      for (k=0; k<l1; k++) {
+        for (i=2; i<ido; i+=2) {
+          ic = ido - i;
+          tr2 = wa1[i - 2]*ref(cc, i-1 + (k + l1)*ido) + wa1[i - 1]*ref(cc, i + (k + l1)*ido);
+          ti2 = wa1[i - 2]*ref(cc, i + (k + l1)*ido) - wa1[i - 1]*ref(cc, i-1 + (k + l1)*ido);
+          ch[i + 2*k*ido] = ref(cc,i + k*ido) + ti2;
+          ch[ic + (2*k+1)*ido] = ti2 - ref(cc,i + k*ido);
+          ch[i - 1 + 2*k*ido] = ref(cc,i - 1 + k*ido) + tr2;
+          ch[ic - 1 + (2*k+1)*ido] = ref(cc,i - 1 + k*ido) - tr2;
+        }
+      }
+      if (ido % 2 == 1) return;
+    }
+    for (k=0; k<l1; k++) {
+      ch[(2*k+1)*ido] = -ref(cc,ido-1 + (k + l1)*ido);
+      ch[ido-1 + 2*k*ido] = ref(cc,ido-1 + k*ido);
+    }
+  } /* radf2 */
+
+
+static void radb2(int ido, int l1, const Treal cc[], Treal ch[], const Treal wa1[])
+  {
+    int i, k, ic;
+    Treal ti2, tr2;
+    for (k=0; k<l1; k++) {
+      ch[k*ido] =
+          ref(cc,2*k*ido) + ref(cc,ido-1 + (2*k+1)*ido);
+      ch[(k + l1)*ido] =
+          ref(cc,2*k*ido) - ref(cc,ido-1 + (2*k+1)*ido);
+    }
+    if (ido < 2) return;
+    if (ido != 2) {
+      for (k = 0; k < l1; ++k) {
+        for (i = 2; i < ido; i += 2) {
+          ic = ido - i;
+          ch[i-1 + k*ido] =
+              ref(cc,i-1 + 2*k*ido) + ref(cc,ic-1 + (2*k+1)*ido);
+          tr2 = ref(cc,i-1 + 2*k*ido) - ref(cc,ic-1 + (2*k+1)*ido);
+          ch[i + k*ido] =
+              ref(cc,i + 2*k*ido) - ref(cc,ic + (2*k+1)*ido);
+          ti2 = ref(cc,i + (2*k)*ido) + ref(cc,ic + (2*k+1)*ido);
+          ch[i-1 + (k + l1)*ido] =
+              wa1[i - 2]*tr2 - wa1[i - 1]*ti2;
+          ch[i + (k + l1)*ido] =
+              wa1[i - 2]*ti2 + wa1[i - 1]*tr2;
+        }
+      }
+      if (ido % 2 == 1) return;
+    }
+    for (k = 0; k < l1; k++) {
+      ch[ido-1 + k*ido] = 2*ref(cc,ido-1 + 2*k*ido);
+      ch[ido-1 + (k + l1)*ido] = -2*ref(cc,(2*k+1)*ido);
+    }
+  } /* radb2 */
+
+
+static void radf3(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[])
+  {
+    static const Treal taur = -0.5;
+    static const Treal taui = 0.866025403784439;
+    int i, k, ic;
+    Treal ci2, di2, di3, cr2, dr2, dr3, ti2, ti3, tr2, tr3;
+    for (k=0; k<l1; k++) {
+      cr2 = ref(cc,(k + l1)*ido) + ref(cc,(k + 2*l1)*ido);
+      ch[3*k*ido] = ref(cc,k*ido) + cr2;
+      ch[(3*k+2)*ido] = taui*(ref(cc,(k + l1*2)*ido) - ref(cc,(k + l1)*ido));
+      ch[ido-1 + (3*k + 1)*ido] = ref(cc,k*ido) + taur*cr2;
+    }
+    if (ido == 1) return;
+    for (k=0; k<l1; k++) {
+      for (i=2; i<ido; i+=2) {
+        ic = ido - i;
+        dr2 = wa1[i - 2]*ref(cc,i - 1 + (k + l1)*ido) +
+            wa1[i - 1]*ref(cc,i + (k + l1)*ido);
+        di2 = wa1[i - 2]*ref(cc,i + (k + l1)*ido) - wa1[i - 1]*ref(cc,i - 1 + (k + l1)*ido);
+        dr3 = wa2[i - 2]*ref(cc,i - 1 + (k + l1*2)*ido) + wa2[i - 1]*ref(cc,i + (k + l1*2)*ido);
+        di3 = wa2[i - 2]*ref(cc,i + (k + l1*2)*ido) - wa2[i - 1]*ref(cc,i - 1 + (k + l1*2)*ido);
+        cr2 = dr2 + dr3;
+        ci2 = di2 + di3;
+        ch[i - 1 + 3*k*ido] = ref(cc,i - 1 + k*ido) + cr2;
+        ch[i + 3*k*ido] = ref(cc,i + k*ido) + ci2;
+        tr2 = ref(cc,i - 1 + k*ido) + taur*cr2;
+        ti2 = ref(cc,i + k*ido) + taur*ci2;
+        tr3 = taui*(di2 - di3);
+        ti3 = taui*(dr3 - dr2);
+        ch[i - 1 + (3*k + 2)*ido] = tr2 + tr3;
+        ch[ic - 1 + (3*k + 1)*ido] = tr2 - tr3;
+        ch[i + (3*k + 2)*ido] = ti2 + ti3;
+        ch[ic + (3*k + 1)*ido] = ti3 - ti2;
+      }
+    }
+  } /* radf3 */
+
+
+static void radb3(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[])
+  {
+    static const Treal taur = -0.5;
+    static const Treal taui = 0.866025403784439;
+    int i, k, ic;
+    Treal ci2, ci3, di2, di3, cr2, cr3, dr2, dr3, ti2, tr2;
+    for (k=0; k<l1; k++) {
+      tr2 = 2*ref(cc,ido-1 + (3*k + 1)*ido);
+      cr2 = ref(cc,3*k*ido) + taur*tr2;
+      ch[k*ido] = ref(cc,3*k*ido) + tr2;
+      ci3 = 2*taui*ref(cc,(3*k + 2)*ido);
+      ch[(k + l1)*ido] = cr2 - ci3;
+      ch[(k + 2*l1)*ido] = cr2 + ci3;
+    }
+    if (ido == 1) return;
+    for (k=0; k<l1; k++) {
+      for (i=2; i<ido; i+=2) {
+        ic = ido - i;
+        tr2 = ref(cc,i - 1 + (3*k + 2)*ido) + ref(cc,ic - 1 + (3*k + 1)*ido);
+        cr2 = ref(cc,i - 1 + 3*k*ido) + taur*tr2;
+        ch[i - 1 + k*ido] = ref(cc,i - 1 + 3*k*ido) + tr2;
+        ti2 = ref(cc,i + (3*k + 2)*ido) - ref(cc,ic + (3*k + 1)*ido);
+        ci2 = ref(cc,i + 3*k*ido) + taur*ti2;
+        ch[i + k*ido] = ref(cc,i + 3*k*ido) + ti2;
+        cr3 = taui*(ref(cc,i - 1 + (3*k + 2)*ido) - ref(cc,ic - 1 + (3*k + 1)*ido));
+        ci3 = taui*(ref(cc,i + (3*k + 2)*ido) + ref(cc,ic + (3*k + 1)*ido));
+        dr2 = cr2 - ci3;
+        dr3 = cr2 + ci3;
+        di2 = ci2 + cr3;
+        di3 = ci2 - cr3;
+        ch[i - 1 + (k + l1)*ido] = wa1[i - 2]*dr2 - wa1[i - 1]*di2;
+        ch[i + (k + l1)*ido] = wa1[i - 2]*di2 + wa1[i - 1]*dr2;
+        ch[i - 1 + (k + 2*l1)*ido] = wa2[i - 2]*dr3 - wa2[i - 1]*di3;
+        ch[i + (k + 2*l1)*ido] = wa2[i - 2]*di3 + wa2[i - 1]*dr3;
+      }
+    }
+  } /* radb3 */
+
+
+static void radf4(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[], const Treal wa3[])
+  {
+    static const Treal hsqt2 = 0.7071067811865475;
+    int i, k, ic;
+    Treal ci2, ci3, ci4, cr2, cr3, cr4, ti1, ti2, ti3, ti4, tr1, tr2, tr3, tr4;
+    for (k=0; k<l1; k++) {
+      tr1 = ref(cc,(k + l1)*ido) + ref(cc,(k + 3*l1)*ido);
+      tr2 = ref(cc,k*ido) + ref(cc,(k + 2*l1)*ido);
+      ch[4*k*ido] = tr1 + tr2;
+      ch[ido-1 + (4*k + 3)*ido] = tr2 - tr1;
+      ch[ido-1 + (4*k + 1)*ido] = ref(cc,k*ido) - ref(cc,(k + 2*l1)*ido);
+      ch[(4*k + 2)*ido] = ref(cc,(k + 3*l1)*ido) - ref(cc,(k + l1)*ido);
+    }
+    if (ido < 2) return;
+    if (ido != 2) {
+      for (k=0; k<l1; k++) {
+        for (i=2; i<ido; i += 2) {
+          ic = ido - i;
+          cr2 = wa1[i - 2]*ref(cc,i - 1 + (k + l1)*ido) + wa1[i - 1]*ref(cc,i + (k + l1)*ido);
+          ci2 = wa1[i - 2]*ref(cc,i + (k + l1)*ido) - wa1[i - 1]*ref(cc,i - 1 + (k + l1)*ido);
+          cr3 = wa2[i - 2]*ref(cc,i - 1 + (k + 2*l1)*ido) + wa2[i - 1]*ref(cc,i + (k + 2*l1)*
+              ido);
+          ci3 = wa2[i - 2]*ref(cc,i + (k + 2*l1)*ido) - wa2[i - 1]*ref(cc,i - 1 + (k + 2*l1)*
+              ido);
+          cr4 = wa3[i - 2]*ref(cc,i - 1 + (k + 3*l1)*ido) + wa3[i - 1]*ref(cc,i + (k + 3*l1)*
+              ido);
+          ci4 = wa3[i - 2]*ref(cc,i + (k + 3*l1)*ido) - wa3[i - 1]*ref(cc,i - 1 + (k + 3*l1)*
+              ido);
+          tr1 = cr2 + cr4;
+          tr4 = cr4 - cr2;
+          ti1 = ci2 + ci4;
+          ti4 = ci2 - ci4;
+          ti2 = ref(cc,i + k*ido) + ci3;
+          ti3 = ref(cc,i + k*ido) - ci3;
+          tr2 = ref(cc,i - 1 + k*ido) + cr3;
+          tr3 = ref(cc,i - 1 + k*ido) - cr3;
+          ch[i - 1 + 4*k*ido] = tr1 + tr2;
+          ch[ic - 1 + (4*k + 3)*ido] = tr2 - tr1;
+          ch[i + 4*k*ido] = ti1 + ti2;
+          ch[ic + (4*k + 3)*ido] = ti1 - ti2;
+          ch[i - 1 + (4*k + 2)*ido] = ti4 + tr3;
+          ch[ic - 1 + (4*k + 1)*ido] = tr3 - ti4;
+          ch[i + (4*k + 2)*ido] = tr4 + ti3;
+          ch[ic + (4*k + 1)*ido] = tr4 - ti3;
+        }
+      }
+      if (ido % 2 == 1) return;
+    }
+    for (k=0; k<l1; k++) {
+      ti1 = -hsqt2*(ref(cc,ido-1 + (k + l1)*ido) + ref(cc,ido-1 + (k + 3*l1)*ido));
+      tr1 = hsqt2*(ref(cc,ido-1 + (k + l1)*ido) - ref(cc,ido-1 + (k + 3*l1)*ido));
+      ch[ido-1 + 4*k*ido] = tr1 + ref(cc,ido-1 + k*ido);
+      ch[ido-1 + (4*k + 2)*ido] = ref(cc,ido-1 + k*ido) - tr1;
+      ch[(4*k + 1)*ido] = ti1 - ref(cc,ido-1 + (k + 2*l1)*ido);
+      ch[(4*k + 3)*ido] = ti1 + ref(cc,ido-1 + (k + 2*l1)*ido);
+    }
+  } /* radf4 */
+
+
+static void radb4(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[], const Treal wa3[])
+  {
+    static const Treal sqrt2 = 1.414213562373095;
+    int i, k, ic;
+    Treal ci2, ci3, ci4, cr2, cr3, cr4, ti1, ti2, ti3, ti4, tr1, tr2, tr3, tr4;
+    for (k = 0; k < l1; k++) {
+      tr1 = ref(cc,4*k*ido) - ref(cc,ido-1 + (4*k + 3)*ido);
+      tr2 = ref(cc,4*k*ido) + ref(cc,ido-1 + (4*k + 3)*ido);
+      tr3 = ref(cc,ido-1 + (4*k + 1)*ido) + ref(cc,ido-1 + (4*k + 1)*ido);
+      tr4 = ref(cc,(4*k + 2)*ido) + ref(cc,(4*k + 2)*ido);
+      ch[k*ido] = tr2 + tr3;
+      ch[(k + l1)*ido] = tr1 - tr4;
+      ch[(k + 2*l1)*ido] = tr2 - tr3;
+      ch[(k + 3*l1)*ido] = tr1 + tr4;
+    }
+    if (ido < 2) return;
+    if (ido != 2) {
+      for (k = 0; k < l1; ++k) {
+        for (i = 2; i < ido; i += 2) {
+          ic = ido - i;
+          ti1 = ref(cc,i + 4*k*ido) + ref(cc,ic + (4*k + 3)*ido);
+          ti2 = ref(cc,i + 4*k*ido) - ref(cc,ic + (4*k + 3)*ido);
+          ti3 = ref(cc,i + (4*k + 2)*ido) - ref(cc,ic + (4*k + 1)*ido);
+          tr4 = ref(cc,i + (4*k + 2)*ido) + ref(cc,ic + (4*k + 1)*ido);
+          tr1 = ref(cc,i - 1 + 4*k*ido) - ref(cc,ic - 1 + (4*k + 3)*ido);
+          tr2 = ref(cc,i - 1 + 4*k*ido) + ref(cc,ic - 1 + (4*k + 3)*ido);
+          ti4 = ref(cc,i - 1 + (4*k + 2)*ido) - ref(cc,ic - 1 + (4*k + 1)*ido);
+          tr3 = ref(cc,i - 1 + (4*k + 2)*ido) + ref(cc,ic - 1 + (4*k + 1)*ido);
+          ch[i - 1 + k*ido] = tr2 + tr3;
+          cr3 = tr2 - tr3;
+          ch[i + k*ido] = ti2 + ti3;
+          ci3 = ti2 - ti3;
+          cr2 = tr1 - tr4;
+          cr4 = tr1 + tr4;
+          ci2 = ti1 + ti4;
+          ci4 = ti1 - ti4;
+          ch[i - 1 + (k + l1)*ido] = wa1[i - 2]*cr2 - wa1[i - 1]*ci2;
+          ch[i + (k + l1)*ido] = wa1[i - 2]*ci2 + wa1[i - 1]*cr2;
+          ch[i - 1 + (k + 2*l1)*ido] = wa2[i - 2]*cr3 - wa2[i - 1]*ci3;
+          ch[i + (k + 2*l1)*ido] = wa2[i - 2]*ci3 + wa2[i - 1]*cr3;
+          ch[i - 1 + (k + 3*l1)*ido] = wa3[i - 2]*cr4 - wa3[i - 1]*ci4;
+          ch[i + (k + 3*l1)*ido] = wa3[i - 2]*ci4 + wa3[i - 1]*cr4;
+        }
+      }
+      if (ido % 2 == 1) return;
+    }
+    for (k = 0; k < l1; k++) {
+      ti1 = ref(cc,(4*k + 1)*ido) + ref(cc,(4*k + 3)*ido);
+      ti2 = ref(cc,(4*k + 3)*ido) - ref(cc,(4*k + 1)*ido);
+      tr1 = ref(cc,ido-1 + 4*k*ido) - ref(cc,ido-1 + (4*k + 2)*ido);
+      tr2 = ref(cc,ido-1 + 4*k*ido) + ref(cc,ido-1 + (4*k + 2)*ido);
+      ch[ido-1 + k*ido] = tr2 + tr2;
+      ch[ido-1 + (k + l1)*ido] = sqrt2*(tr1 - ti1);
+      ch[ido-1 + (k + 2*l1)*ido] = ti2 + ti2;
+      ch[ido-1 + (k + 3*l1)*ido] = -sqrt2*(tr1 + ti1);
+    }
+  } /* radb4 */
+
+
+static void radf5(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[], const Treal wa3[], const Treal wa4[])
+  {
+    static const Treal tr11 = 0.309016994374947;
+    static const Treal ti11 = 0.951056516295154;
+    static const Treal tr12 = -0.809016994374947;
+    static const Treal ti12 = 0.587785252292473;
+    int i, k, ic;
+    Treal ci2, di2, ci4, ci5, di3, di4, di5, ci3, cr2, cr3, dr2, dr3, dr4, dr5,
+        cr5, cr4, ti2, ti3, ti5, ti4, tr2, tr3, tr4, tr5;
+    for (k = 0; k < l1; k++) {
+      cr2 = ref(cc,(k + 4*l1)*ido) + ref(cc,(k + l1)*ido);
+      ci5 = ref(cc,(k + 4*l1)*ido) - ref(cc,(k + l1)*ido);
+      cr3 = ref(cc,(k + 3*l1)*ido) + ref(cc,(k + 2*l1)*ido);
+      ci4 = ref(cc,(k + 3*l1)*ido) - ref(cc,(k + 2*l1)*ido);
+      ch[5*k*ido] = ref(cc,k*ido) + cr2 + cr3;
+      ch[ido-1 + (5*k + 1)*ido] = ref(cc,k*ido) + tr11*cr2 + tr12*cr3;
+      ch[(5*k + 2)*ido] = ti11*ci5 + ti12*ci4;
+      ch[ido-1 + (5*k + 3)*ido] = ref(cc,k*ido) + tr12*cr2 + tr11*cr3;
+      ch[(5*k + 4)*ido] = ti12*ci5 - ti11*ci4;
+    }
+    if (ido == 1) return;
+    for (k = 0; k < l1; ++k) {
+      for (i = 2; i < ido; i += 2) {
+        ic = ido - i;
+        dr2 = wa1[i - 2]*ref(cc,i - 1 + (k + l1)*ido) + wa1[i - 1]*ref(cc,i + (k + l1)*ido);
+        di2 = wa1[i - 2]*ref(cc,i + (k + l1)*ido) - wa1[i - 1]*ref(cc,i - 1 + (k + l1)*ido);
+        dr3 = wa2[i - 2]*ref(cc,i - 1 + (k + 2*l1)*ido) + wa2[i - 1]*ref(cc,i + (k + 2*l1)*ido);
+        di3 = wa2[i - 2]*ref(cc,i + (k + 2*l1)*ido) - wa2[i - 1]*ref(cc,i - 1 + (k + 2*l1)*ido);
+        dr4 = wa3[i - 2]*ref(cc,i - 1 + (k + 3*l1)*ido) + wa3[i - 1]*ref(cc,i + (k + 3*l1)*ido);
+        di4 = wa3[i - 2]*ref(cc,i + (k + 3*l1)*ido) - wa3[i - 1]*ref(cc,i - 1 + (k + 3*l1)*ido);
+        dr5 = wa4[i - 2]*ref(cc,i - 1 + (k + 4*l1)*ido) + wa4[i - 1]*ref(cc,i + (k + 4*l1)*ido);
+        di5 = wa4[i - 2]*ref(cc,i + (k + 4*l1)*ido) - wa4[i - 1]*ref(cc,i - 1 + (k + 4*l1)*ido);
+        cr2 = dr2 + dr5;
+        ci5 = dr5 - dr2;
+        cr5 = di2 - di5;
+        ci2 = di2 + di5;
+        cr3 = dr3 + dr4;
+        ci4 = dr4 - dr3;
+        cr4 = di3 - di4;
+        ci3 = di3 + di4;
+        ch[i - 1 + 5*k*ido] = ref(cc,i - 1 + k*ido) + cr2 + cr3;
+        ch[i + 5*k*ido] = ref(cc,i + k*ido) + ci2 + ci3;
+        tr2 = ref(cc,i - 1 + k*ido) + tr11*cr2 + tr12*cr3;
+        ti2 = ref(cc,i + k*ido) + tr11*ci2 + tr12*ci3;
+        tr3 = ref(cc,i - 1 + k*ido) + tr12*cr2 + tr11*cr3;
+        ti3 = ref(cc,i + k*ido) + tr12*ci2 + tr11*ci3;
+        tr5 = ti11*cr5 + ti12*cr4;
+        ti5 = ti11*ci5 + ti12*ci4;
+        tr4 = ti12*cr5 - ti11*cr4;
+        ti4 = ti12*ci5 - ti11*ci4;
+        ch[i - 1 + (5*k + 2)*ido] = tr2 + tr5;
+        ch[ic - 1 + (5*k + 1)*ido] = tr2 - tr5;
+        ch[i + (5*k + 2)*ido] = ti2 + ti5;
+        ch[ic + (5*k + 1)*ido] = ti5 - ti2;
+        ch[i - 1 + (5*k + 4)*ido] = tr3 + tr4;
+        ch[ic - 1 + (5*k + 3)*ido] = tr3 - tr4;
+        ch[i + (5*k + 4)*ido] = ti3 + ti4;
+        ch[ic + (5*k + 3)*ido] = ti4 - ti3;
+      }
+    }
+  } /* radf5 */
+
+
+static void radb5(int ido, int l1, const Treal cc[], Treal ch[],
+      const Treal wa1[], const Treal wa2[], const Treal wa3[], const Treal wa4[])
+  {
+    static const Treal tr11 = 0.309016994374947;
+    static const Treal ti11 = 0.951056516295154;
+    static const Treal tr12 = -0.809016994374947;
+    static const Treal ti12 = 0.587785252292473;
+    int i, k, ic;
+    Treal ci2, ci3, ci4, ci5, di3, di4, di5, di2, cr2, cr3, cr5, cr4, ti2, ti3,
+        ti4, ti5, dr3, dr4, dr5, dr2, tr2, tr3, tr4, tr5;
+    for (k = 0; k < l1; k++) {
+      ti5 = 2*ref(cc,(5*k + 2)*ido);
+      ti4 = 2*ref(cc,(5*k + 4)*ido);
+      tr2 = 2*ref(cc,ido-1 + (5*k + 1)*ido);
+      tr3 = 2*ref(cc,ido-1 + (5*k + 3)*ido);
+      ch[k*ido] = ref(cc,5*k*ido) + tr2 + tr3;
+      cr2 = ref(cc,5*k*ido) + tr11*tr2 + tr12*tr3;
+      cr3 = ref(cc,5*k*ido) + tr12*tr2 + tr11*tr3;
+      ci5 = ti11*ti5 + ti12*ti4;
+      ci4 = ti12*ti5 - ti11*ti4;
+      ch[(k + l1)*ido] = cr2 - ci5;
+      ch[(k + 2*l1)*ido] = cr3 - ci4;
+      ch[(k + 3*l1)*ido] = cr3 + ci4;
+      ch[(k + 4*l1)*ido] = cr2 + ci5;
+    }
+    if (ido == 1) return;
+    for (k = 0; k < l1; ++k) {
+      for (i = 2; i < ido; i += 2) {
+        ic = ido - i;
+        ti5 = ref(cc,i + (5*k + 2)*ido) + ref(cc,ic + (5*k + 1)*ido);
+        ti2 = ref(cc,i + (5*k + 2)*ido) - ref(cc,ic + (5*k + 1)*ido);
+        ti4 = ref(cc,i + (5*k + 4)*ido) + ref(cc,ic + (5*k + 3)*ido);
+        ti3 = ref(cc,i + (5*k + 4)*ido) - ref(cc,ic + (5*k + 3)*ido);
+        tr5 = ref(cc,i - 1 + (5*k + 2)*ido) - ref(cc,ic - 1 + (5*k + 1)*ido);
+        tr2 = ref(cc,i - 1 + (5*k + 2)*ido) + ref(cc,ic - 1 + (5*k + 1)*ido);
+        tr4 = ref(cc,i - 1 + (5*k + 4)*ido) - ref(cc,ic - 1 + (5*k + 3)*ido);
+        tr3 = ref(cc,i - 1 + (5*k + 4)*ido) + ref(cc,ic - 1 + (5*k + 3)*ido);
+        ch[i - 1 + k*ido] = ref(cc,i - 1 + 5*k*ido) + tr2 + tr3;
+        ch[i + k*ido] = ref(cc,i + 5*k*ido) + ti2 + ti3;
+        cr2 = ref(cc,i - 1 + 5*k*ido) + tr11*tr2 + tr12*tr3;
+
+        ci2 = ref(cc,i + 5*k*ido) + tr11*ti2 + tr12*ti3;
+        cr3 = ref(cc,i - 1 + 5*k*ido) + tr12*tr2 + tr11*tr3;
+
+        ci3 = ref(cc,i + 5*k*ido) + tr12*ti2 + tr11*ti3;
+        cr5 = ti11*tr5 + ti12*tr4;
+        ci5 = ti11*ti5 + ti12*ti4;
+        cr4 = ti12*tr5 - ti11*tr4;
+        ci4 = ti12*ti5 - ti11*ti4;
+        dr3 = cr3 - ci4;
+        dr4 = cr3 + ci4;
+        di3 = ci3 + cr4;
+        di4 = ci3 - cr4;
+        dr5 = cr2 + ci5;
+        dr2 = cr2 - ci5;
+        di5 = ci2 - cr5;
+        di2 = ci2 + cr5;
+        ch[i - 1 + (k + l1)*ido] = wa1[i - 2]*dr2 - wa1[i - 1]*di2;
+        ch[i + (k + l1)*ido] = wa1[i - 2]*di2 + wa1[i - 1]*dr2;
+        ch[i - 1 + (k + 2*l1)*ido] = wa2[i - 2]*dr3 - wa2[i - 1]*di3;
+        ch[i + (k + 2*l1)*ido] = wa2[i - 2]*di3 + wa2[i - 1]*dr3;
+        ch[i - 1 + (k + 3*l1)*ido] = wa3[i - 2]*dr4 - wa3[i - 1]*di4;
+        ch[i + (k + 3*l1)*ido] = wa3[i - 2]*di4 + wa3[i - 1]*dr4;
+        ch[i - 1 + (k + 4*l1)*ido] = wa4[i - 2]*dr5 - wa4[i - 1]*di5;
+        ch[i + (k + 4*l1)*ido] = wa4[i - 2]*di5 + wa4[i - 1]*dr5;
+      }
+    }
+  } /* radb5 */
+
+
+static void radfg(int ido, int ip, int l1, int idl1,
+      Treal cc[], Treal ch[], const Treal wa[])
+  {
+    static const Treal twopi = 6.28318530717959;
+    int idij, ipph, i, j, k, l, j2, ic, jc, lc, ik, is, nbd;
+    Treal dc2, ai1, ai2, ar1, ar2, ds2, dcp, arg, dsp, ar1h, ar2h;
+    arg = twopi / ip;
+    dcp = cos(arg);
+    dsp = sin(arg);
+    ipph = (ip + 1) / 2;
+    nbd = (ido - 1) / 2;
+    if (ido != 1) {
+      for (ik=0; ik<idl1; ik++) ch[ik] = cc[ik];
+      for (j=1; j<ip; j++)
+        for (k=0; k<l1; k++)
+          ch[(k + j*l1)*ido] = cc[(k + j*l1)*ido];
+      if (nbd <= l1) {
+        is = -ido;
+        for (j=1; j<ip; j++) {
+          is += ido;
+          idij = is-1;
+          for (i=2; i<ido; i+=2) {
+            idij += 2;
+            for (k=0; k<l1; k++) {
+              ch[i - 1 + (k + j*l1)*ido] =
+                  wa[idij - 1]*cc[i - 1 + (k + j*l1)*ido] + wa[idij]*cc[i + (k + j*l1)*ido];
+              ch[i + (k + j*l1)*ido] =
+                  wa[idij - 1]*cc[i + (k + j*l1)*ido] - wa[idij]*cc[i - 1 + (k + j*l1)*ido];
+            }
+          }
+        }
+      } else {
+        is = -ido;
+        for (j=1; j<ip; j++) {
+          is += ido;
+          for (k=0; k<l1; k++) {
+            idij = is-1;
+            for (i=2; i<ido; i+=2) {
+              idij += 2;
+              ch[i - 1 + (k + j*l1)*ido] =
+                  wa[idij - 1]*cc[i - 1 + (k + j*l1)*ido] + wa[idij]*cc[i + (k + j*l1)*ido];
+              ch[i + (k + j*l1)*ido] =
+                  wa[idij - 1]*cc[i + (k + j*l1)*ido] - wa[idij]*cc[i - 1 + (k + j*l1)*ido];
+            }
+          }
+        }
+      }
+      if (nbd >= l1) {
+        for (j=1; j<ipph; j++) {
+          jc = ip - j;
+          for (k=0; k<l1; k++) {
+            for (i=2; i<ido; i+=2) {
+              cc[i - 1 + (k + j*l1)*ido] = ch[i - 1 + (k + j*l1)*ido] + ch[i - 1 + (k + jc*l1)*ido];
+              cc[i - 1 + (k + jc*l1)*ido] = ch[i + (k + j*l1)*ido] - ch[i + (k + jc*l1)*ido];
+              cc[i + (k + j*l1)*ido] = ch[i + (k + j*l1)*ido] + ch[i + (k + jc*l1)*ido];
+              cc[i + (k + jc*l1)*ido] = ch[i - 1 + (k + jc*l1)*ido] - ch[i - 1 + (k + j*l1)*ido];
+            }
+          }
+        }
+      } else {
+        for (j=1; j<ipph; j++) {
+          jc = ip - j;
+          for (i=2; i<ido; i+=2) {
+            for (k=0; k<l1; k++) {
+              cc[i - 1 + (k + j*l1)*ido] =
+                  ch[i - 1 + (k + j*l1)*ido] + ch[i - 1 + (k + jc*l1)*ido];
+              cc[i - 1 + (k + jc*l1)*ido] = ch[i + (k + j*l1)*ido] - ch[i + (k + jc*l1)*ido];
+              cc[i + (k + j*l1)*ido] = ch[i + (k + j*l1)*ido] + ch[i + (k + jc*l1)*ido];
+              cc[i + (k + jc*l1)*ido] = ch[i - 1 + (k + jc*l1)*ido] - ch[i - 1 + (k + j*l1)*ido];
+            }
+          }
+        }
+      }
+    } else {  /* now ido == 1 */
+      for (ik=0; ik<idl1; ik++) cc[ik] = ch[ik];
+    }
+    for (j=1; j<ipph; j++) {
+      jc = ip - j;
+      for (k=0; k<l1; k++) {
+        cc[(k + j*l1)*ido] = ch[(k + j*l1)*ido] + ch[(k + jc*l1)*ido];
+        cc[(k + jc*l1)*ido] = ch[(k + jc*l1)*ido] - ch[(k + j*l1)*ido];
+      }
+    }
+
+    ar1 = 1;
+    ai1 = 0;
+    for (l=1; l<ipph; l++) {
+      lc = ip - l;
+      ar1h = dcp*ar1 - dsp*ai1;
+      ai1 = dcp*ai1 + dsp*ar1;
+      ar1 = ar1h;
+      for (ik=0; ik<idl1; ik++) {
+        ch[ik + l*idl1] = cc[ik] + ar1*cc[ik + idl1];
+        ch[ik + lc*idl1] = ai1*cc[ik + (ip-1)*idl1];
+      }
+      dc2 = ar1;
+      ds2 = ai1;
+      ar2 = ar1;
+      ai2 = ai1;
+      for (j=2; j<ipph; j++) {
+        jc = ip - j;
+        ar2h = dc2*ar2 - ds2*ai2;
+        ai2 = dc2*ai2 + ds2*ar2;
+        ar2 = ar2h;
+        for (ik=0; ik<idl1; ik++) {
+          ch[ik + l*idl1] += ar2*cc[ik + j*idl1];
+          ch[ik + lc*idl1] += ai2*cc[ik + jc*idl1];
+        }
+      }
+    }
+    for (j=1; j<ipph; j++)
+      for (ik=0; ik<idl1; ik++)
+        ch[ik] += cc[ik + j*idl1];
+
+    if (ido >= l1) {
+      for (k=0; k<l1; k++) {
+        for (i=0; i<ido; i++) {
+          ref(cc,i + k*ip*ido) = ch[i + k*ido];
+        }
+      }
+    } else {
+      for (i=0; i<ido; i++) {
+        for (k=0; k<l1; k++) {
+          ref(cc,i + k*ip*ido) = ch[i + k*ido];
+        }
+      }
+    }
+    for (j=1; j<ipph; j++) {
+      jc = ip - j;
+      j2 = 2*j;
+      for (k=0; k<l1; k++) {
+        ref(cc,ido-1 + (j2 - 1 + k*ip)*ido) =
+            ch[(k + j*l1)*ido];
+        ref(cc,(j2 + k*ip)*ido) =
+            ch[(k + jc*l1)*ido];
+      }
+    }
+    if (ido == 1) return;
+    if (nbd >= l1) {
+      for (j=1; j<ipph; j++) {
+        jc = ip - j;
+        j2 = 2*j;
+        for (k=0; k<l1; k++) {
+          for (i=2; i<ido; i+=2) {
+            ic = ido - i;
+            ref(cc,i - 1 + (j2 + k*ip)*ido) = ch[i - 1 + (k + j*l1)*ido] + ch[i - 1 + (k + jc*l1)*ido];
+            ref(cc,ic - 1 + (j2 - 1 + k*ip)*ido) = ch[i - 1 + (k + j*l1)*ido] - ch[i - 1 + (k + jc*l1)*ido];
+            ref(cc,i + (j2 + k*ip)*ido) = ch[i + (k + j*l1)*ido] + ch[i + (k + jc*l1)*ido];
+            ref(cc,ic + (j2 - 1 + k*ip)*ido) = ch[i + (k + jc*l1)*ido] - ch[i + (k + j*l1)*ido];
+          }
+        }
+      }
+    } else {
+      for (j=1; j<ipph; j++) {
+        jc = ip - j;
+        j2 = 2*j;
+        for (i=2; i<ido; i+=2) {
+          ic = ido - i;
+          for (k=0; k<l1; k++) {
+            ref(cc,i - 1 + (j2 + k*ip)*ido) = ch[i - 1 + (k + j*l1)*ido] + ch[i - 1 + (k + jc*l1)*ido];
+            ref(cc,ic - 1 + (j2 - 1 + k*ip)*ido) = ch[i - 1 + (k + j*l1)*ido] - ch[i - 1 + (k + jc*l1)*ido];
+            ref(cc,i + (j2 + k*ip)*ido) = ch[i + (k + j*l1)*ido] + ch[i + (k + jc*l1)*ido];
+            ref(cc,ic + (j2 - 1 + k*ip)*ido) = ch[i + (k + jc*l1)*ido] - ch[i + (k + j*l1)*ido];
+          }
+        }
+      }
+    }
+  } /* radfg */
+
+
+static void radbg(int ido, int ip, int l1, int idl1,
+      Treal cc[], Treal ch[], const Treal wa[])
+  {
+    static const Treal twopi = 6.28318530717959;
+    int idij, ipph, i, j, k, l, j2, ic, jc, lc, ik, is;
+    Treal dc2, ai1, ai2, ar1, ar2, ds2;
+    int nbd;
+    Treal dcp, arg, dsp, ar1h, ar2h;
+    arg = twopi / ip;
+    dcp = cos(arg);
+    dsp = sin(arg);
+    nbd = (ido - 1) / 2;
+    ipph = (ip + 1) / 2;
+    if (ido >= l1) {
+      for (k=0; k<l1; k++) {
+        for (i=0; i<ido; i++) {
+          ch[i + k*ido] = ref(cc,i + k*ip*ido);
+        }
+      }
+    } else {
+      for (i=0; i<ido; i++) {
+        for (k=0; k<l1; k++) {
+          ch[i + k*ido] = ref(cc,i + k*ip*ido);
+        }
+      }
+    }
+    for (j=1; j<ipph; j++) {
+      jc = ip - j;
+      j2 = 2*j;
+      for (k=0; k<l1; k++) {
+        ch[(k + j*l1)*ido] = ref(cc,ido-1 + (j2 - 1 + k*ip)*ido) + ref(cc,ido-1 + (j2 - 1 + k*ip)*
+            ido);
+        ch[(k + jc*l1)*ido] = ref(cc,(j2 + k*ip)*ido) + ref(cc,(j2 + k*ip)*ido);
+      }
+    }
+
+    if (ido != 1) {
+      if (nbd >= l1) {
+        for (j=1; j<ipph; j++) {
+          jc = ip - j;
+          for (k=0; k<l1; k++) {
+            for (i=2; i<ido; i+=2) {
+              ic = ido - i;
+              ch[i - 1 + (k + j*l1)*ido] = ref(cc,i - 1 + (2*j + k*ip)*ido) + ref(cc,
+                  ic - 1 + (2*j - 1 + k*ip)*ido);
+              ch[i - 1 + (k + jc*l1)*ido] = ref(cc,i - 1 + (2*j + k*ip)*ido) -
+                  ref(cc,ic - 1 + (2*j - 1 + k*ip)*ido);
+              ch[i + (k + j*l1)*ido] = ref(cc,i + (2*j + k*ip)*ido) - ref(cc,ic
+                  + (2*j - 1 + k*ip)*ido);
+              ch[i + (k + jc*l1)*ido] = ref(cc,i + (2*j + k*ip)*ido) + ref(cc,ic
+                  + (2*j - 1 + k*ip)*ido);
+            }
+          }
+        }
+      } else {
+        for (j=1; j<ipph; j++) {
+          jc = ip - j;
+          for (i=2; i<ido; i+=2) {
+            ic = ido - i;
+            for (k=0; k<l1; k++) {
+              ch[i - 1 + (k + j*l1)*ido] = ref(cc,i - 1 + (2*j + k*ip)*ido) + ref(cc,
+                  ic - 1 + (2*j - 1 + k*ip)*ido);
+              ch[i - 1 + (k + jc*l1)*ido] = ref(cc,i - 1 + (2*j + k*ip)*ido) -
+                  ref(cc,ic - 1 + (2*j - 1 + k*ip)*ido);
+              ch[i + (k + j*l1)*ido] = ref(cc,i + (2*j + k*ip)*ido) - ref(cc,ic
+                  + (2*j - 1 + k*ip)*ido);
+              ch[i + (k + jc*l1)*ido] = ref(cc,i + (2*j + k*ip)*ido) + ref(cc,ic
+                  + (2*j - 1 + k*ip)*ido);
+            }
+          }
+        }
+      }
+    }
+
+    ar1 = 1;
+    ai1 = 0;
+    for (l=1; l<ipph; l++) {
+      lc = ip - l;
+      ar1h = dcp*ar1 - dsp*ai1;
+      ai1 = dcp*ai1 + dsp*ar1;
+      ar1 = ar1h;
+      for (ik=0; ik<idl1; ik++) {
+        cc[ik + l*idl1] = ch[ik] + ar1*ch[ik + idl1];
+        cc[ik + lc*idl1] = ai1*ch[ik + (ip-1)*idl1];
+      }
+      dc2 = ar1;
+      ds2 = ai1;
+      ar2 = ar1;
+      ai2 = ai1;
+      for (j=2; j<ipph; j++) {
+        jc = ip - j;
+        ar2h = dc2*ar2 - ds2*ai2;
+        ai2 = dc2*ai2 + ds2*ar2;
+        ar2 = ar2h;
+        for (ik=0; ik<idl1; ik++) {
+          cc[ik + l*idl1] += ar2*ch[ik + j*idl1];
+          cc[ik + lc*idl1] += ai2*ch[ik + jc*idl1];
+        }
+      }
+    }
+    for (j=1; j<ipph; j++) {
+      for (ik=0; ik<idl1; ik++) {
+        ch[ik] += ch[ik + j*idl1];
+      }
+    }
+    for (j=1; j<ipph; j++) {
+      jc = ip - j;
+      for (k=0; k<l1; k++) {
+        ch[(k + j*l1)*ido] = cc[(k + j*l1)*ido] - cc[(k + jc*l1)*ido];
+        ch[(k + jc*l1)*ido] = cc[(k + j*l1)*ido] + cc[(k + jc*l1)*ido];
+      }
+    }
+
+    if (ido == 1) return;
+    if (nbd >= l1) {
+      for (j=1; j<ipph; j++) {
+        jc = ip - j;
+        for (k=0; k<l1; k++) {
+          for (i=2; i<ido; i+=2) {
+            ch[i - 1 + (k + j*l1)*ido] = cc[i - 1 + (k + j*l1)*ido] - cc[i + (k + jc*l1)*ido];
+            ch[i - 1 + (k + jc*l1)*ido] = cc[i - 1 + (k + j*l1)*ido] + cc[i + (k + jc*l1)*ido];
+            ch[i + (k + j*l1)*ido] = cc[i + (k + j*l1)*ido] + cc[i - 1 + (k + jc*l1)*ido];
+            ch[i + (k + jc*l1)*ido] = cc[i + (k + j*l1)*ido] - cc[i - 1 + (k + jc*l1)*ido];
+          }
+        }
+      }
+    } else {
+      for (j=1; j<ipph; j++) {
+        jc = ip - j;
+        for (i=2; i<ido; i+=2) {
+          for (k=0; k<l1; k++) {
+            ch[i - 1 + (k + j*l1)*ido] = cc[i - 1 + (k + j*l1)*ido] - cc[i + (k + jc*l1)*ido];
+            ch[i - 1 + (k + jc*l1)*ido] = cc[i - 1 + (k + j *l1)*ido] + cc[i + (k + jc*l1)*ido];
+            ch[i + (k + j*l1)*ido] = cc[i + (k + j*l1)*ido] + cc[i - 1 + (k + jc*l1)*ido];
+            ch[i + (k + jc*l1)*ido] = cc[i + (k + j*l1)*ido] - cc[i - 1 + (k + jc*l1)*ido];
+          }
+        }
+      }
+    }
+    for (ik=0; ik<idl1; ik++) cc[ik] = ch[ik];
+    for (j=1; j<ip; j++)
+      for (k=0; k<l1; k++)
+        cc[(k + j*l1)*ido] = ch[(k + j*l1)*ido];
+    if (nbd <= l1) {
+      is = -ido;
+      for (j=1; j<ip; j++) {
+        is += ido;
+        idij = is-1;
+        for (i=2; i<ido; i+=2) {
+          idij += 2;
+          for (k=0; k<l1; k++) {
+            cc[i - 1 + (k + j*l1)*ido] = wa[idij - 1]*ch[i - 1 + (k + j*l1)*ido] - wa[idij]*
+                ch[i + (k + j*l1)*ido];
+            cc[i + (k + j*l1)*ido] = wa[idij - 1]*ch[i + (k + j*l1)*ido] + wa[idij]*ch[i - 1 + (k + j*l1)*ido];
+          }
+        }
+      }
+    } else {
+      is = -ido;
+      for (j=1; j<ip; j++) {
+        is += ido;
+        for (k=0; k<l1; k++) {
+          idij = is;
+          for (i=2; i<ido; i+=2) {
+            idij += 2;
+            cc[i - 1 + (k + j*l1)*ido] = wa[idij-1]*ch[i - 1 + (k + j*l1)*ido] - wa[idij]*
+                ch[i + (k + j*l1)*ido];
+            cc[i + (k + j*l1)*ido] = wa[idij-1]*ch[i + (k + j*l1)*ido] + wa[idij]*ch[i - 1 + (k + j*l1)*ido];
+          }
+        }
+      }
+    }
+  } /* radbg */
+
+  /* ----------------------------------------------------------------------
+cfftf1, cfftf, cfftb, cffti1, cffti. Complex FFTs.
+---------------------------------------------------------------------- */
+
+static void cfftf1(int n, Treal c[], Treal ch[], const Treal wa[], const int ifac[MAXFAC+2], int isign)
+  {
+    int idot, i;
+    int k1, l1, l2;
+    int na, nf, ip, iw, ix2, ix3, ix4, nac, ido, idl1;
+    Treal *cinput, *coutput;
+    nf = ifac[1];
+    na = 0;
+    l1 = 1;
+    iw = 0;
+    for (k1=2; k1<=nf+1; k1++) {
+      ip = ifac[k1];
+      l2 = ip*l1;
+      ido = n / l2;
+      idot = ido + ido;
+      idl1 = idot*l1;
+      if (na) {
+        cinput = ch;
+        coutput = c;
+      } else {
+        cinput = c;
+        coutput = ch;
+      }
+      switch (ip) {
+      case 4:
+        ix2 = iw + idot;
+        ix3 = ix2 + idot;
+        passf4(idot, l1, cinput, coutput, &wa[iw], &wa[ix2], &wa[ix3], isign);
+        na = !na;
+        break;
+      case 2:
+        passf2(idot, l1, cinput, coutput, &wa[iw], isign);
+        na = !na;
+        break;
+      case 3:
+        ix2 = iw + idot;
+        passf3(idot, l1, cinput, coutput, &wa[iw], &wa[ix2], isign);
+        na = !na;
+        break;
+      case 5:
+        ix2 = iw + idot;
+        ix3 = ix2 + idot;
+        ix4 = ix3 + idot;
+        passf5(idot, l1, cinput, coutput, &wa[iw], &wa[ix2], &wa[ix3], &wa[ix4], isign);
+        na = !na;
+        break;
+      default:
+        passf(&nac, idot, ip, l1, idl1, cinput, coutput, &wa[iw], isign);
+        if (nac != 0) na = !na;
+      }
+      l1 = l2;
+      iw += (ip - 1)*idot;
+    }
+    if (na == 0) return;
+    for (i=0; i<2*n; i++) c[i] = ch[i];
+  } /* cfftf1 */
+
+
+void cfftf(int n, Treal c[], Treal wsave[])
+  {
+    int iw1, iw2;
+    if (n == 1) return;
+    iw1 = 2*n;
+    iw2 = iw1 + 2*n;
+    cfftf1(n, c, wsave, wsave+iw1, (int*)(wsave+iw2), -1);
+  } /* cfftf */
+
+
+void cfftb(int n, Treal c[], Treal wsave[])
+  {
+    int iw1, iw2;
+    if (n == 1) return;
+    iw1 = 2*n;
+    iw2 = iw1 + 2*n;
+    cfftf1(n, c, wsave, wsave+iw1, (int*)(wsave+iw2), +1);
+  } /* cfftb */
+
+
+static void factorize(int n, int ifac[MAXFAC+2])
+  /* Factorize n in factors of 2,3,4,5 and rest. On exit,
+ifac[0] contains n and ifac[1] contains number of factors,
+the factors start from ifac[2]. */
+  {
+    static const int ntryh[4] = {
+      3,4,2,5    };
+    int ntry=3, i, j=0, ib, nf=0, nl=n, nq, nr;
+startloop:
+    if (j < 4)
+      ntry = ntryh[j];
+    else
+      ntry+= 2;
+    j++;
+    do {
+      nq = nl / ntry;
+      nr = nl - ntry*nq;
+      if (nr != 0) goto startloop;
+      nf++;
+      ifac[nf + 1] = ntry;
+      nl = nq;
+      if (ntry == 2 && nf != 1) {
+        for (i=2; i<=nf; i++) {
+          ib = nf - i + 2;
+          ifac[ib + 1] = ifac[ib];
+        }
+        ifac[2] = 2;
+      }
+    } while (nl != 1);
+    ifac[0] = n;
+    ifac[1] = nf;
+  }
+
+
+static void cffti1(int n, Treal wa[], int ifac[MAXFAC+2])
+  {
+    static const Treal twopi = 6.28318530717959;
+    Treal arg, argh, argld, fi;
+    int idot, i, j;
+    int i1, k1, l1, l2;
+    int ld, ii, nf, ip;
+    int ido, ipm;
+
+    factorize(n,ifac);
+    nf = ifac[1];
+    argh = twopi/(Treal)n;
+    i = 1;
+    l1 = 1;
+    for (k1=1; k1<=nf; k1++) {
+      ip = ifac[k1+1];
+      ld = 0;
+      l2 = l1*ip;
+      ido = n / l2;
+      idot = ido + ido + 2;
+      ipm = ip - 1;
+      for (j=1; j<=ipm; j++) {
+        i1 = i;
+        wa[i-1] = 1;
+        wa[i] = 0;
+        ld += l1;
+        fi = 0;
+        argld = ld*argh;
+        for (ii=4; ii<=idot; ii+=2) {
+          i+= 2;
+          fi+= 1;
+          arg = fi*argld;
+          wa[i-1] = cos(arg);
+          wa[i] = sin(arg);
+        }
+        if (ip > 5) {
+          wa[i1-1] = wa[i-1];
+          wa[i1] = wa[i];
+        }
+      }
+      l1 = l2;
+    }
+  } /* cffti1 */
+
+
+void cffti(int n, Treal wsave[])
+ {
+    int iw1, iw2;
+    if (n == 1) return;
+    iw1 = 2*n;
+    iw2 = iw1 + 2*n;
+    cffti1(n, wsave+iw1, (int*)(wsave+iw2));
+  } /* cffti */
+
+  /* ----------------------------------------------------------------------
+rfftf1, rfftb1, rfftf, rfftb, rffti1, rffti. Treal FFTs.
+---------------------------------------------------------------------- */
+
+static void rfftf1(int n, Treal c[], Treal ch[], const Treal wa[], const int ifac[MAXFAC+2])
+  {
+    int i;
+    int k1, l1, l2, na, kh, nf, ip, iw, ix2, ix3, ix4, ido, idl1;
+    Treal *cinput, *coutput;
+    nf = ifac[1];
+    na = 1;
+    l2 = n;
+    iw = n-1;
+    for (k1 = 1; k1 <= nf; ++k1) {
+      kh = nf - k1;
+      ip = ifac[kh + 2];
+      l1 = l2 / ip;
+      ido = n / l2;
+      idl1 = ido*l1;
+      iw -= (ip - 1)*ido;
+      na = !na;
+      if (na) {
+        cinput = ch;
+        coutput = c;
+      } else {
+        cinput = c;
+        coutput = ch;
+      }
+      switch (ip) {
+      case 4:
+        ix2 = iw + ido;
+        ix3 = ix2 + ido;
+        radf4(ido, l1, cinput, coutput, &wa[iw], &wa[ix2], &wa[ix3]);
+        break;
+      case 2:
+        radf2(ido, l1, cinput, coutput, &wa[iw]);
+        break;
+      case 3:
+        ix2 = iw + ido;
+        radf3(ido, l1, cinput, coutput, &wa[iw], &wa[ix2]);
+        break;
+      case 5:
+        ix2 = iw + ido;
+        ix3 = ix2 + ido;
+        ix4 = ix3 + ido;
+        radf5(ido, l1, cinput, coutput, &wa[iw], &wa[ix2], &wa[ix3], &wa[ix4]);
+        break;
+      default:
+        if (ido == 1)
+          na = !na;
+        if (na == 0) {
+          radfg(ido, ip, l1, idl1, c, ch, &wa[iw]);
+          na = 1;
+        } else {
+          radfg(ido, ip, l1, idl1, ch, c, &wa[iw]);
+          na = 0;
+        }
+      }
+      l2 = l1;
+    }
+    if (na == 1) return;
+    for (i = 0; i < n; i++) c[i] = ch[i];
+  } /* rfftf1 */
+
+
+void rfftb1(int n, Treal c[], Treal ch[], const Treal wa[], const int ifac[MAXFAC+2])
+  {
+    int i;
+    int k1, l1, l2, na, nf, ip, iw, ix2, ix3, ix4, ido, idl1;
+    Treal *cinput, *coutput;
+    nf = ifac[1];
+    na = 0;
+    l1 = 1;
+    iw = 0;
+    for (k1=1; k1<=nf; k1++) {
+      ip = ifac[k1 + 1];
+      l2 = ip*l1;
+      ido = n / l2;
+      idl1 = ido*l1;
+      if (na) {
+        cinput = ch;
+        coutput = c;
+      } else {
+        cinput = c;
+        coutput = ch;
+      }
+      switch (ip) {
+      case 4:
+        ix2 = iw + ido;
+        ix3 = ix2 + ido;
+        radb4(ido, l1, cinput, coutput, &wa[iw], &wa[ix2], &wa[ix3]);
+        na = !na;
+        break;
+      case 2:
+        radb2(ido, l1, cinput, coutput, &wa[iw]);
+        na = !na;
+        break;
+      case 3:
+        ix2 = iw + ido;
+        radb3(ido, l1, cinput, coutput, &wa[iw], &wa[ix2]);
+        na = !na;
+        break;
+      case 5:
+        ix2 = iw + ido;
+        ix3 = ix2 + ido;
+        ix4 = ix3 + ido;
+        radb5(ido, l1, cinput, coutput, &wa[iw], &wa[ix2], &wa[ix3], &wa[ix4]);
+        na = !na;
+        break;
+      default:
+        radbg(ido, ip, l1, idl1, cinput, coutput, &wa[iw]);
+        if (ido == 1) na = !na;
+      }
+      l1 = l2;
+      iw += (ip - 1)*ido;
+    }
+    if (na == 0) return;
+    for (i=0; i<n; i++) c[i] = ch[i];
+  } /* rfftb1 */
+
+
+void rfftf(int n, Treal r[], Treal wsave[])
+  {
+    if (n == 1) return;
+    rfftf1(n, r, wsave, wsave+n, (int*)(wsave+2*n));
+  } /* rfftf */
+
+
+void rfftb(int n, Treal r[], Treal wsave[])
+  {
+    if (n == 1) return;
+    rfftb1(n, r, wsave, wsave+n, (int*)(wsave+2*n));
+  } /* rfftb */
+
+
+static void rffti1(int n, Treal wa[], int ifac[MAXFAC+2])
+  {
+    static const Treal twopi = 6.28318530717959;
+    Treal arg, argh, argld, fi;
+    int i, j;
+    int k1, l1, l2;
+    int ld, ii, nf, ip, is;
+    int ido, ipm, nfm1;
+    factorize(n,ifac);
+    nf = ifac[1];
+    argh = twopi / n;
+    is = 0;
+    nfm1 = nf - 1;
+    l1 = 1;
+    if (nfm1 == 0) return;
+    for (k1 = 1; k1 <= nfm1; k1++) {
+      ip = ifac[k1 + 1];
+      ld = 0;
+      l2 = l1*ip;
+      ido = n / l2;
+      ipm = ip - 1;
+      for (j = 1; j <= ipm; ++j) {
+        ld += l1;
+        i = is;
+        argld = (Treal) ld*argh;
+        fi = 0;
+        for (ii = 3; ii <= ido; ii += 2) {
+          i += 2;
+          fi += 1;
+          arg = fi*argld;
+          wa[i - 2] = cos(arg);
+          wa[i - 1] = sin(arg);
+        }
+        is += ido;
+      }
+      l1 = l2;
+    }
+  } /* rffti1 */
+
+
+void rffti(int n, Treal wsave[])
+  {
+    if (n == 1) return;
+    rffti1(n, wsave+n, (int*)(wsave+2*n));
+  } /* rffti */
+
+/************************************************************************
+* cfft1d is a subroutine used to call and initialize FFT routines from  *
+* fftpack.c   The calls are almost identical to the old Sun perflib     *
+************************************************************************/
+/************************************************************************
+* Creator: David T. Sandwell	(Scripps Institution of Oceanography    *
+* Date   : 12/27/96                                                     *
+* Date   : 09/15/07 re-worked by Rob Mellors                            *
+* Date   : 10/16/07 re-worked by David Sandwells  to use pointers       *
+************************************************************************/
+
+typedef struct FCOMPLEX {float r,i;} fcomplex;
+
+/*----------------------------------------------------------------------------*/
+void cfft1d_fftpack (int *np, fcomplex *c, int *dir)
+{
+
+	static float *work;
+	static int nold = 0;
+	int i, n;
+
+/* Initialize work array with sines and cosines to save CPU time later 
+   This is done when the length of the FFT has changed or when *dir == 0. */
+	
+	n = *np;
+
+	if ((n != nold) || (*dir == 0)) {
+		if (nold != 0) free (work);
+		if ((work = malloc((4*n+30)*sizeof(float))) == NULL) {
+			fprintf (stderr, "Cannot allocate work memory\n");
+			GMT_exit (EXIT_FAILURE);
+		}
+
+		cffti (n, work);
+
+		nold = n;
+	}
+
+/* Do forward transform with NO normalization.  Forward is exp(+i*k*x) */
+
+	if (*dir == -1) cfftf (n, (Treal *)c, work); 
+
+/* Do inverse transform with normalization.  Inverse is exp(-i*k*x) */
+
+	if (*dir == 1) {
+	  	cfftb (n, (Treal *)c, work);
+          	for (i=0; i<n; i++) {
+			c[i].i = c[i].i/(1.0*n);
+			c[i].r = c[i].r/(1.0*n);
 		}
 	}
-
-	GMT->current.setting.fftw_plan = FFTW_ESTIMATE; /* default planner flag */
-#endif /* HAVE_FFTW3_THREADS */
-
-	/* Start with nothing */
-	memset (GMT->session.fft1d, k_n_fft_algorithms, sizeof(void*));
-	memset (GMT->session.fft2d, k_n_fft_algorithms, sizeof(void*));
-
-#ifdef __APPLE__
-	/* OS X Accelerate Framework */
-	GMT->session.fft1d[k_fft_accelerate] = &GMT_fft_1d_vDSP;
-	GMT->session.fft2d[k_fft_accelerate] = &GMT_fft_2d_vDSP;
-#endif
-#ifdef HAVE_FFTW3F
-	/* single precision FFTW3 */
-	GMT->session.fft1d[k_fft_fftw] = &GMT_fft_1d_fftwf;
-	GMT->session.fft2d[k_fft_fftw] = &GMT_fft_2d_fftwf;
-#endif /* HAVE_FFTW3F */
-	/* Kiss FFT is the integrated fallback */
-	GMT->session.fft1d[k_fft_kiss] = &GMT_fft_1d_kiss;
-	GMT->session.fft2d[k_fft_kiss] = &GMT_fft_2d_kiss;
-	/* Brenner FFT is the legacy fallback */
-	GMT->session.fft1d[k_fft_brenner] = &GMT_fft_1d_brenner;
-	GMT->session.fft2d[k_fft_brenner] = &GMT_fft_2d_brenner;
 }
 
-void GMT_fft_cleanup (struct GMT_CTRL *GMT) {
-	/* Called by GMT_end */
-#if defined HAVE_FFTW3F_THREADS
-	fftwf_cleanup_threads(); /* clean resources allocated internally by FFTW */
+GMT_LONG GMT_fft_1d_fftpack (struct GMT_CTRL *C, float *data, GMT_LONG n, GMT_LONG direction, GMT_LONG mode)
+{
+	int np = (int)n, dir = (int)direction;
+	cfft1d_fftpack (&np, (fcomplex)data, &dir);
+	return (GMT_NOERROR);
+}
+
+/*------------------------------------------------------------------------*/
+/*	calculates 2D fft by doing 1D over rows, transposing, and then 	  */
+/*	columns								  */
+/*------------------------------------------------------------------------*/
+
+void transpose_complex_NM (struct FCOMPLEX *in, int n, int m)
+{
+	int i, j;
+	struct FCOMPLEX	*tmp;
+
+	tmp = malloc(n * m * sizeof(struct FCOMPLEX));
+
+	for (i=0; i<n; i++) {
+		for (j=0; j<m; j++) {
+			tmp[j*n+i] = in[i*m+j];
+			}
+		}
+
+	for (i=0; i<(n*m); i++) in[i] = tmp[i];
+
+	free (tmp);
+}
+
+int cfft2d_fftpack (int *N, int *M, struct FCOMPLEX *cin, int *dir)
+{
+	int	i, j;
+	static	int flag = 1;
+
+	if (flag == 0) {
+		fprintf(stderr,"using fftpack \n");
+		flag = 1;
+	}
+
+	if (debug) print_complex (cin, *N, *M, 1);
+
+	/* forward 2D */
+	if (*dir == -1) {
+		/* forward rows */
+		for (i=0; i<(*N); i++) cfft1d_(M, &cin[i*(*M)], dir); 
+
+		/* transpose */
+		transpose_complex_NM(cin, *N, *M);
+
+		/* forward columns */
+		for (i=0; i<(*M); i++) cfft1d_(N, &cin[i*(*N)], dir); 
+
+		/* transpose */
+		transpose_complex_NM(cin, *M, *N);
+	}
+
+	/* inverse 2D */
+	if (*dir == 1) {
+		/* forward rows */
+		for (i=0; i<(*N); i++) cfft1d_(M, &cin[i*(*M)], dir); 
+
+		/* transpose */
+		transpose_complex_NM(cin, *N, *M);
+
+		/* forward columns */
+		for (i=0; i<(*M); i++) cfft1d_(N, &cin[i*(*N)], dir); 
+
+		/* transpose */
+		transpose_complex_NM(cin, *M, *N);
+		}
+
+	if (debug) print_complex(cin, *N, *M, 1);
+
+return 0;
+
+GMT_LONG GMT_fft_2d_fftpack (struct GMT_CTRL *C, float *data, GMT_LONG nx, GMT_LONG ny, GMT_LONG direction, GMT_LONG mode)
+{
+	int N = (int)ny, M = (int)nx, dir = (int)direction;
+	return (cfft2d_fftpack (&N, &M, (struct FCOMPLEX *)data, &dir));
+}
 #endif
-#ifdef __APPLE__ /* Accelerate framework */
-	GMT_fft_1d_vDSP_reset (&GMT->current.fft);
-	GMT_fft_2d_vDSP_reset (&GMT->current.fft);
+
+#ifdef WITH_FFTW
+/************************************************************************
+* cfft1d is a subroutine to do a 1-D fft using FFTW routines            *
+************************************************************************/
+/************************************************************************
+* Creator: David T. Sandwell    (Scripps Institution of Oceanography    *
+* Date   : 12/27/96                                                     *
+************************************************************************/
+/************************************************************************
+* Modification history:                                                 *
+*  04/01/98  - changed to have arguments be pointers (Fotran callable)  *
+*  10/16/03  - changed to call fftw instead of the sun perflib          *
+************************************************************************/
+
+#include "fftw3.h"
+
+cfft1d_fftw (int *np, fftwf_complex *c, int *dir)
+{
+        static int nold = 0;
+        static fftwf_plan pf, pi;
+        int i, n;
+
+/* Make the plans for FFTW and destroy the old ones if they exist.
+   This is done when the length of the FFT has changed or when *dir == 0. */
+
+        n = *np;
+        if ((n != nold) || (*dir == 0)) {
+		if (nold != 0) {
+			fftwf_destroy_plan (pf);
+			fftwf_destroy_plan (pi);
+		}
+		pf = fftwf_plan_dft_1d (n,c,c,-1,FFTW_MEASURE);
+		pi = fftwf_plan_dft_1d (n,c,c, 1,FFTW_MEASURE);
+		printf (" reset plan \n");
+		nold = n;
+	}
+
+/* Do forward transform with NO normalization. */
+
+	if (*dir == -1) {
+		fftwf_execute(pf);
+	}
+
+/* Do inverse transform with normalization. */
+
+	if (*dir == 1) {
+		fftwf_execute (pi);
+		for (i=0;i<n;i++){
+			c[i][0] = c[i][0]/((float) n);
+			c[i][1] = c[i][1]/((float) n);
+		}
+	}
+}
+
+GMT_LONG GMT_fft_1d_fftw (struct GMT_CTRL *C, float *data, GMT_LONG n, GMT_LONG direction, GMT_LONG mode)
+{
+	int np = (int)n, dir = (int)direction;
+	cfft1d_fftw (&np, (fftwf_complex)data, &dir);
+	return (GMT_NOERROR);
+}
 #endif
+
+#ifdef WITH_PERFLIB
+
+/************************************************************************
+* cfft1d is a subroutine used to call and initialize perflib Fortran FFT *
+* routines in a Sun computer.                                           *
+************************************************************************/
+/************************************************************************
+* Creator: David T. Sandwell	(Scripps Institution of Oceanography    *
+* Date   : 12/27/96                                                     *
+************************************************************************/
+/************************************************************************
+* Modification history:                                                 *
+*  04/01/98  - changed to have arguments be pointers (Fotran callable)  *
+*                                                                       *
+* DATE                                                                  *
+************************************************************************/
+ 
+#include "../include/soi.h"
+
+cfft1d_perflib (int *np,fcomplex *c,int *dir)
+{
+
+	static float *work;
+	static int nold = 0;
+	int i,n;
+
+/* Initialize work array with sines and cosines to save CPU time later 
+   This is done when the length of the FFT has changed or when *dir == 0. */
+
+	n = *np;
+	if ((n != nold) || (*dir == 0)) {
+		if(nold != 0) free (work);
+		if((work = malloc ((4*n+30)*sizeof(float))) == NULL){
+			fprintf(stderr,"Sorry, can't allocate mem.\n");
+			return(-1);
+		}
+		cffti_ (np,work);
+		nold = n;
+	}
+
+/* Do forward transform with NO normalization.  Forward is exp(+i*k*x) */
+
+	if (*dir == -1) {
+		cfftf_ (np,c,work);
+	}
+
+/* Do inverse transform with normalization.  Inverse is exp(-i*k*x) */
+
+	if (*dir == 1) {
+		cfftb_ (np,c,work);
+		for (i=0;i<n;i++) {
+			c[i].r = c[i].r/((float) n);
+			c[i].i = c[i].i/((float) n);
+		}
+	}
+}
+
+GMT_LONG GMT_fft_1d_perflib (struct GMT_CTRL *C, float *data, GMT_LONG n, GMT_LONG direction, GMT_LONG mode)
+{
+	int np = (int)n, dir = (int)direction;
+	cfft1d_perflib (&np, (fcomplex)data, &dir);
+	return (GMT_NOERROR);
+}
+#endif
+
+#ifdef WITH_ACCELERATE
+
+/************************************************************************
+* cfft1d is a subroutine used to call and initialize veclib FFT         *
+* in a Mac OS X computer.                                               *
+************************************************************************/
+/************************************************************************
+* Creator: Robert Kern          (Scripps Institution of Oceanography    *
+* Date   : 12/2005                                                      *
+************************************************************************/
+//#include <vecLib/vecLib.h>
+#include <Accelerate/Accelerate.h>
+
+void cfft1d_cleanup_();
+
+static int n = 0; 
+static int log2n;
+static FFTSetup setup;
+static DSPSplitComplex d;
+static float scale;
+static int inited = 0;
+
+void cfft1d_accelerate (int* np, DSPComplex* c, int* dir)
+{
+	if (*dir == 0) return;
+	if (n != *np) {
+		cfft1d_cleanup_ ();
+		n = *np;
+		for (log2n=1; (1<<log2n)<*np; log2n++) {}
+
+		d.realp = (float*)malloc(n*sizeof(float));
+		d.imagp = (float*)malloc(n*sizeof(float));
+
+		setup = vDSP_create_fftsetup (log2n, 0);
+		scale = 1.0/n;
+		inited = 1;
+	}
+    
+	vDSP_ctoz (c, 2, &d, 1, n);
+
+	vDSP_fft_zip (setup, &d, 1, log2n, (*dir==-1 ? FFT_FORWARD : FFT_INVERSE));
+
+	vDSP_ztoc (&d, 1, c, 2, n);
+
+	if (*dir == 1) {
+		vDSP_vsmul ((float*)c, 1, &scale, (float*)c, 1, 2*n);
+	}
+}
+
+void cfft1d_cleanup_()
+{
+	if (inited) {
+		free(d.realp);
+		free(d.imagp);
+		vDSP_destroy_fftsetup(setup);
+		inited = 0;
+	}
+}
+
+GMT_LONG GMT_fft_1d_accelerate (struct GMT_CTRL *C, float *data, GMT_LONG n, GMT_LONG direction, GMT_LONG mode)
+{
+	int np = (int)n, dir = (int)direction;
+	cfft1d_accelerate (&np, (DSPComplex *)data, &dir);
+	return (GMT_NOERROR);
+}
+#endif
+
+/* C-callable wrapper for BRENNER_fourt_ */
+
+#define GMT_radix2(n) doubleAlmostEqualZero(log2 ((double)n), floor(log2 ((double)n)))
+
+GMT_LONG GMT_fft_1d_brenner (struct GMT_CTRL *C, float *data, GMT_LONG n, GMT_LONG direction, GMT_LONG mode)
+{
+	/* void GMT_fourt (struct GMT_CTRL *C, float *data, GMT_LONG *nn, GMT_LONG ndim, GMT_LONG ksign, GMT_LONG iform, float *work) */
+	/* Data array */
+	/* Dimension array */
+	/* Number of dimensions */
+	/* Forward(-1) or Inverse(+1) */
+	/* Real(0) or complex(1) data */
+	/* Work array */
+	GMT_LONG ksign, ndim = 1, work_size = 0;
+	float *work = NULL;
+	ksign = (direction == GMT_FFT_INV) ? +1 : -1;
+	if ((work_size = brenner_worksize (C, n, 1))) work = GMT_memory (C, NULL, work_size, float);
+	(void) BRENNER_fourt_ (data, &n, &ndim, &ksign, &mode, work);
+	if (work_size) GMT_free (C, work);
+	return (GMT_OK);
+}
+
+GMT_LONG GMT_fft_2d_brenner (struct GMT_CTRL *C, float *data, GMT_LONG nx, GMT_LONG ny, GMT_LONG direction, GMT_LONG mode)
+{
+	/* Data array */
+	/* Dimension array */
+	/* Number of dimensions */
+	/* Forward(-1) or Inverse(+1) */
+	/* Real(0) or complex(1) data */
+	/* Work array */
+	GMT_LONG ksign, ndim = 2, nn[2] = {nx, ny}, work_size = 0;
+	float *work = NULL;
+	ksign = (direction == GMT_FFT_INV) ? +1 : -1;
+	if ((work_size = brenner_worksize (C, nx, ny))) work = GMT_memory (C, NULL, work_size, float);
+	GMT_report (C, GMT_MSG_VERBOSE, "Brenner_fourt_ work size = %ld\n", work_size);
+	(void) BRENNER_fourt_ (data, nn, &ndim, &ksign, &mode, work);
+	if (work_size) GMT_free (C, work);
+	return (GMT_OK);
+}
+
+#ifdef GMT_COMPAT
+/* C-callable wrapper for BRENNER_fourt_ [for backwards compatibility only] */
+
+void GMT_fourt (struct GMT_CTRL *C, float *data, GMT_LONG *nn, GMT_LONG ndim, GMT_LONG ksign, GMT_LONG iform, float *work)
+{
+	/* Data array */
+	/* Dimension array */
+	/* Number of dimensions */
+	/* Forward(-1) or Inverse(+1) */
+	/* Real(0) or complex(1) data */
+	/* Work array */
+	(void) BRENNER_fourt_ (data, nn, &ndim, &ksign, &iform, work);
+}
+#endif
+
+GMT_LONG GMT_fft_1d_selection (struct GMT_CTRL *C, GMT_LONG n) {
+	/* Returns the most suitable 1-D FFT for the job - or the one requested via GMT_FFT */
+	
+	if (C->current.setting.fft != GMT_FFT_AUTO) return (C->current.setting.fft);	/* Specific selection requested */
+	/* Here we want automatic selection from available candidates */
+	if (GMT_radix2 (n) && C->session.fft1d[GMT_FFT_ACCELERATE]) return (GMT_FFT_ACCELERATE);	/* Use if Radix-2 under OS/X */
+	if (C->session.fft1d[GMT_FFT_W]) return (GMT_FFT_W);			/* Use that fast gunslinger */
+	if (C->session.fft1d[GMT_FFT_PERFLIB]) return (GMT_FFT_PERFLIB);	/* Make Sun-people happy */
+	if (C->session.fft1d[GMT_FFT_PACK]) return (GMT_FFT_PACK);		/* General-purpose FFT */
+	return (GMT_FFT_BRENNER);						/* Default */
+}
+
+GMT_LONG GMT_fft_2d_selection (struct GMT_CTRL *C, GMT_LONG nx, GMT_LONG ny) {
+	/* Returns the most suitable 2-D FFT for the job - or the one requested via GMT_FFT */
+	
+	if (C->current.setting.fft != GMT_FFT_AUTO) {	/* Specific selection requested */
+		if (C->session.fft2d[C->current.setting.fft]) return (C->current.setting.fft);	/* It was available */
+		GMT_report (C, GMT_MSG_FATAL, "Desired FFT Algorithm (%s) not configured - Default to brenner instead\n", GMT_fft_algo[C->current.setting.fft]);
+		return (GMT_FFT_BRENNER);						/* Default */
+	}
+	/* Here we want automatic selection from available candidates */
+	if (GMT_radix2 (nx) && GMT_radix2 (ny) && C->session.fft2d[GMT_FFT_ACCELERATE]) return (GMT_FFT_ACCELERATE);	/* Use if Radix-2 under OS/X */
+	if (C->session.fft2d[GMT_FFT_W]) return (GMT_FFT_W);			/* Use that fast gunslinger */
+	if (C->session.fft2d[GMT_FFT_PERFLIB]) return (GMT_FFT_PERFLIB);	/* Make Sun-people happy */
+	if (C->session.fft2d[GMT_FFT_PACK]) return (GMT_FFT_PACK);		/* General-purpose FFT */
+	return (GMT_FFT_BRENNER);						/* Default */
+}
+
+GMT_LONG GMT_fft_1d (struct GMT_CTRL *C, float *data, GMT_LONG n, GMT_LONG direction, GMT_LONG mode)
+{
+	/* data is an array of length n (or 2*n for complex) data points
+	 * n is the number of data points
+	 * direction is either 0 (forward) or 1(inverse)
+	 * mode is either 0(real) or 1(complex)
+	 */
+	GMT_LONG status, use;
+	use = GMT_fft_1d_selection (C, n);
+	GMT_report (C, GMT_MSG_DEBUG, "1-D FFT using %s\n", GMT_fft_algo[use]);
+	status = C->session.fft1d[use] (C, data, n, direction, mode);
+	return (status);
+}
+
+GMT_LONG GMT_fft_2d (struct GMT_CTRL *C, float *data, GMT_LONG nx, GMT_LONG ny, GMT_LONG direction, GMT_LONG mode)
+{
+	/* data is an array of length nx*ny (or 2*nx*ny for complex) data points
+	 * nx, ny is the number of data nodes
+	 * direction is either 0 (forward) or 1(inverse)
+	 * mode is either 0(real) or 1(complex)
+	 */
+	GMT_LONG status, use;
+	use = GMT_fft_2d_selection (C, nx, ny);
+	GMT_report (C, GMT_MSG_DEBUG, "2-D FFT using %s\n", GMT_fft_algo[use]);
+	status = C->session.fft2d[use] (C, data, nx, ny, direction, mode);
+	return (status);
+}
+
+void GMT_fft_initialization (struct GMT_CTRL *C) {
+	/* Called by GMT_begin and sets up pointers to the available FFT calls */
+	
+	GMT_memset (C->session.fft1d, N_GMT_FFT, PFL);	/* Start with nothing */
+	GMT_memset (C->session.fft2d, N_GMT_FFT, PFL);	/* Start with nothing */
+#ifdef WITH_ACCELERATE
+	C->session.fft1d[GMT_FFT_ACCELERATE] = GMT_fft_1d_accelerate;	/* OS X Accelerate Framework */
+	// C->session.fft2d[GMT_FFT_ACCELERATE] = GMT_fft_2d_accelerate;	/* OS X Accelerate Framework */
+	C->session.fft2d[GMT_FFT_ACCELERATE] = NULL;	/* OS X Accelerate Framework */
+#endif
+#ifdef WITH_FFTW
+	C->session.fft1d[GMT_FFT_W] = GMT_fft_1d_fftw;	/* FFTW */
+	//C->session.fft2d[GMT_FFT_W] = GMT_fft_2d_fftw;	/* FFTW */
+	C->session.fft2d[GMT_FFT_W] = NULL;	/* FFTW */
+#endif
+#ifdef WITH_PERFLIB
+	C->session.fft1d[GMT_FFT_PERFLIB] = GMT_fft_1d_perflib;		/* Sun Performance Library */
+	//C->session.fft2d[GMT_FFT_PERFLIB] = GMT_fft_2d_perflib;		/* Sun Performance Library */
+	C->session.fft2d[GMT_FFT_PERFLIB] = NULL;		/* Sun Performance Library */
+#endif
+#ifdef WITH_FFTPACK
+	C->session.fft1d[GMT_FFT_PACK] = GMT_fft_1d_fftpack;		/* FFTPack */
+	C->session.fft2d[GMT_FFT_PACK] = GMT_fft_2d_fftpack;
+#endif
+	C->session.fft1d[GMT_FFT_BRENNER] = GMT_fft_1d_brenner;	/* The old GMT standby is always available */
+	C->session.fft2d[GMT_FFT_BRENNER] = GMT_fft_2d_brenner;	/* The old GMT standby is always available */
 }

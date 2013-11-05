@@ -3,9 +3,10 @@
 #
 # Plot all the symbols on a 1x1 inch grid pattern
 
-ps=arcs.ps
+. functions.sh
+header "Test psxy with various circles, ellipses and wedges"
 
-gmt psxy -R0/4/0/4 -Jx1i -P -W5p -S1i -X2i -Y2i << EOF > $ps
+psxy -R0/4/0/4 -Jx1i -P -W5p -S1i -X2i -Y2i << EOF > $ps
 1 1 1 c
 1 3.2 0 1.6 0.8 e
 > -W3p,blue -Ggreen
@@ -18,3 +19,4 @@ gmt psxy -R0/4/0/4 -Jx1i -P -W5p -S1i -X2i -Y2i << EOF > $ps
 3 3 45 2 1 e
 EOF
 
+pscmp

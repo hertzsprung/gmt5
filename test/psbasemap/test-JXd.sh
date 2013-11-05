@@ -2,29 +2,31 @@
 #
 #	$Id$
 
-basemap="gmt psbasemap --FORMAT_GEO_MAP=dddF --FONT_LABEL=16p --MAP_FRAME_AXES=WeSn"
+psbasemap="psbasemap --FORMAT_GEO_MAP=dddF --FONT_LABEL=16p --MAP_FRAME_AXES=WeSn"
 
 plot1 () {
-   $basemap -R -JX$1 -Bx20f10g20+lLongitude -By20f10g20+lLatitude -O -K $2
+   $psbasemap -R -JX$1 -B20f10g20:Longitude:/20f10g20:Latitude: -O -K $2
    annot $1
 }
 
 annot () {
-   gmt psxy -R -J -O -K -W2p,red -Gyellow <<%
+   psxy -R -J -O -K -W2p,red -Gyellow <<%
 -40 0
 40 0
 40 -40
 -40 -40
 %
-   gmt pstext -R -J -F+f20p,Helvetica-Bold+jBC -O -K <<< "0 2 -JX$1"
+   pstext -R -J -F+f20p,Helvetica-Bold+jBC -O -K <<< "0 2 -JX$1"
 }
 
-ps=test-JXd.ps
+. functions.sh
+header "Test various specifications of -Jx w/wo trailing d"
 
-gmt psxy -T -R-60/60/-60/60 -JX8c/8c -K -X4c -Y13c > $ps
+psxy -T -R-60/60/-60/60 -JX8c/8c -K -X4c -Y13c > $ps
 plot1 8c/8c >> $ps
 plot1 8cd/8c -X12c >> $ps
 plot1 8c/8cd -Y-11c >> $ps
 plot1 8cd/8cd -X-12c >> $ps
-gmt psxy -T -R -J -O >> $ps
+psxy -T -R -J -O >> $ps
 
+pscmp

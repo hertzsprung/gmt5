@@ -41,11 +41,6 @@ gmt_nrecords() {
 	cat $* | wc -l | awk '{print $1}'
 }
 
-#	Return integer total number of data records in the file(s)
-gmt_ndatarecords() {
-	cat $* | egrep -v '^>|^#' | wc -l | awk '{print $1}'
-}
-
 #	Returns the number of fields or arguments
 gmt_nfields() {
 	echo $* | awk '{print NF}'
@@ -60,22 +55,22 @@ gmt_get_field() {
 #	Return w/e/s/n from given table file(s)
 #	May also add -Idx/dy to round off answer
 gmt_get_region() {
-	printf "%s/%s/%s/%s\n" `gmt minmax -C $* | cut -d'	' -f1-4`
+	printf "%s/%s/%s/%s\n" `minmax -C $* | cut -d'	' -f1-4`
 }
 
 #	Return the w/e/s/n from the header in grd file
 gmt_get_gridregion() {
-	printf "%s/%s/%s/%s\n" `gmt grdinfo -C $* | cut -d'	' -f2-5`
+	printf "%s/%s/%s/%s\n" `grdinfo -C $* | cut -d'	' -f2-5`
 }
 
 #	Return the current map width (expects -R and -J settings)
 gmt_map_width() {
-	gmt mapproject $* /dev/null -V 2>&1 | grep Transform | awk -F/ '{print $5}'
+	mapproject $* /dev/null -V 2>&1 | grep Transform | awk -F/ '{print $5}'
 }
 
 #	Return the current map height (expects -R and -J settings)
 gmt_map_height() {
-	gmt mapproject $* /dev/null -V 2>&1 | grep Transform | awk -F/ '{print $7}' | cut -f1 -d' '
+	mapproject $* /dev/null -V 2>&1 | grep Transform | awk -F/ '{print $7}' | cut -f1 -d' '
 }
 
 # Make output PostScript file name based on script base name
@@ -87,11 +82,11 @@ gmt_set_psfile() {
 # For animations: Create a lexically increasing file namestem (no extension) based on prefix and frame number
 # i.e., prefix_######
 gmt_set_framename() {
-	echo $1 $2 | awk '{printf "%s_%06d\n", $1, $2}'
+	echo $1 $2 | awk '{printf "%s_%6.6d\n", $1, $2}'
 }
 
 # For animations: Increment frame counter by one
 
 gmt_set_framenext() {
-	gmt math -Q $1 1 ADD =
+	gmtmath -Q $1 1 ADD =
 }

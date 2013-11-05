@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -26,8 +26,16 @@
 #ifndef _GMT_COLORS_H
 #define _GMT_COLORS_H
 
+enum GMT_enum_color {GMT_RGB	= 0,
+	GMT_CMYK		= 1,
+	GMT_HSV			= 2,
+	GMT_COLORINT		= 4,
+	GMT_NO_COLORNAMES	= 8};
+
+enum GMT_enum_bfn {GMT_BGD, GMT_FGD, GMT_NAN};
+
 /* Copy two RGB[T] arrays (a = b) */
-#define GMT_rgb_copy(a,b) memcpy (a, b, 4 * sizeof(double))
+#define GMT_rgb_copy(a,b) memcpy (a, b, (size_t)(4 * sizeof(double)))
 
 /* To compare is two colors are ~ the same */
 #define GMT_eq(a,b) (fabs((a)-(b)) < GMT_SMALL)
@@ -56,5 +64,44 @@
 
 /* Force component to be in 0 <= s <= 255 range */
 #define GMT_0_255_truncate(s) ((s < 0) ? 0 : ((s > 255) ? 255 : s))	/* Truncate to allowable 0-255 range */
+
+/* Here is the definition of the GMT_PALETTE structure that is used in programs
+ * that deals with coloring of items as a function of z-lookup.  Note that rgb
+ * arrays have 4 items as the 4th value could be a non-zero transparency (when supported).
+ */
+ 
+struct GMT_LUT {
+	double z_low, z_high, i_dz;
+	double rgb_low[4], rgb_high[4], rgb_diff[4];
+	double hsv_low[4], hsv_high[4], hsv_diff[4];
+	GMT_LONG annot;
+	GMT_LONG skip;
+	struct GMT_FILL *fill;	/* Use by grdview */			/* Content not counted by sizeof (struct) */
+	char *label;		/* For non-number labels */		/* Content not counted by sizeof (struct) */
+};
+
+struct GMT_BFN_COLOR {		/* For back-, fore-, and nan-colors */
+	double rgb[4];
+	double hsv[4];
+	GMT_LONG skip;
+	struct GMT_FILL *fill;						/* Content not counted by sizeof (struct) */
+};
+
+struct GMT_PALETTE {		/* Holds all pen, color, and fill-related parameters */
+	GMT_LONG n_headers;		/* Number of CPT file header records (0 if no header) */
+	struct GMT_LUT *range;		/* CPT lookup table read by GMT_read_cpt */
+	struct GMT_BFN_COLOR patch[3];	/* Structures with back/fore/nan colors */
+	GMT_LONG n_colors;		/* Number of colors in CPT lookup table */
+	GMT_LONG cpt_flags;		/* Flags controling use of BFN colors */
+	GMT_LONG alloc_mode;		/* Allocation info [0] */
+	GMT_LONG model;			/* RGB, HSV, CMYK */
+	GMT_LONG is_gray;		/* TRUE if only grayshades are needed */
+	GMT_LONG is_bw;			/* TRUE if only black and white are needed */
+	GMT_LONG is_continuous;		/* TRUE if continuous color tables have been given */
+	GMT_LONG has_pattern;		/* TRUE if cpt file contains any patterns */
+	GMT_LONG skip;			/* TRUE if current z-slice is to be skipped */
+	GMT_LONG categorical;		/* TRUE if CPT applies to categorical data */
+	char **header;			/* Array with all CPT ile header records, if any) */		/* Content not counted by sizeof (struct) */
+};
 
 #endif /* _GMT_COLORS_H */

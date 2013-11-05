@@ -1,7 +1,7 @@
 ////
 $Id$
 
-Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis
+Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis,
 and F. Wobbe. See LICENSE.TXT file for copying and redistribution conditions.
 
 Contact info: gmt.soest.hawaii.edu
@@ -10,16 +10,11 @@ Contact info: gmt.soest.hawaii.edu
 CMake User Guide
 ================
 
-Note: This guide is also available at http://gmtrac.soest.hawaii.edu/
-
 Build and runtime prerequisites
 -------------------------------
 
-1. Software:
-  You need Ghostscript, CMake (>=2.8.5), netCDF (>=4.0, netCDF-4/HDF5
-  support mandatory).  Optionally install Sphinx, PCRE, GDAL, and FFTW.
-2. Data:
-  You need gshhg (>=2.2.2); optionally install dcw-gmt (>=1.0.5)
+You need Ghostscript, CMake (>=2.8.5), netCDF (>=3.6.3, version 4 recommended).
+Optionally install PCRE and GDAL.
 
 Information for building GMT 5 with CMake
 -----------------------------------------
@@ -33,47 +28,47 @@ Checkout GMT5 from its subversion repository:
   $ cd gmt5-dev
   $ cp cmake/ConfigUserTemplate.cmake cmake/ConfigUser.cmake
 
-Edit *cmake/ConfigUser.cmake* [see comments in the file]. Then:
+Edit *cmake/ConfigUser.cmake*. Then:
 
   $ mkdir build
   $ cd build
-  $ cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-  $ make -jx
+  $ cmake -DCMAKE_INSTALL_PREFIX=gmt5 -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+  $ make -j8
 
-where _x_ is the number of threads you want to use and depends on the number
-of cores in your CPU and if hyperthreading is available or not.
-cmake ill build out-of-source in the the directory _build_. 'CMAKE_BUILD_TYPE'
-can be one of: empty, Debug, Release, RelWithDebInfo or MinSizeRel
+will build out-of-source in the the directory _build_. 'CMAKE_BUILD_TYPE' can
+be one of: empty, Debug, Release, RelWithDebInfo or MinSizeRel
 
-  $ make -jx install
+  $ make -j8 install
 
 installs a basic gmt in _build/gmt5_.
 
 NOTE: All cmake command line options such as _-DCMAKE_INSTALL_PREFIX_ can be
-configured in *cmake/ConfigUser.cmake*.
+configured in *cmake/ConfigUser.cmake*. You can define the number of jobs to run
+simultaneously by make with the _-jx_ option, where _x_ is typically the
+number of CPUs.
 
 In more detail:
 ~~~~~~~~~~~~~~~
 
 For CMake related questions refer to the CMake manual which is available
-online: http://www.cmake.org/cmake/help/documentation.html
+online: http://www.cmake.org/cmake/help/cmake-2-8-docs.html
 
-To avoid CMake's lengthy command line options you can create your custom
-ConfigUser.cmake file in the cmake directory. Simply duplicate the
-cmake/ConfigUserTemplate.cmake to cmake/ConfigUser.cmake and then make
-changes in cmake/ConfigUser.cmake. See additional comments in that file.
+To avoid CMake's lengthy command line options you should create your custom
+ConfigUser.cmake file in the cmake directory. Simply copy
+cmake/ConfigUserTemplate.cmake to cmake/ConfigUser.cmake and then make changes
+in cmake/ConfigUser.cmake. See additional comments in that file.
 
 There are two configuration files:
 
 1. "ConfigDefault.cmake" -- is version controlled and used to add new default
-    variables and set defaults for everyone. You should not edit this file.
-2. "ConfigUser.cmake" -- is not version controlled (currently listed in
-    svn:ignore property) and used to override defaults on a per-user basis.
-    There is a template file, ConfigUserTemplate.cmake, that you should copy
-    to ConfigUser.cmake and make your changes therein.
+    variables and set defaults for everyone.
+2. "ConfigUser.cmake" -- is not version controlled (currently listed in svn:ignore
+    property) and used to override defaults on a per-user basis. There is a
+    template file, ConfigUserTemplate.cmake, that you should copy to
+    ConfigUser.cmake and make your changes therein.
 
-NOTE: If you want to change CMake behaviour for your build then only modify
-      the "ConfigUser.cmake" file (not "ConfigDefault.cmake").
+NOTE: If you want to change CMake behaviour for your build then only modify the
+      "ConfigUser.cmake" file (not "ConfigDefault.cmake").
 
 Invoking CMake:
 ~~~~~~~~~~~~~~~
@@ -86,58 +81,41 @@ minimal required version and then search for required and optional libraries
 fail if dependencies are not met. You have to ensure that CMake can find the
 required resources by configuring *cmake/ConfigUser.cmake*.
 
-Finding GSHHG:
+Finding GSHHS:
 ~~~~~~~~~~~~~~
 
-GSHHG shorelines are searched in FindGSHHG.cmake and a little helper program
-tests the version (gshhg_version.c). If CMake cannot find the shorelines you
-have to configure _GSHHG_ROOT_ in cmake/ConfigUser.cmake.
-
-Finding DCW:
-~~~~~~~~~~~~~~
-
-DCW (Digital Chart of the World) country polygons are searched at compile time.
-The DCW data are optional; they are currently used in pscoast -F for painting
-individual countries only.  If CMake cannot auto-find DCW for you then you can
-configure _DCW_ROOT_ in cmake/ConfigUser.cmake.
+GSHHS shorelines are searched in FindGSHHS.cmake and a little helper programm
+tests the version (gshhs_version.c). If CMake cannot find the shorelines you
+have to configure _GSHHS_ROOT_ in cmake/ConfigUser.cmake.
 
 Documentation:
 ~~~~~~~~~~~~~~
 
-The GMT manual is available in different formats and can be generated with:
+Manpages are available in different formats and can be generated with:
 
-  $ make -jx docs_man        # UNIX manual pages
-  $ make -jx docs_html       # HTML manual, cookbook, and API reference
-  $ make -jx docs_pdf        # PDF manual, cookbook, and API reference
-  $ make -jx docs_pdf_shrink # Like docs_pdf but with reduced size
+  $ make -j8 manpages_all
 
-To generate the documentation you need to install the Sphinx documentation
-builder, and for PDFs you also need LaTeX.  You can choose to install the
-documentation files from an external location instead of generating the
-Manpages, PDF, and HTML files from the sources.  This is convenient if Sphinx
-and/or LaTeX are not available.  Set GMT_INSTALL_EXTERNAL_DOC in
-cmake/ConfigUser.cmake.
+To generate the PDF documentation you need LaTeX:
+
+  $ make -j8 gmt_doc
+
+You can choose to install documentation files from an external location instead
+of generating the PDF and HTML files from the sources. This is convenient if
+LaTeX is not available. Set GMT_INSTALL_EXTERNAL_DOC in cmake/ConfigUser.cmake.
 
 Installing:
 ~~~~~~~~~~~
 
-  $ make -jx install
+  $ make -j8 install
 
-will compile and install libps, libgmt, and the gmt executable. Optionally it
-will install the GSHHG shorelines (if found), DCW (if found), UNIX manpages,
-and HTML and PDF documentation.
-
+will compile and install libps, libgmt, and all GMT modules. Optionally it
+will install the GSHHS shorelines (if found), manpages, and PDF documentation.
 You have to explicitly make the latter two beforehand or they will be omitted
-during installation.  You have the choice between installing into a
-traditional directory structure (_-DGMT_INSTALL_TRADITIONAL_FOLDERNAMES=ON_)
-where everything goes into a common subdirectory or a distribution-like
-installation (PREFIX/bin/gmtSUFFIX, PREFIX/lib/gmtSUFFIX/,
-PREFIX/include/gmtSUFFIX/, PREFIX/share/gmtSUFFIX/,
-PREFIX/share/doc/gmtSUFFIX/).
-
-GMT is shipped as a single executable.  By default we also set "classic mode"
-by installing convenience links for all GMT modules. New GMT users should set
-GMT_INSTALL_MODULE_LINKS to FALSE in cmake/ConfigUser.cmake.
+during installation. You have the choice between a monolithic installation
+(_-DGMT_INSTALL_MONOLITHIC=ON_) where everything goes into a common
+subdirectory or a distribution-like installation (PREFIX/bin/gmt-VERSION,
+PREFIX/lib/gmt-VERSION/, PREFIX/share/gmt-VERSION/,
+PREFIX/share/doc/gmt-VERSION/).
 
 Updating:
 ~~~~~~~~~
@@ -148,7 +126,7 @@ working directory is the build directory this is just as simple as
   $ cd ..
   $ svn up
   $ cd -
-  $ make -jx install
+  $ make -j8 install
 
 CMake will detect any changes to the source files and will automatically
 reconfigure. If you deleted all files inside the build directory you have to
@@ -159,56 +137,65 @@ Packaging:
 
 Currently, packaging with CPack works on MacOSX (Bundle, TGZ, TBZ2),
 Windows (ZIP, NSIS), and UNIX (TGZ, TBZ2). On Windows you need to install NSIS
-(http://nsis.sourceforge.net/). After building GMT and the documentation run
-either one of these:
+(http://nsis.sourceforge.net/). After building GMT run either one of these:
 
   $ make package
   $ cpack -G <TGZ|TBZ2|Bundle|ZIP|NSIS>
+
+You probably also want to run cmake with _-DGMT_INSTALL_MONOLITHIC=ON_ before
+creating packages.
 
 Creating a source package:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Set GMT_RELEASE_PREFIX in cmake/ConfigUser.cmake and run cmake. Then do
 
-  $ make -jx docs_depends # optional but increases speed (parallel build)
-  $ make gmt_release      # export the source tree and install doc
+  $ make gmt_doc         # make PDF and HTML documentation
+  $ make gmt_doc_shrink  # reduce the size of the PDFs
+  $ make gmt_release     # export the source tree and install doc
 
 You should then edit ${GMT_RELEASE_PREFIX}/cmake/ConfigDefault.cmake and
 set GMT_PACKAGE_VERSION_MAJOR, GMT_PACKAGE_VERSION_MINOR, and
 GMT_PACKAGE_VERSION_PATCH. Also uncomment and set
-GMT_SOURCE_CODE_CONTROL_VERSION_STRING to the current svn version. Then
-create tarballs with:
-
-  $ make -jx gmt_release_tar
+GMT_SOURCE_CODE_CONTROL_VERSION_STRING to the current svn version.
 
 In-build-dir tests:
 ~~~~~~~~~~~~~~~~~~~
 
-A complete set of the example scripts used to create all the example plots,
-including all necessary data files, are provided by the installation.
 Examples and tests can be build inside GMT_BINARY_DIR *without* installing.
-This is very convenient for testing. Just _enable_testing()_, set
-_DO_EXAMPLES_ and/or _DO_TESTS_ in ConfigUser.cmake and do:
+This is very convenient for testing. Just _enable_testing()_, set _DO_EXAMPLES_
+and/or _DO_TESTS_ in ConfigUser.cmake and do:
 
-  $ make -jx
+  $ make -j8
   $ make check
 
 Optionally set _N_TEST_JOBS_ to the number of ctest jobs to run
-simultaneously. You can also select individual tests using regexp with ctest,
-e.g.:
+simultaneously. You can also select individual tests using regexp with ctest:
 
-  $ ctest -R ex2[3-6]
+  $ ctest -R job1[3-6]
 
-Tests are preferably run through valgrind and GMT's internal memory tracker.
-Configure cmake with _add_definitions(-DMEMDEBUG)_ and prior to invoking the
-test, export the following variables:
 
-  $ export GMT_TRACK_MEMORY=2
-  $ export VALGRIND_ARGS="--track-origins=yes --leak-check=full"
+TODO list
+---------
 
-The test script will keep gmt_memtrack_<pid>.log and valgrind_<pid>.log files
-in the test directories for later inspection, when memory related errors were
-identified.
+* Replace GMT_(malloc|memory): perl -i -pe 's/(GMT_(malloc|memory)[^_].+, )([^,)]+)/$1sizeof($3)/g' files ...
+
+* Remove (void *) casts: perl -i -pe 's/(free.*[(])[(]void[ ]*[*][)][ ]*/$1/g' *.c
+
+* Clean up config.h.cmake gmt_version.h.cmake gmt_notposix.h.cmake.
+  Right now this is a mixture of partly redundant defines that can be
+  simplified. (almost done)
+
+* Make exported cmake variables consistent GMT_..., prefix temporary
+  variables with "_"
+
+* Add further tests/cmake-find-modules:
+  - fftw/Accelerate Framework
+  - xgrid
+  - WIN32: test for USE_MEM_ALIGNED, defined in src/gmt_config.h.cmake
+
+* Generate macros
+  - to build a release (including precompiled manpages, pdf docu, ...)
 
 ////
 vim: ft=asciidoc tw=78 et ts=2 sts=2 sw=2 autoindent smartindent

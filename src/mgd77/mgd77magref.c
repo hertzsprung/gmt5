@@ -14,48 +14,51 @@
  *
  */
 
-#define THIS_MODULE_NAME	"mgd77magref"
-#define THIS_MODULE_LIB		"mgd77"
-#define THIS_MODULE_PURPOSE	"Evaluate the IGRF or CM4 magnetic field models"
-
-#include "gmt_dev.h"
+#include "gmt_mgd77.h"
 #include "mgd77.h"
 
-#define GMT_PROG_OPTIONS "-Vbh" GMT_OPT("Hm")
-
 struct MGD77MAGREF_CTRL {	/* All control options for this program (except common args) */
-	/* active is true if the option has been activated */
+	/* active is TRUE if the option has been activated */
 	struct MGD77_CM4 *CM4;
-	bool copy_input;
-	bool do_IGRF;
-	bool do_CM4;
-	bool joint_IGRF_CM4;
-	struct MGD77_MAGREF_A {	/* -A */
-		bool active;
-		bool fixed_alt;
-		bool fixed_time;
-		int years;
-		int t_col;
+	GMT_LONG copy_input;
+	GMT_LONG do_IGRF;
+	GMT_LONG do_CM4;
+	GMT_LONG joint_IGRF_CM4;
+	struct A {	/* -A */
+		GMT_LONG active;
+		GMT_LONG fixed_alt;
+		GMT_LONG fixed_time;
+		GMT_LONG years;
+		GMT_LONG t_col;
 		double altitude;
 		double time;
 	} A;
-	struct MGD77_MAGREF_C {	/* -C */
-		bool active;
+	struct C {	/* -C */
+		GMT_LONG active;
 	} C;
-	struct MGD77_MAGREF_D {	/* -D */
-		bool active;
+	struct D {	/* -D */
+		GMT_LONG active;
 	} D;
-	struct MGD77_MAGREF_F {	/* -F */
-		bool active;
+	struct E {	/* -E */
+		GMT_LONG active;
+		GMT_LONG mode;
+	} E;
+	struct F {	/* -F */
+		GMT_LONG active;
 	} F;
-	struct MGD77_MAGREF_G {	/* -G */
-		bool active;
+	struct G {	/* -G */
+		GMT_LONG active;
 	} G;
-	struct MGD77_MAGREF_L {	/* -L */
-		bool active;
+	struct I {	/* -I */
+		GMT_LONG active;
+		GMT_LONG n;
+		char code[3];
+	} I;
+	struct L {	/* -L */
+		GMT_LONG active;
 	} L;
-	struct MGD77_MAGREF_S {	/* -S */
-		bool active;
+	struct S {	/* -S */
+		GMT_LONG active;
 	} S;
 };
 
@@ -63,98 +66,95 @@ void *New_mgd77magref_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a
 	struct MGD77MAGREF_CTRL *C = NULL;
 
 	C = GMT_memory (GMT, NULL, 1, struct MGD77MAGREF_CTRL);
-	C->CM4 = calloc (1U, sizeof (struct MGD77_CM4));
+	C->CM4 = calloc ((size_t)1, sizeof (struct MGD77_CM4));
 
-	/* Initialize values whose defaults are not 0/false/NULL */
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
 
-	C->do_CM4 = true;
+	C->do_CM4 = TRUE;
 	return (C);
 }
 
 void Free_mgd77magref_Ctrl (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
 	free (C->CM4);
 	GMT_free (GMT, C);
 }
 
-int GMT_mgd77magref_usage (struct GMTAPI_CTRL *API, int level)
+GMT_LONG GMT_mgd77magref_usage (struct GMTAPI_CTRL *C, GMT_LONG level)
 {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: mgd77magref [<table>] [-A+y+a<alt>+t<date>] [-C<cm4file>] [-D<dstfile>] [-E<f107file>]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[-F<rthxyzdi[/[0|9]1234567]>] [-G] [-L<rtxyz[/1234]>] [-Sc|l<low>/<high>] [%s]\n", GMT_V_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\n", GMT_b_OPT, GMT_h_OPT, GMT_colon_OPT);
+	struct GMT_CTRL *GMT = C->GMT;
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	GMT_message (GMT, "mgd77magref %s [API] - Evaluate the IGRF or CM4 magnetic field models\n\n", GMT_VERSION);
+	GMT_message (GMT, "usage: mgd77magref [<table>] [-A+y+a<alt>+t<date>] [-C<cm4file>] [-D<dstfile>] [-E<f107file>]\n");
+	GMT_message (GMT, "\t[-F<rthxyzdi[/[0|9]1234567]>] [-G] [-L<rtxyz[/1234]>] [-Sc|l<low>/<high>]\n");
+	GMT_message (GMT, "\t[-V] [%s] [%s] [%s]\n\n", GMT_b_OPT, GMT_h_OPT, GMT_colon_OPT);
 
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t<table> contains records that must contain lon, lat, alt, time[, other cols].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   longitude and latitude is the geocentric position on the ellipsoid [but see -G].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   alt is the altitude in km positive above the ellipsoid.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   time is the time of data aquisition, in <date>T<clock> format (but see -A+y).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   We read <stdin> if no input file is given.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-A Adjust how the input records are interpreted. Append\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   +a<alt> to indicate a constant altitude [Default is 3rd column].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   +t<time> to indicate a constant time [Default is 4th column].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   +y to indicate times are given in decimal years [Default is ISO <date>T<clock> format].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-C Select an alternate file with coefficients for the CM4 model [%s/umdl.CM4].\n",
-		API->GMT->session.SHAREDIR);
-	GMT_Message (API, GMT_TIME_NONE, "\t-D Select an alternate file with hourly means of the Dst index for CM4 [%s/Dst_all.wdc],\n",
-		API->GMT->session.SHAREDIR);
-	GMT_Message (API, GMT_TIME_NONE, "\t   OR a single Dst index to apply for all records.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Select an alternate file with monthly means of absolute F10.7 solar radio flux for CM4 [%s/F107_mon.plt],\n",
-		API->GMT->session.SHAREDIR);
-	GMT_Message (API, GMT_TIME_NONE, "\t   OR a single solar radio flux to apply for all records.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-F Dataflags is a string made up of 1 or more of these characters:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 r means output all input columns before adding the items below (all in nTesla).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 t means list total field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 h means list horizontal field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 x means list X component.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 y means list Y component.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 z means list Z component.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 d means list declination.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 i means list inclination.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append a number to indicate the requested field contribution(s):\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 0 means Core field from IGRF only (no CM4 evalution).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 1 means Core field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 2 means Lithospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 3 Primary Magnetospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 4 Induced Magnetospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 5 Primary ionospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 6 Induced ionospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 7 Toroidal field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 9 means Core field from IGRF and other contributions from CM4. DO NOT USE BOTH 1 AND 9.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append several numbers to add up the different contributions. For example,\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     -Ft/12 computes the total field due to CM4 Core and Lithospheric sources.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     Two special cases are allowed which mix which Core field from IGRF and other sources from CM4.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     -Ft/934 computes Core field due to IGRF plus terms 3 and 4 from CM4.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     -Fxyz/934 the same as above but output the field components.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 The data is written out in the order specified in <dataflags>\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 [Default is -Frthxyzdi/1]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-G Specify that coordinates are geocentric [geodetic].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-L Compute J field vectors from certain external sources.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Dataflags is a string made up of 1 or more of these characters:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 r means output all input columns before adding the items below (all in Ampers/m).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 t means list magnitude field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 x means list X component.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 y means list Y component.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 z means list Z or current function Psi.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append a number to indicate the requested J contribution(s)\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 1 means Induced Magnetospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 2 means Primary ionospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 3 means Induced ionospheric field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t	 4 means Poloidal field.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Limit the CM4 contributions from core and lithosphere to certain harmonic degree bands.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append c(ore) or l(ithosphere) and the low and high degrees to use [-Sc1/13 -Sl14/65].\n");
-	GMT_Option (API, "V,bi0");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Default is 4 input columns (unless -A is used).  Note for binary input, absolute time must\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   be in the unix time-system (unless -A+y is used).\n");
-	GMT_Option (API, "bo,h,:,.");
+	if (level == GMTAPI_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_message (GMT, "\n\tOPTIONS:\n");
+	GMT_message (GMT, "\t<table> contains records that must contain lon, lat, alt, time[, other cols].\n");
+	GMT_message (GMT, "\t   longitude and latitude is the geocentric position on the ellipsoid [but see -G].\n");
+	GMT_message (GMT, "\t   alt is the altitude in km positive above the ellipsoid.\n");
+	GMT_message (GMT, "\t   time is the time of data aquisition, in <date>T<clock> format (but see -A+y).\n");
+	GMT_message (GMT, "\t   We read <stdin> if no input file is given.\n");
+	GMT_message (GMT, "\t-A Adjust how the input records are interpreted. Append\n");
+	GMT_message (GMT, "\t   +a<alt> to indicate a constant altitude [Default is 3rd column].\n");
+	GMT_message (GMT, "\t   +t<time> to indicate a constant time [Default is 4th column].\n");
+	GMT_message (GMT, "\t   +y to indicate times are given in decimal years [Default is ISO <date>T<clock> format].\n");
+	GMT_message (GMT, "\t-C Select an alternate file with coefficients for the CM4 model [%s/umdl.CM4].\n", GMT->session.SHAREDIR);
+	GMT_message (GMT, "\t-D Select an alternate file with hourly means of the Dst index for CM4 [%s/Dst_all.wdc],\n", GMT->session.SHAREDIR);
+	GMT_message (GMT, "\t   OR a single Dst index to apply for all records.\n");
+	GMT_message (GMT, "\t-E Select an alternate file with monthly means of absolute F10.7 solar radio flux for CM4 [%s/F107_mon.plt],\n", GMT->session.SHAREDIR);
+	GMT_message (GMT, "\t   OR a single solar radio flux to apply for all records.\n");
+	GMT_message (GMT, "\t-F Dataflags is a string made up of 1 or more of these characters:\n");
+	GMT_message (GMT, "\t	 r means output all input columns before adding the items below (all in nTesla).\n");
+	GMT_message (GMT, "\t	 t means list total field.\n");
+	GMT_message (GMT, "\t	 h means list horizontal field.\n");
+	GMT_message (GMT, "\t	 x means list X component.\n");
+	GMT_message (GMT, "\t	 y means list Y component.\n");
+	GMT_message (GMT, "\t	 z means list Z component.\n");
+	GMT_message (GMT, "\t	 d means list declination.\n");
+	GMT_message (GMT, "\t	 i means list inclination.\n");
+	GMT_message (GMT, "\t   Append a number to indicate the requested field contribution(s):\n");
+	GMT_message (GMT, "\t	 0 means Core field from IGRF only (no CM4 evalution).\n");
+	GMT_message (GMT, "\t	 1 means Core field.\n");
+	GMT_message (GMT, "\t	 2 means Lithospheric field.\n");
+	GMT_message (GMT, "\t	 3 Primary Magnetospheric field.\n");
+	GMT_message (GMT, "\t	 4 Induced Magnetospheric field.\n");
+	GMT_message (GMT, "\t	 5 Primary ionospheric field.\n");
+	GMT_message (GMT, "\t	 6 Induced ionospheric field.\n");
+	GMT_message (GMT, "\t	 7 Toroidal field.\n");
+	GMT_message (GMT, "\t	 9 means Core field from IGRF and other contributions from CM4. DO NOT USE BOTH 0 AND 9.\n");
+	GMT_message (GMT, "\t   Append several numbers to add up the different contributions. For example,\n");
+	GMT_message (GMT, "\t     -Ft/12 computes the total field due to CM4 Core and Lithospheric sources.\n");
+	GMT_message (GMT, "\t     Two special cases are allowed which mix which Core field from IGRF and other sources from CM4.\n");
+	GMT_message (GMT, "\t     -Ft/934 computes Core field due to IGRF plus terms 3 and 4 from CM4.\n");
+	GMT_message (GMT, "\t     -Fxyz/934 the same as above but output the field components.\n");
+	GMT_message (GMT, "\t	 The data is written out in the order specified in <dataflags>\n");
+	GMT_message (GMT, "\t	 [Default is -Frthxyzdi/1]\n");
+	GMT_message (GMT, "\t-G Specify that coordinates are geocentric [geodetic].\n");
+	GMT_message (GMT, "\t-L Compute J field vectors from certain external sources.\n");
+	GMT_message (GMT, "\t   Dataflags is a string made up of 1 or more of these characters:\n");
+	GMT_message (GMT, "\t	 r means output all input columns before adding the items below (all in Ampers/m).\n");
+	GMT_message (GMT, "\t	 t means list magnitude field.\n");
+	GMT_message (GMT, "\t	 x means list X component.\n");
+	GMT_message (GMT, "\t	 y means list Y component.\n");
+	GMT_message (GMT, "\t	 z means list Z or current function Psi.\n");
+	GMT_message (GMT, "\t   Append a number to indicate the requested J contribution(s)\n");
+	GMT_message (GMT, "\t	 1 means Induced Magnetospheric field.\n");
+	GMT_message (GMT, "\t	 2 means Primary ionospheric field.\n");
+	GMT_message (GMT, "\t	 3 means Induced ionospheric field.\n");
+	GMT_message (GMT, "\t	 4 means Poloidal field.\n");
+	GMT_message (GMT, "\t-S Limit the CM4 contributions from core and lithosphere to certain harmonic degree bands.\n");
+	GMT_message (GMT, "\t   Append c(ore) or l(ithosphere) and the low and high degrees to use [-Sc1/13 -Sl14/65].\n");
+	GMT_explain_options (GMT, "VC0");
+	GMT_message (GMT, "\t   Default is 4 input columns (unless -A is used).  Note for binary input, absolute time must\n");
+	GMT_message (GMT, "\t   be in the unix time-system (unless -A+y is used).\n");
+	GMT_explain_options (GMT, "D0fh:.");
 
 	return (EXIT_FAILURE);
 }
 
-int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, struct GMT_OPTION *options)
+GMT_LONG GMT_mgd77magref_parse (struct GMTAPI_CTRL *C, struct MGD77MAGREF_CTRL *Ctrl, struct GMT_OPTION *options)
 {
 	/* This parses the options provided to mgd77magref and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
@@ -162,12 +162,11 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0, pos, n_out, lfval = 0, pos_slash = 0, nval = 0, nfval = 0, lval = 0;
-	int j;
-	char p[GMT_BUFSIZ] = {""}, tfixed[GMT_LEN64] = {""};
-	bool do_CM4core = false;
+	GMT_LONG n_errors = 0, j, pos, t_col = 3, pos_slash = 0, nval = 0, nfval = 0, lval = 0;
+	GMT_LONG n_out, lfval = 0;
+	char p[GMT_BUFSIZ];
 	struct GMT_OPTION *opt = NULL;
-	struct GMTAPI_CTRL *API = GMT->parent;
+	struct GMT_CTRL *GMT = C->GMT;
 
 	for (opt = options; opt; opt = opt->next) {
 		switch (opt->option) {
@@ -178,21 +177,22 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 			/* Processes program-specific parameters */
 
 			case 'A':
-				Ctrl->A.active = true;
+				Ctrl->A.active = TRUE;
 				pos = 0;
 				while ((GMT_strtok (opt->arg, "+", &pos, p))) {
 					switch (p[0]) {
 						case 'a':
-							Ctrl->A.fixed_alt = true;
+							Ctrl->A.fixed_alt = TRUE;
 							Ctrl->A.altitude = atof (&p[1]);
+							t_col = 2;	/* Since we are missing the altitude column */
 							break;
 						case 't':
-							Ctrl->A.fixed_time = true;
-							strncpy (tfixed, &p[1], GMT_LEN64);
+							Ctrl->A.fixed_time = TRUE;
+							Ctrl->A.time = atof (&p[1]);
 							GMT->current.io.col_type[GMT_OUT][3] = GMT_IS_FLOAT;
 							break;
 						case 'y':
-							Ctrl->A.years = true;
+							Ctrl->A.years = TRUE;
 							GMT->current.io.col_type[GMT_IN][2] = GMT->current.io.col_type[GMT_OUT][2] = 
 												GMT->current.io.col_type[GMT_IN][3] = 
 												GMT->current.io.col_type[GMT_OUT][3] = 
@@ -202,15 +202,9 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 							break;
 					}
 				}
-				if (Ctrl->A.fixed_time) {
-					if (Ctrl->A.years)
-						Ctrl->A.time = atof (tfixed);
-					else
-						GMT_scanf_arg (GMT, tfixed, GMT_IS_ABSTIME, &Ctrl->A.time);
-				}
 				break;
 			case 'C':	/* Alternate CM4 coefficient file */
-				Ctrl->C.active = true;
+				Ctrl->C.active = TRUE;
 				free (Ctrl->CM4->CM4_M.path);
 				Ctrl->CM4->CM4_M.path = strdup (opt->arg);
 				break;
@@ -219,27 +213,27 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 				if (opt->arg[j] == '-') j++;
 				if ((opt->arg[j] > 47) && (opt->arg[j] < 58)) {	/* arg is numeric -> Dst Index */
 					Ctrl->CM4->CM4_D.dst[0] = atof (&opt->arg[j]);
-					Ctrl->CM4->CM4_D.index = false;
+					Ctrl->CM4->CM4_D.index = FALSE;
 				}
 				else {
 					free (Ctrl->CM4->CM4_D.path);
 					Ctrl->CM4->CM4_D.path = strdup (opt->arg);
-					Ctrl->CM4->CM4_D.load = true;
+					Ctrl->CM4->CM4_D.load = TRUE;
 				}
 				break;
 			case 'E':
 				if ((opt->arg[0] > 47) && (opt->arg[0] < 58)) {	/* arg is numeric -> Dst Index */
 					Ctrl->CM4->CM4_I.F107 = atof (opt->arg);
-					Ctrl->CM4->CM4_I.index = false;
+					Ctrl->CM4->CM4_I.index = FALSE;
 				}
 				else {
 					free (Ctrl->CM4->CM4_I.path);
 					Ctrl->CM4->CM4_I.path = strdup (opt->arg);
-					Ctrl->CM4->CM4_I.load = true;
+					Ctrl->CM4->CM4_I.load = TRUE;
 				}
 				break;
 			case 'F':
-				Ctrl->CM4->CM4_F.active = true;
+				Ctrl->CM4->CM4_F.active = TRUE;
 
 				pos_slash = 0;
 				for (j = 0; opt->arg[j]; j++) {
@@ -249,7 +243,7 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 					}
 					switch (opt->arg[j]) {
 						case 'r':		/* Echo input record */
-							Ctrl->copy_input = true;
+							Ctrl->copy_input = TRUE;
 							break;
 						case 't':		/* Total field is requested */
 							Ctrl->CM4->CM4_F.field_components[nval++] = 0;
@@ -280,13 +274,12 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 					for (j = pos_slash; opt->arg[j]; j++) {
 						switch (opt->arg[j]) {
 							case '0':		/* IGRF */
-								Ctrl->do_IGRF = true;
-								Ctrl->do_CM4  = false;
-								Ctrl->joint_IGRF_CM4 = false;
+								Ctrl->do_IGRF = TRUE;
+								Ctrl->do_CM4  = FALSE;
+								Ctrl->joint_IGRF_CM4 = FALSE;
 								break;
 							case '1':		/* Main field 1 */
 								Ctrl->CM4->CM4_F.field_sources[nfval++] = 0;
-								do_CM4core = true;
 								break;
 							case '2':		/* Main field 2 */
 								Ctrl->CM4->CM4_F.field_sources[nfval++] = 1;
@@ -307,9 +300,9 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 								Ctrl->CM4->CM4_F.field_sources[nfval++] = 6;
 								break;
 							case '9':		/* Main field is computed with the IGRF */
-								Ctrl->do_IGRF = false;/* No contradiction, the way will be through joint_IGRF_CM4 */
-								Ctrl->do_CM4  = true;	/* Well maybe, if some other source is selected also */
-								Ctrl->joint_IGRF_CM4 = true;
+								Ctrl->do_IGRF = FALSE;/* No contradiction, the way will be through joint_IGRF_CM4 */
+								Ctrl->do_CM4  = TRUE;	/* Well maybe, if some other source is selected also */
+								Ctrl->joint_IGRF_CM4 = TRUE;
 								break;
 						}
 					}
@@ -317,10 +310,10 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 				}
 				break;
 			case 'G':
-				Ctrl->CM4->CM4_G.geodetic = false;
+				Ctrl->CM4->CM4_G.geodetic = FALSE;
 				break;
 			case 'L':
-				Ctrl->CM4->CM4_L.curr = true;
+				Ctrl->CM4->CM4_L.curr = TRUE;
 
 				pos_slash = 0;
 				for (j = 0; opt->arg[j]; j++) {
@@ -330,7 +323,7 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 					}
 					switch (opt->arg[j]) {
 						case 'r':		/* Echo input record */
-							Ctrl->copy_input = true;
+							Ctrl->copy_input = TRUE;
 							break;
 						case 't':		/* Total field is requested */
 							Ctrl->CM4->CM4_L.curr_components[lval++] = 0;
@@ -372,14 +365,14 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 				if (opt->arg[0] == 'c') {
 					j = sscanf (&opt->arg[1], "%d/%d", &Ctrl->CM4->CM4_S.nlmf[0], &Ctrl->CM4->CM4_S.nhmf[0]);
 					if (j != 2) {
-						GMT_Report (API, GMT_MSG_NORMAL, "Error: -Sc option usage is -Sc<low/high>\n");
+						GMT_report (GMT, GMT_MSG_FATAL, "Error: -Sc option usage is -Sc<low/high>\n");
 						n_errors++;
 					}
 				}
 				if (opt->arg[0] == 'l') {
 					j = sscanf (&opt->arg[1], "%d/%d", &Ctrl->CM4->CM4_S.nlmf[1], &Ctrl->CM4->CM4_S.nhmf[1]);
 					if (j != 2) {
-						GMT_Report (API, GMT_MSG_NORMAL, "Error: -Sl option usage is -Sl<low/high>\n");
+						GMT_report (GMT, GMT_MSG_FATAL, "Error: -Sl option usage is -Sl<low/high>\n");
 						n_errors++;
 					}
 				}
@@ -391,30 +384,22 @@ int GMT_mgd77magref_parse (struct GMT_CTRL *GMT, struct MGD77MAGREF_CTRL *Ctrl, 
 	}
 
 	n_out = 4 - (Ctrl->A.fixed_alt + Ctrl->A.fixed_time);	/* Minimum input columns (could be more) */
-	if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0)
-		GMT->common.b.ncol[GMT_IN] = n_out;
+	if (GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0) GMT->common.b.ncol[GMT_IN] = n_out;
 	n_errors += GMT_check_condition (GMT, GMT->common.b.active[GMT_IN] && GMT->common.b.ncol[GMT_IN] == 0, 
-			"Syntax error: Binary input data (-bi) must have at least %d columns\n", n_out);
+			"Syntax error: Binary input data (-bi) must have at least %ld columns\n", n_out);
 	n_errors += GMT_check_condition (GMT, Ctrl->CM4->CM4_F.active && Ctrl->CM4->CM4_L.curr, 
 			"Syntax error: You cannot select both -F and -L options\n");
-	n_errors += GMT_check_condition (GMT, (do_CM4core && Ctrl->do_IGRF) || (do_CM4core && Ctrl->joint_IGRF_CM4),
-			"Syntax error: You cannot select both CM4 core (1) and IGRF as they are both core fields.\n");
 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
 
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
-#define Return(code) {free(Ctrl->CM4->CM4_M.path); free(Ctrl->CM4->CM4_D.path); free(Ctrl->CM4->CM4_I.path); \
-	Free_mgd77magref_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
+#define Return(code) {Free_mgd77magref_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_mgd77magref (void *V_API, int mode, void *args)
+GMT_LONG GMT_mgd77magref (struct GMTAPI_CTRL *API, GMT_LONG mode, void *args)
 {
-	unsigned int j, nval = 0, nfval = 0, error = 0;
-	unsigned int lval = 0, lfval = 0, n_field_components, tbl;
-	unsigned int n_out = 0, n_in, t_col = 3;
-	bool cm4_igrf_T = false;
-	
-	size_t i, s, need = 0, n_alloc = 0;
+	GMT_LONG i, j, s, nval = 0, nfval = 0, error = 0, t_col = 3, n_out = 0, cm4_igrf_T = FALSE;
+	GMT_LONG lval = 0, lfval = 0, n_field_components, n_alloc = 0, need = 0, tbl;
 
 	double the_altitude, the_time, *time_array = NULL, *alt_array = NULL, *time_years = NULL, IGRF[7], out[GMT_MAX_COLUMNS];
 	double *igrf_xyz = NULL;	/* Temporary storage for the joint_IGRF_CM4 case */
@@ -422,37 +407,30 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 	struct MGD77_CONTROL M;
 	struct MGD77MAGREF_CTRL *Ctrl = NULL;
 	struct GMT_DATASET *Din = NULL;
-	struct GMT_DATATABLE *T = NULL;
+	struct GMT_TABLE *T = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_mgd77magref_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	if (API == NULL) return (GMT_Report_Error (API, GMT_NOT_A_SESSION));
+	options = GMT_Prep_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_mgd77magref_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_mgd77magref_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (options && options->option == '?') return (GMT_mgd77magref_usage (API, GMTAPI_USAGE));	/* Return the usage message */
+	if (options && options->option == GMTAPI_OPT_SYNOPSIS) bailout (GMT_mgd77magref_usage (API, GMTAPI_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	GMT = GMT_begin_module (API, "GMT_mgd77magref", &GMT_cpy);	/* Save current state */
+	if (GMT_Parse_Common (API, "-Vfb", "Hm", options)) Return (API->error);
 	Ctrl = New_mgd77magref_Ctrl (GMT);	/* Allocate and initialize a new control structure */
 	MGD77_Init (GMT, &M);			/* Initialize MGD77 Machinery */
 	MGD77_CM4_init (GMT, &M, Ctrl->CM4);	/* Presets path using strdup */
-	if ((error = GMT_mgd77magref_parse (GMT, Ctrl, options))) {
-		MGD77_end (GMT, &M);
-		Return (error);
-	}
+	if ((error = GMT_mgd77magref_parse (API, Ctrl, options))) Return (error);
 
 	/*---------------------------- This is the mgd77magref main code ----------------------------*/
 
-	n_in = 4 - (Ctrl->A.fixed_alt + Ctrl->A.fixed_time);
-
-	Ctrl->CM4->CM4_D.dst = calloc (1U, sizeof(double));	/* We need at least a size of one in case a value is given in input */
+	Ctrl->CM4->CM4_D.dst = calloc((size_t)(1), sizeof(double));	/* We need at least a size of one in case a value is given in input */
 	GMT->current.io.col_type[GMT_IN][t_col] = GMT->current.io.col_type[GMT_OUT][t_col] = GMT_IS_ABSTIME;	/* By default, time is in 4th input column */
 
 	/* Shorthand for these */
@@ -461,24 +439,24 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 	lval = Ctrl->CM4->CM4_L.n_curr_components;
 	lfval = Ctrl->CM4->CM4_L.n_curr_sources;
 
-	if (nfval && Ctrl->do_IGRF) GMT_Message (API, GMT_TIME_NONE, "Warning. Source fields other than IGRF will be ignored. It's in the manual\n");
+	if (nfval && Ctrl->do_IGRF) GMT_message (GMT, "Warning. Source fields other than IGRF will be ignored. It's in the manual\n");
 
 	/* ------------- Test, and take measures, if mix mode IGRF/CM4 is to be used -------------------------- */
 	if (Ctrl->joint_IGRF_CM4) {
 		if (nfval == 0) {	/* It means we had a -F.../9 which is exactly iqual to -F.../0 */
-			Ctrl->do_IGRF = true;
-			Ctrl->do_CM4  = false;
-			Ctrl->joint_IGRF_CM4 = false;
+			Ctrl->do_IGRF = TRUE;
+			Ctrl->do_CM4  = FALSE;
+			Ctrl->joint_IGRF_CM4 = FALSE;
 		}
 		else {
-			cm4_igrf_T = false;
+			cm4_igrf_T = FALSE;
 			if ( (nval == 1) && (Ctrl->CM4->CM4_F.field_components[0] == 0) ) {
 				for (i = 0; i < 3; i++) Ctrl->CM4->CM4_F.field_components[i] = (int)i+2;	/* Force the x,y,z request */
-				cm4_igrf_T = true;
+				cm4_igrf_T = TRUE;
 			}
 			else if ( !((nval == 3) && (Ctrl->CM4->CM4_F.field_components[0] == 2) && (Ctrl->CM4->CM4_F.field_components[1] == 3) && 
 						(Ctrl->CM4->CM4_F.field_components[2] == 4)) ) {
-				GMT_Report (API, GMT_MSG_NORMAL, "GMT ERROR. In mix CM4/IGRF mode -F option can oly be -Ft[r]/... or -Fxyz[r]/...\n");
+				GMT_report (GMT, GMT_MSG_FATAL, "GMT ERROR. In mix CM4/IGRF mode -F option can oly be -Ft[r]/... or -Fxyz[r]/...\n");
 				error++;
 			}
 
@@ -490,12 +468,12 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 
 	if (error) Return (EXIT_FAILURE);
 
-	if (!Ctrl->CM4->CM4_F.active && !Ctrl->CM4->CM4_L.curr) Ctrl->CM4->CM4_F.active = true;
+	if (!Ctrl->CM4->CM4_F.active && !Ctrl->CM4->CM4_L.curr) Ctrl->CM4->CM4_F.active = TRUE;
 
 	/* Sort the order in which the parameters appear */
 	if (Ctrl->CM4->CM4_F.active) {
 		if (nval == 0) {		/* No components selected, default used */
-			Ctrl->copy_input = true;
+			Ctrl->copy_input = TRUE;
 			Ctrl->CM4->CM4_F.n_field_components = 7;
 			for (i = 0; i < 7; i++) Ctrl->CM4->CM4_F.field_components[i] = (int)i;
 		}
@@ -507,7 +485,7 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 	}
 	else {
 		if (lval == 0) {		/* Nothing selected, default used */
-			Ctrl->copy_input = true;
+			Ctrl->copy_input = TRUE;
 			Ctrl->CM4->CM4_L.n_curr_components = 1;
 			Ctrl->CM4->CM4_L.curr_components[0] = 0;
 		}
@@ -523,10 +501,6 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 		Ctrl->CM4->CM4_DATA.n_altitudes = 1;
 	}
 	if (Ctrl->A.fixed_time) {	/* A single time should apply to all records; set array to point to this single time */
-		if (!Ctrl->A.years) {
-			if (M.adjust_time) Ctrl->A.time = MGD77_time2utime (GMT, &M, Ctrl->A.time);	/* Convert to Unix time if need be */
-			Ctrl->A.time = MGD77_time_to_fyear (GMT, &M, Ctrl->A.time);			/* Get decimal year */
-		}
 		time_array = &Ctrl->A.time;
 		Ctrl->CM4->CM4_DATA.n_times = 1;
 	}
@@ -536,44 +510,38 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 	GMT->current.io.col_type[GMT_IN][t_col+1] = GMT->current.io.col_type[GMT_OUT][t_col+1] = GMT_IS_FLOAT;		/* Override any previous t_col = 3 settings */
 	if (!Ctrl->copy_input) GMT->current.io.col_type[GMT_OUT][2] = GMT->current.io.col_type[GMT_OUT][3] = GMT_IS_FLOAT;	/* No time on output */
 
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default input sources, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_REG_DEFAULT, options) != GMT_OK) {	/* Registers default input sources, unless already set */
 		Return (API->error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_REG_DEFAULT, options) != GMT_OK) {	/* Registers default output destination, unless already set */
 		Return (API->error);
 	}
 
-	if ((Din = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, 0, GMT_READ_NORMAL, NULL, NULL, NULL)) == NULL) {
+	if ((Din = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, 0, NULL, 0, NULL, NULL)) == NULL) {
 		Return (API->error);
 	}
-	n_out = n_field_components + ((Ctrl->copy_input) ? (unsigned int)Din->n_columns : 0);
+	n_out = n_field_components + ((Ctrl->copy_input) ? Din->n_columns : 0);
 	if (cm4_igrf_T) n_out -= 2;	/* Decrease by 2 because the x,y,z were imposed internaly only. i.e not for output */
 	if ((error = GMT_set_cols (GMT, GMT_OUT, n_out)) != GMT_OK) {
 		Return (error);
 	}
 
 	if (GMT->common.b.active[GMT_OUT] && GMT->common.b.ncol[GMT_OUT] > 0 && n_out > GMT->common.b.ncol[GMT_OUT]) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Binary output must have at least %d columns (your -bo option only set %d)\n", n_out, GMT->common.b.ncol[GMT_OUT]);
+		GMT_report (GMT, GMT_MSG_FATAL, "Binary output must have at least %ld columns (your -bo option only set %ld)\n", n_out, GMT->common.b.ncol[GMT_OUT]);
 		Return (EXIT_FAILURE);
 	}
 
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT) != GMT_OK) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
 
 	for (tbl = 0; tbl < Din->n_tables; tbl++) {	/* Loop over all input tables */
 		T = Din->table[tbl];	/* Current table */
 
-		if (T->n_columns < n_in) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Table %d has %d columns, but from the used options we expect %d\n",
-				tbl + 1, T->n_columns, n_in);
-			continue;
-		}
-
 		for (s = 0; s < T->n_segments; s++) {	/* Process each file segment separately */
-			GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, T->segment[s]->header);
-			need = T->segment[s]->n_rows;   /* Size of output array needed in MGD77_cm4field */
-			if (need > n_alloc) {           /* Need to reallocate */
+			GMT_Put_Record (API, GMT_WRITE_SEGHEADER, T->segment[s]->header);
+			need = T->segment[s]->n_rows;	/* Size of output array needed in MGD77_cm4field */
+			if (need > n_alloc) {	/* Need to reallocate */
 				n_alloc = need;
 				Ctrl->CM4->CM4_DATA.out_field = GMT_memory (GMT, Ctrl->CM4->CM4_DATA.out_field, n_alloc * n_field_components, double);
 				if (!(Ctrl->A.years || Ctrl->A.fixed_time))
@@ -600,9 +568,8 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 			}
 
 			if (!(Ctrl->do_IGRF || Ctrl->joint_IGRF_CM4 ) && !s && time_array[0] > 2002.7) {	/* Only atmospheric terms may be reliable */
-				GMT_Message (API, GMT_TIME_NONE, "Warning: Time is outside the CM4 strict validity domain [1960.0-2002.7].\n");
-				GMT_Message (API, GMT_TIME_NONE, "\tThe secular variation estimation will be unreliable. In this"
-							"\n\tcase you really should use the IGRF to estimate the core contribution\n");
+				GMT_message (GMT, "Warning: Time is outside the CM4 strict validity domain [1960-2002.7].\n");
+				GMT_message (GMT, "\tThough extended here to 2009 the secular variation estimation will be unreliable.\n");
 			}
 
 			Ctrl->CM4->CM4_DATA.n_pts = (int)T->segment[s]->n_rows;
@@ -616,9 +583,8 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 					MGD77_igrf10syn (GMT, 0, the_time, type, the_altitude, T->segment[s]->coord[GMT_X][i],
 							T->segment[s]->coord[GMT_Y][i], IGRF);
 					if (!Ctrl->joint_IGRF_CM4) {		/* IGRF only */
-						int jj;
-						for (jj = 0; jj < Ctrl->CM4->CM4_F.n_field_components; jj++)
-							Ctrl->CM4->CM4_DATA.out_field[i*n_field_components+jj] = IGRF[Ctrl->CM4->CM4_F.field_components[jj]];
+						for (j = 0; j < Ctrl->CM4->CM4_F.n_field_components; j++)
+							Ctrl->CM4->CM4_DATA.out_field[i*n_field_components+j] = IGRF[Ctrl->CM4->CM4_F.field_components[j]];
 					}
 					else {				/* Store the IGRF x,y,z components for later use */
 						for (j = 0; j < 3; j++)
@@ -627,16 +593,8 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 				}
 			}
 
-			if (Ctrl->do_CM4) {				/* DO CM4 only. Eval CM4 at all points */
-				int err;
-				if ((err = MGD77_cm4field (GMT, Ctrl->CM4, T->segment[s]->coord[GMT_X],
-							T->segment[s]->coord[GMT_Y], alt_array, time_array))) {
-					GMT_Report (API, GMT_MSG_NORMAL, "Error: this segment has a record generating an error.\n"
-						"Unfortunately, this means all other eventually good\n"
-						"records are also ignored. Fix the bad record and rerun the command.\n");
-					continue;
-				}
-			}
+			if (Ctrl->do_CM4) 				/* DO CM4 only. Eval CM4 at all points */
+				MGD77_cm4field (GMT, Ctrl->CM4, T->segment[s]->coord[GMT_X], T->segment[s]->coord[GMT_Y], alt_array, time_array);
 
 			if ((Ctrl->do_CM4 || Ctrl->do_IGRF) && !Ctrl->joint_IGRF_CM4) {	/* DID CM4 or (exclusive) IGRF only. */
 				for (i = 0; i < T->segment[s]->n_rows; i++) {	/* Output the requested columns */
@@ -674,7 +632,6 @@ int GMT_mgd77magref (void *V_API, int mode, void *args)
 		Return (API->error);
 	}
 
-	free(Ctrl->CM4->CM4_D.dst);
 	GMT_free (GMT, Ctrl->CM4->CM4_DATA.out_field);
 	if (!(Ctrl->A.years || Ctrl->A.fixed_time)) GMT_free (GMT, time_years);
 	if (Ctrl->joint_IGRF_CM4) GMT_free (GMT, igrf_xyz);

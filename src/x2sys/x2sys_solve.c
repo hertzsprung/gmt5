@@ -5,13 +5,13 @@
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
- *      it under the terms of the GNU Lesser General Public License as published by
- *      the Free Software Foundation; version 3 or any later version.
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; version 2 or any later version.
  *
  *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU Lesser General Public License for more details.
+ *      GNU General Public License for more details.
  *
  *      Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -32,13 +32,7 @@
 
 /* #define DEBUGX */	/* Uncomment for testing */
 
-#define THIS_MODULE_NAME	"x2sys_solve"
-#define THIS_MODULE_LIB		"x2sys"
-#define THIS_MODULE_PURPOSE	"Determine least-squares systematic correction from crossovers"
-
 #include "x2sys.h"
-
-#define GMT_PROG_OPTIONS "->Vb"
 
 #define N_COE_PARS	12	/* Total number of items that might be known at each crossover */
 #define COL_COE		0	/* The crossover value in whatever field we are studying */
@@ -65,31 +59,30 @@
 #define F_IS_DRIFT_T	6	/* Subtract a trend with time from each track */
 
 struct X2SYS_SOLVE_CTRL {
-	struct X2S_SOLVE_In {
-		bool active;
+	struct In {
+		GMT_LONG active;
 		char *file;
 	} In;
-	struct X2S_SOLVE_C {	/* -C */
-		bool active;
+	struct C {	/* -C */
+		GMT_LONG active;
 		char *col;
 	} C;
-	struct X2S_SOLVE_E {	/* -E */
-		bool active;
-		int mode;
+	struct E {	/* -E */
+		GMT_LONG active;
+		GMT_LONG mode;
 	} E;
 #ifdef SAVEFORLATER
-	struct X2S_SOLVE_I {	/* -I */
-		bool active;
+	struct I {	/* -I */
+		GMT_LONG active;
 		char *file;
 	} I;
 #endif
-	struct X2S_SOLVE_T {	/* -T */
-		bool active;
+	struct T {	/* -T */
+		GMT_LONG active;
 		char *TAG;
 	} T;
-	struct X2S_SOLVE_W {	/* -W */
-		bool active;
-		bool unweighted_stats;
+	struct W {	/* -W */
+		GMT_LONG active;
 	} W;
 };
 
@@ -106,7 +99,7 @@ struct X2SYS_SOLVE_CTRL {
  * Col 8:	head_2
  * Col 9:	z_1
  * Col 10:	z_2
- * The array active_col[N_COE_PARS] will be true for those columns actually used
+ * The array active_col[N_COE_PARS] will be TRUE for those columns actually used
  */
 
 /* Available basis functions.  To add more basis functions:
@@ -162,13 +155,12 @@ void *New_x2sys_solve_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a
 
 	C = GMT_memory (GMT, NULL, 1, struct X2SYS_SOLVE_CTRL);
 
-	/* Initialize values whose defaults are not 0/false/NULL */
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
 
 	return (C);
 }
 
 void Free_x2sys_solve_Ctrl (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
 	if (C->In.file) free (C->In.file);
 	if (C->C.col) free (C->C.col);
 #ifdef SAVEFORLATER
@@ -178,35 +170,35 @@ void Free_x2sys_solve_Ctrl (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *C) {	
 	GMT_free (GMT, C);
 }
 
-int GMT_x2sys_solve_usage (struct GMTAPI_CTRL *API, int level) {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
+GMT_LONG GMT_x2sys_solve_usage (struct GMTAPI_CTRL *C, GMT_LONG level) {
+	struct GMT_CTRL *GMT = C->GMT;
+	
+	GMT_message (GMT, "x2sys_solve %s - Determine least-squares systematic correction from crossovers\n\n", X2SYS_VERSION);
 #ifdef SAVEFORLATER
-	GMT_Message (API, GMT_TIME_NONE, "usage: x2sys_solve -C<column> -E<flag> -T<TAG> [<coedata>] [-I<tracklist>] [%s] [-W]\n\t[%s]\n\n", GMT_V_OPT, GMT_bi_OPT);
+	GMT_message (GMT, "usage: x2sys_solve -C<column> -E<flag> -T<TAG> [<coedata>] [-I<tracklist>] [%s] [-W] [%s]\n\n", GMT_V_OPT, GMT_bi_OPT);
 #else
-	GMT_Message (API, GMT_TIME_NONE, "usage: x2sys_solve -C<column> -E<flag> -T<TAG> [<coedata>] [%s] [-W[u]]\n\t[%s]\n\n", GMT_V_OPT, GMT_bi_OPT);
+	GMT_message (GMT, "usage: x2sys_solve -C<column> -E<flag> -T<TAG> [<coedata>] [%s] [-W] [%s]\n\n", GMT_V_OPT, GMT_bi_OPT);
 #endif
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	if (level == GMTAPI_SYNOPSIS) return (EXIT_FAILURE);
 
-	GMT_Message (API, GMT_TIME_NONE, "\t-C Specify the column name to process (e.g., faa, mag).\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-E Equation to fit: specify <flag> as c (constant), d (drift over distance),\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t     g (latitude), h (heading), s (scale with data), or t (drift over time) [c].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-T <TAG> is the x2sys tag for the data set.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t<coedata> is the ASCII data output file from x2sys_list [or we read stdin].\n");
+	GMT_message (GMT, "\t-C Specify the column name to process (e.g., faa, mag).\n");
+	GMT_message (GMT, "\t-E Equation to fit: specify <flag> as c (constant), d (drift over distance),\n");
+	GMT_message (GMT, "\t     g (latitude), h (heading), s (scale with data), or t (drift over time) [c].\n");
+	GMT_message (GMT, "\t-T <TAG> is the x2sys tag for the data set.\n");
+	GMT_message (GMT, "\n\tOPTIONS:\n");
+	GMT_message (GMT, "\t<coedata> is the ASCII data output file from x2sys_list [or we read stdin].\n");
 #ifdef SAVEFORLATER
-	GMT_Message (API, GMT_TIME_NONE, "\t-I List of tracks and their start date (required for -Et).\n");
+	GMT_message (GMT, "\t-I List of tracks and their start date (required for -Et).\n");
 #endif
-	GMT_Option (API, "V");
-	GMT_Message (API, GMT_TIME_NONE, "\t-W Weights are present in last column for weighted fit [no weights].\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Append 'u' to report unweighted mean/std [Default, report weighted stats].\n");
-	GMT_Option (API, "bi,.");
+	GMT_explain_options (GMT, "V");
+	GMT_message (GMT, "\t-W Weights are present in last column for weighted fit [no weights].\n");
+	GMT_explain_options (GMT, "C");
 	
 	return (EXIT_FAILURE);
 }
 
-int GMT_x2sys_solve_parse (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *Ctrl, struct GMT_OPTION *options) {
+GMT_LONG GMT_x2sys_solve_parse (struct GMTAPI_CTRL *C, struct X2SYS_SOLVE_CTRL *Ctrl, struct GMT_OPTION *options) {
 
 	/* This parses the options provided to grdcut and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
@@ -214,8 +206,9 @@ int GMT_x2sys_solve_parse (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *Ctrl, 
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0, n_files = 0;
+	GMT_LONG n_errors = 0, n_files = 0;
 	struct GMT_OPTION *opt = NULL;
+	struct GMT_CTRL *GMT = C->GMT;
 
 	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
 
@@ -223,7 +216,7 @@ int GMT_x2sys_solve_parse (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *Ctrl, 
 			/* Common parameters */
 
 			case '<':	/* Input files */
-				Ctrl->In.active = true;
+				Ctrl->In.active = TRUE;
 				if (n_files == 0) Ctrl->In.file = strdup (opt->arg);
 				n_files++;
 				break;
@@ -231,11 +224,11 @@ int GMT_x2sys_solve_parse (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *Ctrl, 
 			/* Processes program-specific parameters */
 			
 			case 'C':	/* Needed to report correctly */
-				Ctrl->C.active = true;
+				Ctrl->C.active = TRUE;
 				Ctrl->C.col = strdup (opt->arg);
 				break;
 			case 'E':	/* Which model to fit */
-				Ctrl->E.active = true;
+				Ctrl->E.active = TRUE;
 				switch (opt->arg[0]) {
 					case 'c':
 						Ctrl->E.mode = F_IS_CONSTANT;
@@ -259,18 +252,16 @@ int GMT_x2sys_solve_parse (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *Ctrl, 
 				break;
 #ifdef SAVEFORLATER
 			case 'I':	/* List of track names and their start time dateTclock */
-				Ctrl->I.active = true;
+				Ctrl->I.active = TRUE;
 				Ctrl->I.file = strdup (opt->arg);
 				break;
 #endif
 			case 'T':
-				Ctrl->T.active = true;
+				Ctrl->T.active = TRUE;
 				Ctrl->T.TAG = strdup (opt->arg);
 				break;
 			case 'W':
-				Ctrl->W.active = true;
-				if (opt->arg[0] == 'u')		/* Report unweighted statistics anyway */
-					Ctrl->W.unweighted_stats = true;
+				Ctrl->W.active = TRUE;
 				break;
 
 			default:	/* Report bad options */
@@ -292,14 +283,13 @@ int GMT_x2sys_solve_parse (struct GMT_CTRL *GMT, struct X2SYS_SOLVE_CTRL *Ctrl, 
 int x2sys_read_namedatelist (struct GMT_CTRL *GMT, char *file, char ***list, double **start, int *nf)
 {
 	/* Reads a list with track names and their origin times (needed for -Et) */
-	size_t n_alloc = GMT_CHUNK;
-	int n = 0;
-	char **p, line[GMT_BUFSIZ] = {""}, name[GMT_LEN64] = {""}, date[GMT_LEN64] = {""};
-	double *T = NULL;
-	FILE *fp = NULL;
+	int n_alloc = GMT_CHUNK, n = 0;
+	char **p, line[GMT_BUFSIZ], name[GMT_TEXT_LEN64], date[GMT_TEXT_LEN64];
+	double *T;
+	FILE *fp;
 
 	if ((fp = x2sys_fopen (GMT, file, "r")) == NULL) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Cannot find track list file %s in either current or X2SYS_HOME directories\n", line);
+		GMT_report (GMT, GMT_MSG_FATAL, "Cannot find track list file %s in either current or X2SYS_HOME directories\n", line);
 		return (GMT_GRDIO_FILE_NOT_FOUND);
 	}
 	
@@ -336,17 +326,15 @@ int x2sys_read_namedatelist (struct GMT_CTRL *GMT, char *file, char ***list, dou
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
 #define Return(code) {Free_x2sys_solve_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_x2sys_solve (void *V_API, int mode, void *args)
+GMT_LONG GMT_x2sys_solve (struct GMTAPI_CTRL *API, GMT_LONG mode, void *args)
 {
 	char **trk_list = NULL;
-	char trk[2][GMT_LEN64], t_txt[2][GMT_LEN64], z_txt[GMT_LEN64] = {""}, w_txt[GMT_LEN64] = {""}, line[GMT_BUFSIZ] = {""};
-	bool grow_list = false, normalize = false, active_col[N_COE_PARS];
-	int *ID[2] = {NULL, NULL}, ks, t;
-	uint64_t n_par = 0, n, m, n_tracks = 0, n_active;
-	uint64_t i, p, j, k, r, s, off, row, n_COE = 0;
-	int error = 0, ierror;
-	size_t n_alloc = GMT_CHUNK, n_alloc_t = GMT_CHUNK;
-	double *N = NULL, *a = NULL, *b = NULL, *data[N_COE_PARS], sgn, old_mean, new_mean, sw2;
+	char trk[2][GMT_TEXT_LEN64], t_txt[2][GMT_TEXT_LEN64], z_txt[GMT_TEXT_LEN64], w_txt[GMT_TEXT_LEN64], line[GMT_BUFSIZ];
+	GMT_LONG error = FALSE, grow_list = FALSE, normalize = FALSE, active_col[N_COE_PARS];
+	int *ID[2] = {NULL, NULL};
+	GMT_LONG n_par = 0, n, m, t, n_tracks = 0, n_active;
+	GMT_LONG i, p, j, k, r, s, off, row, n_COE = 0, n_alloc = GMT_CHUNK, n_alloc_t = GMT_CHUNK, ierror;
+	double *N = NULL, *a = NULL, *b = NULL, *data[N_COE_PARS], sgn, zero_test = 1.0e-08, old_mean, new_mean, sw2;
 	double old_stdev, new_stdev, e_k, min_extent, max_extent, range = 0.0, Sw, Sx, Sxx;
 #ifdef SAVEFORLATER
 	double *start = NULL;
@@ -354,34 +342,31 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 	struct X2SYS_INFO *S = NULL;
 	struct X2SYS_BIX B;
 	FILE *fp = NULL;
-	double (*basis[N_BASIS]) (double **, int, int);	/* Pointers to selected basis functions */
-	
+	PFD basis[N_BASIS];
 	struct X2SYS_SOLVE_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_x2sys_solve_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	if (API == NULL) return (GMT_Report_Error (API, GMT_NOT_A_SESSION));
+	options = GMT_Prep_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_x2sys_solve_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_x2sys_solve_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMTAPI_OPT_USAGE) bailout (GMT_x2sys_solve_usage (API, GMTAPI_USAGE));	/* Return the usage message */
+	if (options->option == GMTAPI_OPT_SYNOPSIS) bailout (GMT_x2sys_solve_usage (API, GMTAPI_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	GMT = GMT_begin_module (API, "GMT_x2sys_solve", &GMT_cpy);	/* Save current state */
+	if (GMT_Parse_Common (API, "-Vb", ">", options)) Return (API->error);
 	Ctrl = New_x2sys_solve_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_x2sys_solve_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_x2sys_solve_parse (API, Ctrl, options))) Return (error);
 
 	/*---------------------------- This is the x2sys_solve main code ----------------------------*/
 
 #ifdef SAVEFORLATER
 	if (Ctrl->I.file && x2sys_read_namedatelist (GMT, Ctrl->I.file, &trk_list, &start, &n_tracks) == X2SYS_NOERROR) {
-		GMT_Report (API, GMT_MSG_NORMAL, "ERROR -I: Problems reading %s\n", Ctrl->I.file);
+		GMT_report (GMT, GMT_MSG_FATAL, "ERROR -I: Problems reading %s\n", Ctrl->I.file);
 		Return (EXIT_FAILURE);	
 	}
 #endif
@@ -391,53 +376,50 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 	x2sys_err_fail (GMT, x2sys_set_system (GMT, Ctrl->T.TAG, &S, &B, &GMT->current.io), Ctrl->T.TAG);
 
 	/* Verify that the chosen column is known to the system */
-
+	
 	if (Ctrl->C.col) x2sys_err_fail (GMT, x2sys_pick_fields (GMT, Ctrl->C.col, S), "-C");
 	if (S->n_out_columns != 1) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Error: -C must specify a single column name\n");
+		GMT_report (GMT, GMT_MSG_FATAL, "Error: -C must specify a single column name\n");
 		Return (EXIT_FAILURE);
 	}
 
-	for (i = 0; i < N_COE_PARS; ++i)
-		active_col[i] = false; /* Initialize array */
-
-	active_col[COL_COE] = true;	/* Always used */
+	active_col[COL_COE] = TRUE;	/* Always used */
 	switch (Ctrl->E.mode) {	/* Set up pointers to basis functions and assign constants */
 		case F_IS_CONSTANT:
 			n_par = 1;
-			basis[0] = &basis_constant;
+			basis[0] = basis_constant;
 			break;
 		case F_IS_DRIFT_T:
-			active_col[COL_T1] = active_col[COL_T2] = true;
+			active_col[COL_T1] = active_col[COL_T2] = TRUE;
 			n_par = 2;
-			basis[0] = &basis_constant;
-			basis[1] = &basis_tdrift;
+			basis[0] = basis_constant;
+			basis[1] = basis_tdrift;
 			break;
 		case F_IS_DRIFT_D:
-			active_col[COL_D1] = active_col[COL_D2] = true;
+			active_col[COL_D1] = active_col[COL_D2] = TRUE;
 			n_par = 2;
-			basis[0] = &basis_constant;
-			basis[1] = &basis_ddrift;
+			basis[0] = basis_constant;
+			basis[1] = basis_ddrift;
 			break;
 		case F_IS_GRAV1930:
-			active_col[COL_YY] = true;
+			active_col[COL_YY] = TRUE;
 			n_par = 2;
-			basis[0] = &basis_constant;
-			basis[1] = &basis_siny2;
+			basis[0] = basis_constant;
+			basis[1] = basis_siny2;
 			break;
 		case F_IS_HEADING:
-			active_col[COL_H1] = active_col[COL_H2] = true;
+			active_col[COL_H1] = active_col[COL_H2] = TRUE;
 			n_par = 5;
-			basis[0] = &basis_constant;
-			basis[1] = &basis_cosh;
-			basis[2] = &basis_cos2h;
-			basis[3] = &basis_sinh;
-			basis[4] = &basis_sin2h;
+			basis[0] = basis_constant;
+			basis[1] = basis_cosh;
+			basis[2] = basis_cos2h;
+			basis[3] = basis_sinh;
+			basis[4] = basis_sin2h;
 			break;
 		case F_IS_SCALE:
-			active_col[COL_Z1] = active_col[COL_Z2] = true;
+			active_col[COL_Z1] = active_col[COL_Z2] = TRUE;
 			n_par = 1;
-			basis[0] = &basis_z;
+			basis[0] = basis_z;
 			break;
 	}
 	
@@ -457,12 +439,12 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 
 	fp = GMT->session.std[GMT_IN];
 	if (Ctrl->In.file && (fp = GMT_fopen (GMT, Ctrl->In.file, GMT->current.io.r_mode)) == NULL) {
-		GMT_Report (API, GMT_MSG_NORMAL, "Error: Cannot open file %s\n", Ctrl->In.file);
+		GMT_report (GMT, GMT_MSG_FATAL, "Error: Cannot open file %s\n", Ctrl->In.file);
 		Return (EXIT_FAILURE);	
 	}
 	
 	if (n_tracks == 0)	{	/* Create track list on the go */
-		grow_list = true;
+		grow_list = TRUE;
 		trk_list = GMT_memory (GMT, NULL, n_alloc_t, char *);
 	}
 	
@@ -470,8 +452,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 	if (GMT->common.b.active[GMT_IN]) {	/* Binary input */
 		/* Here, first two cols have track IDs and we do not write track names */
 		int min_ID, max_ID;
-		int n_fields;
-		uint64_t n_expected_fields, n_tracks2;
+		GMT_LONG n_fields, n_tracks2, n_expected_fields;
 		double *in = NULL;
 		char *check = NULL;
 		
@@ -514,7 +495,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 			}
 			data[COL_WW][n_COE] = (Ctrl->W.active) ? in[n_active] : 1.0;	/* Weight */
 			if (GMT_is_dnan (data[COL_COE][n_COE])) {
-				GMT_Report (API, GMT_MSG_VERBOSE, "Warning: COE == NaN skipped during reading\n");
+				GMT_report (GMT, GMT_MSG_NORMAL, "Warning: COE == NaN skipped during reading\n");
 				continue;
 			}
 			n_COE++;
@@ -527,19 +508,19 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 		/* Check that IDs are all contained within 0 <= ID < n_tracks and that there are no gaps */
 		n_tracks2 = max_ID - min_ID + 1;
 		if (n_tracks && n_tracks2 != n_tracks) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: The ID numbers in the binary file %s are not compatible with the <trklist> length\n", Ctrl->In.file);
-			error = true;	
+			GMT_report (GMT, GMT_MSG_FATAL, "Error: The ID numbers in the binary file %s are not compatible with the <trklist> length\n", Ctrl->In.file);
+			error = TRUE;	
 		}
 		else {	/* Either no tracks read before or the two numbers did match properly */
 			/* Look for ID gaps */
 			n_tracks = n_tracks2;
 			check = GMT_memory (GMT, NULL, n_tracks, char);
-			for (k = 0; k < n_COE; k++) for (i = 0; i < 2; i++) check[ID[i][k]] = true;
+			for (k = 0; k < n_COE; k++) for (i = 0; i < 2; i++) check[ID[i][k]] = TRUE;
 			for (k = 0; k < n_tracks && check[k]; k++);
 			GMT_free (GMT, check);
 			if (k < n_tracks) {
-				GMT_Report (API, GMT_MSG_NORMAL, "Error: The ID numbers in the binary file %s to not completely cover the range 0 <= ID < n_tracks!\n", Ctrl->In.file);
-				error = true;
+				GMT_report (GMT, GMT_MSG_FATAL, "Error: The ID numbers in the binary file %s to not completely cover the range 0 <= ID < n_tracks!\n", Ctrl->In.file);
+				error = TRUE;
 			}
 		}
 		if (error) {	/* Delayed the cleanup until here */
@@ -550,14 +531,11 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 		}
 	}
 	else {	/* Ascii input with track names */
-		char file_TAG[GMT_LEN64] = {""}, file_column[GMT_LEN64] = {""};
-		if (!GMT_fgets (GMT, line, GMT_BUFSIZ, fp)) {	/* Read first line with TAG and column */
-			GMT_Report (API, GMT_MSG_NORMAL, "Read error in 1st line of track file\n");
-			Return (EXIT_FAILURE);
-		}
+		char file_TAG[GMT_TEXT_LEN64], file_column[GMT_TEXT_LEN64], *not_used = NULL;
+		not_used = GMT_fgets (GMT, line, GMT_BUFSIZ, fp);	/* Read first line with TAG and column */
 		sscanf (&line[7], "%s %s", file_TAG, file_column);
 		if (strcmp (Ctrl->T.TAG, file_TAG) && strcmp (Ctrl->C.col, file_column)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: The TAG and column info in the ASCII file %s are not compatible with the -C -T options\n", Ctrl->In.file);
+			GMT_report (GMT, GMT_MSG_FATAL, "Error: The TAG and column info in the ASCII file %s are not compatible with the -C -T options\n", Ctrl->In.file);
 			Return (EXIT_FAILURE);	
 		}
 		while (GMT_fgets (GMT, line, GMT_BUFSIZ, fp)) {    /* Not yet EOF */
@@ -602,12 +580,12 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 			else
 				data[COL_WW][n_COE] = 1.0;
 			if (GMT_is_dnan (data[COL_COE][n_COE])) {
-				GMT_Report (API, GMT_MSG_VERBOSE, "Warning: COE == NaN skipped during reading\n");
+				GMT_report (GMT, GMT_MSG_NORMAL, "Warning: COE == NaN skipped during reading\n");
 				continue;
 			}
 			
 			for (i = 0; i < 2; i++) {	/* Look up track IDs */
-				ID[i][n_COE] = x2sys_find_track (GMT, trk[i], trk_list, (unsigned int)n_tracks);	/* Return track id # for this leg */
+				ID[i][n_COE] = (int)x2sys_find_track (GMT, trk[i], trk_list, n_tracks);	/* Return track id # for this leg */
 				if (ID[i][n_COE] == -1) {	/* Leg not in the data base yet */
 					if (grow_list) {	/* Add it */
 						trk_list[n_tracks] = strdup (trk[i]);
@@ -619,7 +597,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 					}
 #ifdef SAVEFORLATER
 					else {
-						GMT_Report (API, GMT_MSG_NORMAL, "Error: Track %s not in specified list of tracks [%s]\n", trk[i], Ctrl->I.file);
+						GMT_report (GMT, GMT_MSG_FATAL, "Error: Track %s not in specified list of tracks [%s]\n", trk[i], Ctrl->I.file);
 						Return (EXIT_FAILURE);					
 					}
 #endif
@@ -636,7 +614,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 		}
 	}
 	GMT_fclose (GMT, fp);
-	GMT_Report (API, GMT_MSG_VERBOSE, "Found %d COE records\n", n_COE);
+	GMT_report (GMT, GMT_MSG_NORMAL, "Found %ld COE records\n", n_COE);
 	for (i = 0; i < N_COE_PARS; i++) if (active_col[i]) data[i] = GMT_memory (GMT, data[i], n_COE, double);
 	data[COL_WW] = GMT_memory (GMT, data[COL_WW], n_COE, double);
 	
@@ -656,28 +634,19 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 		range = max_extent - min_extent;
 		for (k = 0; k < n_COE; k++) for (i = 0; i < 2; i++) data[j+i][k] /= range;
 	}
-
+	
 	/* Estimate old weighted mean and std.dev */
-
-	if (Ctrl->W.unweighted_stats) {
-		for (k = 0, Sw = Sx = Sxx = 0.0; k < n_COE; k++) {	/* For each crossover */
-			Sx += data[COL_COE][k];
-			Sxx += (data[COL_COE][k] * data[COL_COE][k]);
-		}
-		Sw = (double)n_COE;
-	}
-	else {
-		for (k = 0, Sw = Sx = Sxx = 0.0; k < n_COE; k++) {	/* For each crossover */
-			Sw += data[COL_WW][k];
-			Sx += (data[COL_WW][k] * data[COL_COE][k]);
-			Sxx += (data[COL_WW][k] * data[COL_COE][k] * data[COL_COE][k]);
-		}
+	
+	for (k = 0, Sw = Sx = Sxx = 0.0; k < n_COE; k++) {	/* For each crossover */
+		Sw += data[COL_WW][k];
+		Sx += (data[COL_WW][k] * data[COL_COE][k]);
+		Sxx += (data[COL_WW][k] * data[COL_COE][k] * data[COL_COE][k]);
 	}
 	old_mean = Sx / Sw;
 	old_stdev = sqrt ((n_COE * Sxx - Sx * Sx) / (Sw*Sw*(n_COE - 1.0)/n_COE));
-
+	
 	/* Set up matrix and column vectors */
-
+	
 	n = n_tracks * n_par;	/* Total number of unknowns */
 	m = (Ctrl->E.mode == F_IS_SCALE) ? n : n + 1;	/* Need extra row/column to handle Lagrange's multiplier for unknown absolute level */
 	N = GMT_memory (GMT, NULL, m*m, double);
@@ -698,12 +667,11 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 					sgn = -1.0;	t = 1;
 				} else continue;
 				sw2 = sgn * data[COL_WW][k] * data[COL_WW][k];
-				ks = (int)k;
 				for (r = 0, off = m * row; r < n_par; r++) {	/* For each track's parameter in f(p)  */
-					N[off+i*n_par+r] += sw2 * (basis[r](data,0,ks) * basis[s](data,t,ks));
-					N[off+j*n_par+r] -= sw2 * (basis[r](data,1,ks) * basis[s](data,t,ks));
+					N[off+i*n_par+r] += sw2 * (basis[r](data,0,k) * basis[s](data,t,k));
+					N[off+j*n_par+r] -= sw2 * (basis[r](data,1,k) * basis[s](data,t,k));
 				}
-				b[row] += sw2 * (data[COL_COE][k] * basis[s](data,t,ks));
+				b[row] += sw2 * (data[COL_COE][k] * basis[s](data,t,k));
 			}
 			if (Ctrl->E.mode != F_IS_SCALE && s == 0) N[m*row+m-1] = 1.0;	/* Augmented column entry for Lagrange multiplier */
 		}
@@ -711,20 +679,18 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 	if (Ctrl->E.mode != F_IS_SCALE) {	/* Augmented row for Lagrange multiplier for constants */
 		for (i = 0, off = m*n; i < n; i += n_par) N[off+i] = 1.0;
 	}
-
+	
 #ifdef DEBUGX	
-	GMT_Message (API, GMT_TIME_NONE, "Matrix equation N * a = b: (N = %d)\n", m);
+	GMT_message (GMT, "Matrix equation N * a = b: (N = %ld)\n", m);
 	for (i = 0; i < m; i++) {
-		for (j = 0; j < m; j++) GMT_Message (API, GMT_TIME_NONE, "%8.2f\t", N[i*m+j]);
-		GMT_Message (API, GMT_TIME_NONE, "\t%8.2f\n", b[i]);
+		for (j = 0; j < m; j++) GMT_message (GMT, "%8.2f\t", N[i*m+j]);
+		GMT_message (GMT, "\t%8.2f\n", b[i]);
 	}
 #endif
 
 	/* Get LS solution */
 
-	if ((ierror = GMT_gauss (GMT, N, b, (unsigned int)m, (unsigned int)m, true)))
-		GMT_Report (API, GMT_MSG_NORMAL, "Warning: Divisions by a small number (< DBL_EPSILON) occurred in GMT_gauss()!\n");
-
+	GMT_gauss (GMT, N, b, m, m, zero_test, &ierror, 1);
 	GMT_free (GMT, N);
 	a = b;	/* Convenience since the solution is called a in the notes */
 
@@ -734,35 +700,26 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 		i = ID[0][k];	/* Get track # 1 ID */
 		j = ID[1][k];	/* Get track # 2 ID */
 		e_k = data[COL_COE][k];
-		ks = (int)k;
 		for (r = 0; r < n_par; r++) {	/* Correct crossover for track adjustments  */
-			e_k += a[j*n_par+r]*basis[r](data,1,ks) - a[i*n_par+r]*basis[r](data,0,ks);
+			e_k += a[j*n_par+r]*basis[r](data,1,k) - a[i*n_par+r]*basis[r](data,0,k);
 		}
-
-		if (Ctrl->W.unweighted_stats) {
-			Sx  += e_k;
-			Sxx += (e_k * e_k);
-		}
-		else {
-			Sw += data[COL_WW][k];
-			Sx += (data[COL_WW][k] * e_k);
-			Sxx += (data[COL_WW][k] * e_k * e_k);
-		}
+		Sw += data[COL_WW][k];
+		Sx += (data[COL_WW][k] * e_k);
+		Sxx += (data[COL_WW][k] * e_k * e_k);
 #ifdef DEBUGX	
-		GMT_Message (API, GMT_TIME_NONE, "COE # %d: Was %g Is %g\n", k, data[COL_COE][k], e_k);
+		GMT_message (GMT, "COE # %ld: Was %g Is %g\n", k, data[COL_COE][k], e_k);
 #endif
 	}
-	if (Ctrl->W.unweighted_stats) Sw = (double)n_COE;
 	new_mean = Sx / Sw;
 	new_stdev = sqrt ((n_COE * Sxx - Sx * Sx) / (Sw*Sw*(n_COE - 1.0)/n_COE));
 	
-	GMT_Report (API, GMT_MSG_VERBOSE, "Before correction, mean and st.dev.: %g %g After correction, mean and st.dev.: %g %g\n", old_mean, old_stdev, new_mean, new_stdev);
+	GMT_report (GMT, GMT_MSG_NORMAL, "Old mean and st.dev.: %g %g New mean and st.dev.: %g %g\n", old_mean, old_stdev, new_mean, new_stdev);
 	
 	/* Write correction table */
 	
 	for (p = 0; p < n_tracks; p++) {
 		if (normalize) a[p*n_par+1] /= range;	/* Unnormalize slopes */
-		(GMT->common.b.active[GMT_IN]) ? printf ("%" PRIu64, p) : printf ("%s", trk_list[p]);
+		(GMT->common.b.active[GMT_IN]) ? printf ("%ld", p) : printf ("%s", trk_list[p]);
 		printf ("\t%s", Ctrl->C.col);
 		switch (Ctrl->E.mode) {	/* Set up pointers to basis functions and assign constants */
 			case F_IS_CONSTANT:
@@ -789,7 +746,7 @@ int GMT_x2sys_solve (void *V_API, int mode, void *args)
 	/* Free up memory */
 	
 	for (i = 0; i < N_COE_PARS; i++) if (active_col[i]) GMT_free (GMT, data[i]);
-	if (data[COL_WW]) GMT_free (GMT, data[COL_WW]);
+	GMT_free (GMT, data[COL_WW]);
 	for (i = 0; i < 2; i++) GMT_free (GMT, ID[i]);
 	GMT_free (GMT, b);
 	x2sys_free_list (GMT, trk_list, n_tracks);

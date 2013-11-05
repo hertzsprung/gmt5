@@ -2,524 +2,6 @@
 	$Id$
 -----------------------------------------------------------------------------------------
 
-2013-11-01	remko
-	* example_10.sh:	Changed input to number of languages; multi-color columns
-
-2013-10-31	pwessel
-	* gmt_dcw.c:		Added option to specify code as =<continent> which will
-				automatically be expanded to all the countries in that
-				continent.  E.g., -F=AF+gred will paint Africa read.
-				Fixed memory leaks.
-
-2013-10-23	pwessel
-	* gmtinfo.c:		The new name of minmax.c, the latter will be honored
-				when GMT compatibility mode is 4.
-	* grdmath.c:		Fixed porting bugs for CURV and D2DY2; added test ops.sh
-
-2013-10-22	pwessel
-	* minmax.c:		Added -D to adjust region found with -I
-	* makecpt.c:		Better reporting of gaps or overlaps in CPTs
-
-2013-10-05	pwessel
-	* greenspline.c:	Needed -f in order to select -f0T input, plus it made assumptions
-				about lon,lat despite not being selected.
-
-2013-10-04	pwessel
-	* gmt.history:		This replaces the old .gmtcommands file name.
-
-2013-09-28	remko
-	* gmt_init.c:		Moved origin of JD by one day (24 Nov instead of 25 Nov).
-	* ConfigUserTemplate.cmake:	Added option GMT_DOCS_DEPEND_ON_GMT
-
-2013-09-27	pwessel
-	* share/cpt:		Added 10 new CPTs, mostly for bathymetry and topography.
-
-2013-09-14	pwessel
-	* psmask.c:		Multiple, ancient bugs fixed: properly mark used edges, fix
-				memory allocations, not report clipping if -D is used, starting
-				point for a contour was not offset by 1/2 pixel, debug-only grid
-				was mangled, preventing useful debugging.
-
-2013-09-09	pwessel
-	* greenspline.c:	Did compute 2-D trend for 1-D case, causing bad mem access.
-	* grdraster.c:		Did not understand dd:mm notation and failed to find grdraster.info
-
-2013-09-02	pwessel
-	* psmask.c:		Was off by one in grd index, thus exceeding array length at end.
-
-2013-08-26	pwessel
-	* gmtvector.c:		Needed to add -TR option to gmtvector to apply different
-				rotations to fixed secondary vector.
-
-2013-08-24	pwessel
-	* gmt_io.c:		The GMT_read_table function checked for greenwich before assigning
-				the input data (issue #357).
-
-2013-08-06	pwessel
-	* psxy[z].c:		Will now processes -Sargs strings in multisegment headers.
-
-2013-07-23	pwessel
-	* nearneighbor.c:	Clarify how -N works, what the defaults are, and let the
-				minimum number of sectors default to 50% of sectors instead
-				of a hard-wired 2.  Addresses issue # 343.
-
-2013-07-07	pwessel
-	* makecpt.c:		New option -Glo/hi to truncate the incoming CPT table first.
-	* grd2cpt.c:		---"---
-	* psscale.c:		---"---
-
-2013-07-06	pwessel
-	* psxy[z].c:		Allow -SE- to indicate degenerate ellipse (circle) and only
-				the diameter in km is expected on input.
-
-2013-07-05	pwessel
-	* grdview.c:		Introduce new syntax for -N<level>[+<fill>] so we can handle
-				arbitrary fill, and -Q<args>[+m] as the old trailing g would
-				be confused by colors ending in 'g'.  Backwards compatible
-				under level 4.
-	* pstext.c:		The line in -D...v was plotted on top rather than beneath box.
-
-2013-07-02	pwessel
-	* gmt.c:		Works with shared libs under Cygwin as well.
-	* pshistogram.c:	Fixed porting bug in -A and added -D for count labels.
-	* imgsrc:		Supplement group "imgsrc" renamed "img"
-
-2013-06-27	pwessel
-	* gmt_io.c:		Fix a side-effect of the 2013-04-18 correction.
-
-2013-06-27	pwessel
-	* gmtconnect.c:		Search in both directions for connections in order to avoid a
-				two-pass operation. Fixes problem with back-tracking from end
-				since there might be more connections going backwards.
-
-2013-06-18	pwessel
-	* gmt_plot.c:		Expanded "l" symbol macro to handle variable text and template-ing.
-	* psxy[z].c:		The -Sl symbol now takes modifiers +f<font> and +j<justify>.
-				The old %font suffix is supported under compatibility.
-	
-2013-06-16	pwessel
-	* The latest version of GSHHG is 2.2.3
-
-2013-06-10	jluis
-	* ps2raster.c:		Add -A+s<newsize> option to force a specific image size at
-				the given DPI. This is accomplished via gs re-interpolation.
-
-2013-06-05	pwessel
-	* greenspline.c:	Improved the accuracy of the spherical spline in tension with
-				lots of help from Bob Parker, Scripps Inst. Oceanography.
-				Also added cubic spline interpolation rather than linear for
-				the lookup, and eliminated -SQ (-Sq does that instead now).
-
-2013-06-03	jluis
-	* grd2xyz.c:		Enhanced -N[i]<nodata> to replace grid values on output with NaN.
-
-2013-05-31	pwessel
-	* gmt_plot.c:		Did not check for map-jumping in GMT_plot_rectangle (psxy -SJ).
-	* meca/psvelo.c:	Did not honor the -N setting.
-
-2013-05-26	pwessel
-	* dbase/grdraster.c:	As generic tool it is now in the GMT core
-
-2013-05-25	pwessel
-	* pstext.c:		Added -F...+l|+h modifiers to select text from current
-				segment header instead of data record.
-
-2013-05-24	pwessel
-	* gmtsimplify.c:	The new name of the former gmtdp.c program; under GMT 4
-				compatibility we will still recognize gmtdp.
-	* sph/*.c:		These generic spherical tools are now in the GMT core.
-				Two new examples have been added to the suite.
-	* xgrid:		No longer in GMT5 since requires X11.
-
-2013-05-21	pwessel
-	* pscontour.c:		Added -St to skip triangles whose 3 vertices are outside domain;
-				in contrast, -S or -Sp skips all points outside domain before
-				triangularization.
-	* meca/psvelo.c:	Called get_trans at NP but could not handle the truth.
-
-2013-05-20	pwessel
-	* gshhg:		Remove gshhg_dp.c and gshhgtograss.c from the supplement as
-				being inadequate or obsolete.
-
-2013-05-17	pwessel
-	* gmt_map.c:		GMT_grdproject_init did not handle increments that had been
-				specified as units, e.g., -D30e.
-
-2013-05-09	pwessel
-	* share/x2sys:		Added dat.def for mgd77 ASCII DAT format.
-
-2013-04-21	remko
-	* pslegend.c:		Honor the use of fill without frame (-G without -F).
-				Return pen to black (and no transparency) after drawing frame box.
-	* pslib.c:		Avoid that fill takes transparency of frame.
-
-2013-04-19	pwessel
-	* greenspline.c:	Also added -Cn<n> to directly select the n largest eigenvalues.
-	* grdview.c:		The -C with no argument [rainbow] or master CPT name is accepted
-				and results in an automatic CPT given the data range.
-	* grdvector.c:		Same -C setup as grdview.c
-
-2013-04-18	pwessel
-	* gmt_io.c:		Could not properly decode yyodd (no delimiter) time coordinates
-				like 12Oct24.
-
-2013-04-17	pwessel
-	* filter1d.c:		Susceptible to round-off when determining t of first and last output
-				point when -T was not given.  Fixes issue # 241.
-	* mex:			Removed as mex API will be separate repository gmtmex.
-
-2013-04-16	pwessel
-	* gmtspatial.c:		Added -A option for nearest neighbor analysis, and two test-
-				script nn.sh and decpolar.sh in the test suite.
-
-2013-04-15	pwessel
-	* greenspline.c:	Add -W for weighted fit. Need to be used with -C to have any effect.
-
-2013-04-14	pwessel
-	* blockmean.c:		The -Ep will produce propagated errors on the mean.
-
-2013-04-13	pwessel
-	* sph/sphdistance.c:	Make sure we visit replicated columns for gridline registered grids.
-	* blockm*.c:		Did not use data near west column nodes that were off by 360 for
-				gridline registered grids.
-	* gmt_init.c:		The -R option failed to handle yyyy-jjjT coordinates.
-	* surface.c:		Share points near periodic w|e boundaries with both of them.
-				Introduced periodic BC for longitudes if 360 range.
-	* gmtselect.c:		The -Z option is now repeatable and can take +c<col>.
-
-2013-04-13	pwessel/remko
-	* psbasemap.c:		Added -D option to draw map insert box.
-	* ConfigUserTemplate.cmake ConfigDefaults.cmake gmt_init.c gmt.conf.in:
-				Removed GMT_COMPAT as a compiler option. Can now be set in run-
-				time using the setting GMT_COMPATIBILITY.
-
-2013-04-10	pwessel
-	* gmt_map.c:		Fixed clipping of invisible lines over horizon on azimuthal maps.
-				Added two scripts, general_p.sh (which still has one problem) and
-				ortho.sh, both derived from issue #208.
-
-2013-04-09	pwessel
-	* minmax.c:		Enhanced -I[f|s] that will extend the region otherwise reported
-				to ensure the dimensions are optimized for fastest performance
-				in programs like grdfft (f) or surface (s).
-
-2013-04-07	pwessel
-	* share/DCW:		Add the DCW files to share/DCW so all have access via pscoast.
-	* gmt_grdio.c:		Would restrict grid region in grdimage despite doing a global map
-				with azimuthal projections.
-
-
-2013-04-06	pwessel
-	* grdimage.c:		Allow -I to take a constant for uniform ambient illumination
-	* grdview.c:		---"---
-
-2013-04-03	pwessel
-	* gmt_map.c:		When -Jx is used with longitudes we must use the wesn-clipping
-				and outside functions, not the Cartesian ones.
-				Fixed clipping problem in wesn_clip for regions > 180 but < 360.
-
-2013-03-26	pwessel
-	* psxy[z]:		The -S= geovector now has modifiers +o<plon>/<plat> for
-				specifying small circle geovectors; input is then just
-				lenght in km. Also +q to say input is rotation angles 1 and 2.
-
-2013-03-25	pwessel
-	* greenspline.c:	Enhanced -Cv option to set desired level of variance explained.
-				Also added -Sl for linear (1-D) and bilinear (2-D) splines.
-				The normalization for 2-D with geographic data suffered from
-				not checking that longitudes may be off by +/- 360.
-
-2013-03-23	pwessel
-	* gmt_customio.c:	The magic recognition of native bit grids failed due to bad math.
-				Wrote wrong number of bytes per record for odd-width Sun rasterfiles
-
-2013-03-22	pwessel
-	* greenspline.c:	When -T was used the number of z-layers (1) was not initialized.
-
-2013-03-15	pwessel
-	* -B:			Added modifier +o<plon>/<plat> to draw selected gridlines using
-				oblique coordinates about the specified pole instead of the
-				regular gridlines. Not allowed for oblique Mercator.
-2013-03-11	pwessel
-	* pscoast.c:		Added DCW option for filled countries and (some) states via
-				separate DCW file to be explained.
-2013-03-06	pwessel
-	* sph2grd.c:		New program for evaluating spherical harmonic coefficients
-				into grids.  Just spherical right now, no ellipsoidal adjustments
-				or taking derivatives of geopotentials.
-				
-2013-03-05	pwessel
-	* pshistogram:		Added -N to draw equivalent normal distributions.
-	* grdtrack.c:		Enhanced -E to also handle lines from origins and circles.
-
-2013-03-03	pwessel
-	* gmt_grdio.c:		Enabled scaling of grid header domain via +u|U<unit>
-	* gmt_support.c:	Enabled scaling of cpt domain via +u|U<unit>
-
-2013-02-27	pwessel
-	* blockmode.c:		Added -D to compute unweighted modes via histogram binning. Added
-				automatic detection of integer data, defaulting to center bins.
-	* grdclip.c:		Expanded jluis's implementation of -Si for interval reclassification
-				by allowing any number of classes.  Added error checking on all
-				-S? arguments and improved verbose feedback.
-
-2013-02-22	pwessel
-	* The -h:		Major overhaul of data headers in GMT:
-				1. Header input/output is on by default; turn off output with -hi.
-				2. The default number of header records must be 0 since this
-				   value applies to any record (# records are automatically recognized)
-				3. Added optional modifiers +d (delete existing headers),
-				   +r<remark> (add remark), +t<title> (add title), +c (add column info).
-
-2013-02-18	pwessel
-	* filter1d.c:		Allow -T<t_min>/<t_max>/<t_inc>[+] as for other table makers.
-
-2013-02-14	pwessel
-	* grd2xyz.c:		Added -C[f|i] for writing row,col or index instead of x,y
-
-2013-02-13	pwessel
-	* spectrum1d.c:		Added the same -L[m|h] option for trend-removal control
-				as in grdfft.
-	* grdtrack.c:		Added -E for expeditiously creating profiles via end points
-				instead of reading input table.
-
-2013-02-12	pwessel
-		* grdinfo.c:	Added -Ib which will write the grid's bounding box polygon.
-
-2013-02-11	pwessel
-	* grdfft.c:		Added option for radial cross-spectra (-E) when two grids
-				are supplied, modifiers to scale geographic meters to km,
-				option (-Q) to save intermediate detrended/mirrored/tapered
-				grid to file. expanded -N to allow more flexibility in how
-				data region is extended, mirrored, and tapered.  Added new
-				option -Z to save raw complex spectrum as 2 grid files.
-				Added 3 test scripts to grdfft suite.
-
-2013-02-10	pwessel
-	* grdmath.c:		Added operator TAPER for creating unity weights that taper
-				to zero over specified margin x and y widths.
-	* gmtmath.c:		Added operator TAPER for creating unity weights that taper
-				to zero over specified margin width.
-
-2013-01-30	pwessel
-	* xyz2grd.c:		For -E, must read data as double so can properly compare
-				with the nodata_value read as double.
-	* gmtwhich.c:		Added -D[f] option to report directory where the file is.
-
-2013-01-24      pwessel
-	* gmtmath.c:		Introduced capability to store & recall intermediate
-				calculations from named memory locations, using new
-				operators STO@<label> and [RCL]@<label>, with CLR*<label>
-				used to free up memory.
-	* grdmath.c		---"---
-
-2013-01-18      pwessel
-	* mgd77/mgd77list.c:    The azimuth written was back-azimuth, not forward.
-
-2013-01-17	pwessel
-	* gmt_grdio.[ch]:	Add latest dimensions for Sandwell/Smith ~85N/S img files
-
-2013-01-16	pwessel
-	* grdcontour.c:		Enabled time-annotations for grids with z = time.
-	* mgd77/mgd77list.c:	Added course change (cc) as new auxiliary field.
-				Added -Qc to set limits on cc for output.
-				Added recno (record number) as new auxiliary field.
-				Added ceot (calculated Eotvos) as new auxiliary field
-				and -Af8 to recompute faa based on gobs, ceot, and ngrav.
-
-2013-01-15	pwessel
-	* gmtmath.c:		The MIN and MAX operators ignored NaNs, but result should
-				be NaN if one of the operands equal NaN.
-				Added BITAND, BITLEFT, BITNOT, BITOR, BITRIGHT, BITTEST, BITXOR
-	* grdmath.c:		---"---
-				The XOR operator was incorrect, it is now clarified to be
-				0 if A == NaN and B == NaN, NaN if B == NaN, else A.
-				Added BITAND, BITLEFT, BITNOT, BITOR, BITRIGHT, BITTEST, BITXOR
-	
-2013-01-10	pwessel
-	* gmt_proj.c:		The -JE projection returned NaN if projection center was used,
-				causing some artifacts in pscoast -JE for global maps.
-
-2013-01-10	pwessel
-	* gmt_proj.c:		Inverse -JR blew up at origin; now added check.
-
-2013-01-09	pwessel
-	* gmt_io.c:		Formats for degree annotations using colons should never
-				end in a trailing colon.
-
-2013-01-07	pwessel
-	* grdvector.c:		Enforce that -Idx/dy must be multiples of grid dx/dy and
-				abort if they are not.  Before we would crash, hang, etc.
-	* gmt_grd.h:		Moved the #include <netcdf.h> from here to gmt_nc.c so that
-				custom programs only need gmt.h.
-
-2013-01-03	pwessel
-	* grdcut.c:		Added option -S[n]lon/lat/radius to extract subset that contains all
-				grid nodes that fall inside the circle, and optionally (-Sn) set those
-				outside circle to NaN.
-
-2012-10-19	pwessel
-	* spotter/libspotter.c:	Did not check for time reversals among total reconstruction rotations.
-
-2012-10-18	pwessel
-	* psxy[z].c:		Allow base for bars and columns to be read from data file by appending b
-				with no trailing <base> value.
-	* gmt_map.c:		Geodesic distances are now calculated using Vincenty [1975] equation.
-				A detailed note discussing this switch is included in the source.
-
-2012-10-16	pwessel
-	* gmt_init.c:		Added two additional GMT defaults (PROJ_MEAN_RADIUS and PROJ_AUX_LATITUDE)
-				that control how great circle distances are approximated.
-	
-2012-10-09	pwessel
-	* grdmath.c:		Added operator SUM which adds up all non-NaN entries in a grid.
-				Returns a grid with all nodes set to the sum constant.
-	* grdfilter.c:		Added -Ff<weight> which reads a weight gridfile for custom Cartesian
-	 			grid convolution.  Must have odd dimensions.  Also added -Fo<weight>
-				for operators whose weight sum is zero (hence don't sum and divide).
-
-2012-09-28	pwessel
-	* gmt_init.c:		Allow for new length unit 'u' for US survey foot.
-				Allow -R<unit>... and linear projection to imply a simple
-				unit conversion for the given coordinates (e.g., km to meter).
-				Introduced -fp[<unit>] which allows data input to be in projected
-				values, e.g., UTM coordinates while -Ju is given.
-
-2012-09-26	pwessel
-	* grdcontour.c:		The contour label modifier +t|T[<file>] to save label locations to file
-				now also include any labels implied by -T.
-	* pscontour.c:		---"---"
-
-2012-09-20	pwessel
-	* mgd77/mgd77convert.c:	Added -C option to assemble *.mgd77 files from *.h77/*.a77 pairs.
-
-2012-09-14	pwessel
-	* ps2raster.c:		The -Au option could suppress a font reencoding call, thus causing
-				trouble with special symbols in basemaps.
-
-2012-09-03	remko
-	* gmt_io.c:		Option -ff will now prevent gmt_nc_fopen from altering the data
-				type to GMT_IS_LON|LAT|RELTIME. This is to address issue #134.
-
-2012-08-22	pwessel
-	* blockmedian.c:	Added -Es to read and output source id for median value.
-	* blockmode.c:		Added -Es to read and output source id for modal value.
-	* gmtmath.c:		Now, -N<ncol> with input files will add extra columns.
-
-2012-08-13	pwessel
-	* grdmask.c:		Added z as possible radius value in -S: Read radii from 3rd input column.
-
-2012-06-30	remko
-	* pslib.c:		Removed revision check on PSL_*.ps files. Has become superfluous since
-				introduction for the VERSION file in the share directory
-
-2012-06-29	remko
-	* gmt_error.h, *.c:	Renamed verbosity levels to GMT_QUIET, GMT_NORMAL, GMT_COMPAT, GMT_VERBOSE,
-				GMT_LONG_VERBOSE, GMT_DEBUG. Options have become -Vq, -Vn, -Vc, -V[v], -Vl, -Vd.
-	* gmtapi_parse.c:	Translate --help to -? so that it can be used everywhere to get usage info.
-
-2012-06-28	remko
-	* gmt_io.c:		Added capability in gmt_nc_input to read 2-d arrays from netCDF files
-				or just a column out of those.
-	* gmt_init.c:		Implemented shorthands FONT_ANNOT, etc, for all that have _PRIMARY and
-				_SECONDARY versions. Sets both to the same value.
-	* gmt.conf.in:		Made UNIX the default time system (TIME_EPOCH is 1970-01-01, TIME_UNIT is s)
-				Set TIME_WEEK_START to Monday for SI (leave Sunday for US)
-
-2012-06-24	pwessel
-	* grdtrack.c:		Modifier +a added to -C to alternate the direction of cross-profiles.
-
-2012-06-15	pwessel
-	* gmt_plot.c:		3-D basemaps can now have horizontal gridlines on xz and yz back walls.
-
-2012-06-04	pwessel
-	* gmtvector.c:		Incorrectly applied flat-Earth adjustment for 2-D Cartesian azimuth.
-
-2012-06-01	pwessel
-	* gmt_io.c:		Reading files with one segment header and no data caused a SEGV.
-
-2012-05-31	pwessel
-	* gmt_map.c:		With -R...r and -JE, pscoast could end up trying to paint a
-				block that is outside the rectangular region yet whose projection
-				completely contains the region.
-	* gmt_support.c:	In GMT_crossover(), could get near-duplicate crossovers near a
-				node.  Now checks there are no such consecutive duplicates.
-
-2012-05-17	pwessel
-	* grdtrack.c:		Added option -S to stack cross-profiles generated with -C.
-
-2012-05-13	pwessel
-	* blockmedian.c:	Added -Er[-] to return as last column the record number that
-				gave the median value.  For ties, we return the record number
-				of the higher data value unless -Er- is given (return lower).
-	* blockmode.c:		---"---
-
-2012-05-11	pwessel
-	* gmtmath.c:		Operators UPPER and LOWER did not assign output to rows
-				that contain NaN.
-	* misc/dimfilter.c:	Initialized a max value to -DBL_MIN instead of -DBL_MAX.
-
-2012-04-29	remko
-	* gmt_init.c, gmt_nc.c, etc.:
-				Introduced IO_NC4_DEFLATION_LEVEL setting to control netCDF4 deflation.
-
-2012-04-21	pwessel
-	* gmt_plot.c:		Fixed memory leak in gmt_map_annotate
-
-2012-04-10	remko
-	* FindGSHHS.cmake:	Autodetect GSHHS netCDF file extension
-
-2012-04-08	pwessel
-	* xgrid/*:		Now works again, thanks to Lloyd Parkes!
-
-2012-03-26	pwessel
-	* psrose.c:		Option -L (no args) failed to turn off all labels.
-				Option -T did not create a symmetric plot for -R0/360/...
-				Fixed basemap outline for windrose diagrams.
-				Added -Zu to set all radii to unity (i.e., analysis of angles only).
-				Added -R0/180/... to complement -R-90/90/... for half-circle plots.
-				Allow -i<one_column> to only read azimuths (radii set to unity).
-
-2012-03-22	remko
-	* ConfigUserTemplate.cmake ConfigDefaults.cmake:
-				Make GMT_COMPAT the default. Switch license restrictions off by default.
-	* lockfile.sh:		Removed. No longer needed.
-	* gmt_init.c:		Improved GMT_COMPAT warnings.
-
-2012-03-18	pwessel
-	* *.*:			Set GNU Lesser Public License version 3 or later as the official
-				license terms for GMT 5.
-
-2012-03-17	pwessel
-	* gmt_io.c:		Did not sense EOF if last record was a header.
-	* spotter/libspotter.c:	A very long filename would exceed variable space in spotter_GPlates_pair().
-	* xgrid/xgridedit.c:	Fixed SEGV, but the new value assigned to a node still gets corrupted.
-
-2012-03-16	remko
-	* *.*.cmake:		Renamed things like config.h.cmake to config.h.in, because they are not
-				cmake files.
-
-2012-03-15	pwessel
-	* mgd77/*.c:		Introduced support for NGDC's MGD77T (tab-delimited) format
-	* mgd77list.c:		Confused the meaning of -F shorthands mgd77 and all.  Now handle
-				all the stored and derived quantities needed to reproduce original data.
-
-2012-03-15	remko
-	* examples/CMakeLists.txt:	Complete revision. Tests now run with "check" script.
-	* scripts/*.sh test/*/*.sh:	---"---
-
-2012-03-14	remko
-	* gmtset.c:		Will write out the expansion of shorthands (like -R...) into
-				.gmtcommands file when those options (GMT_SHORTHAND_OPTIONS) are used.
-
-2012-03-12	remko
-	* scripts/CMakeLists.txt:
-				Scripts now run in build directory without copying files.
-	* scripts/CMakeLists.txt examples/CMakeLists.txt:
-				No more "dark magic" with recursive calling of CMakeLists.txt.
-	* cmake/modules/ScriptToVerbatim:
-				Introduced to handle .sh to .txt conversion.
-
 2012-03-11	remko
 	* test/functions.sh.cmake test/*/*.sh test/CMakeLists.txt:
 				Changed so that testing occurs in build directory without copying
@@ -767,7 +249,7 @@
 	* grdview.c:		Also, when nodes are adjusted by small to avoid matching a
 				contour value exactly (during contouring), the same adjustment
 				must be made later when those nodes are used to determine how
-				to connect together polygons for fill.
+				to stitch together polygons for fill.
 
 2011-11-19	jluis
 	* mgd77/mgd77.c:	Fix memory allocation bug in MGD77_Read_Header_Sequence() where 
@@ -1079,7 +561,7 @@
 	* gmt*.c:		Make sure we don't pass ints to funcs expecting GMT_LONG.
 
 2011-07-18	pwessel
-	* gmtconnect_func.c:	Warn that segment with a single point will not connect both
+	* gmtstitch_func.c:	Warn that segment with a single point will not connect both
 				ends properly - you will need to rerun the task on the new
 				sets of segments.  We now give a warning.
 	* grdhisteq_func.c:	Fixed porting bugs for -D; also allow -D<file> instead of just
@@ -1138,7 +620,7 @@
 				etc.)  Added api test suite for this purpose.
 
 2011-06-28	pwessel
-	* gmtconnect_func.c:	Fixed some porting bugs.  Got connect.sh example to run.
+	* gmtstitch_func.c:	Fixed some porting bugs.  Got stitch.sh example to run.
 	* sph/sphdistance_func.c:	Fixed some porting bugs.  Got all sph examples to run.
 
 2011-06-27	pwessel
@@ -2933,7 +2415,7 @@
 	* gmtconvert_func.c:	Added -s[r] as option.
 
 2010-05-02	pwessel
-	* gmtconnect_func.c:	Promoted from supplement misc. Compiles, not tested.
+	* gmtstitch_func.c:	Promoted from supplement misc. Compiles, not tested.
 	* gmtdp_func.c:		Promoted from supplement misc. Compiles, not tested.
 
 2010-04-25	pwessel
@@ -4143,9 +3625,9 @@
 				Changed default for OUTPUT_DEGREE_FORMAT to D (-180/180) so it
 				is the same as that for PLOT_DEGREE_FORMAT.
 2009-06-18	pwessel
-	* misc/gmtconnect.c:	Enhanced -T option to eliminate connections when the 2nd closest
+	* misc/gmtstitch.c:	Enhanced -T option to eliminate connections when the 2nd closest
 				pair is too close.  Also added -C option to simply separate the
-				open from the closed polygons (no connecting).
+				open from the closed polygons (no stitching).
 
 2009-06-17	pwessel
 	* grdfft.c:		Now also has Butterworth band-pass filter.
@@ -4186,7 +3668,7 @@
 2009-06-15	pwessel
 	* gmt_init.c:		Allow negative integer interval (-n) for annotating log axis; this means
 				annotate every n'th power of 10.
-	* misc/gmtconnect.c:	Now honors -V properly.
+	* misc/gmtstitch.c:	Now honors -V properly.
 
 2009-06-11	remko
 	* gmt_nc.c:		No longer write node_offset = 0 to file (not essential, only confusing).
@@ -4243,7 +3725,7 @@
 
 2009-05-31	pwessel
 	* gmt_io.c:		Option -g must force -mo; fixed bug that reset point number in segment.
-	* misc/gmtconnect.c:	Added -L option to write out segment-link information.
+	* misc/gmtstitch.c:	Added -L option to write out segment-link information.
 
 2009-05-29	jluis
 	* gmt_init.c:		Do not create empty .gmtcommands4 files
@@ -4254,7 +3736,7 @@
 				that using -fit and -foT would require reformatting.
 
 2009-05-27	pwessel
-	* misc/gmtconnect.c:	Did not read standard input if no files were given.
+	* misc/gmtstitch.c:	Did not read standard input if no files were given.
 
 2009-05-26	pwessel
 	* gmtconvert.c:		With -S, did not report the number of output segments.  Now allows
@@ -5014,7 +4496,7 @@
 
 2008-06-13	pwessel
 	* grdimage.c:	Failed to determine boundary of projected grid with enough precision.
-	* misc/gmtconnect.c:	Check to see if format was set was wrong.
+	* misc/gmtstitch.c:	Check to see if format was set was wrong.
 	* mgd77/mgd77track.c:	Missing newline after last source line
 
 2008-06-12	pwessel
@@ -7003,7 +6485,7 @@
 	* gmt_support.h:	New include file for extern functions in gmt_support.c
 	* gmt_vector.h:		New include file for extern functions in gmt_vector.c
 	* misc/gmtdigitize.c:	New tool added to misc supplement for digitizing line segments
-	* misc/gmtconnect.c:	New tool added to misc supplement for combining line segments
+	* misc/gmtstitch.c:	New tool added to misc supplement for combining line segments
 
 2006-03-21
 	* gmt_support.c:	Fixed problem in GMT_get_grd_region which would sometimes return

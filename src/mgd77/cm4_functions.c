@@ -129,7 +129,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	int i, j, k, l, n, p, nu, mz, nz, mu, js, jy, nt, mt, iyr = 0, jyr, jf107, cerr = 0;
 	int lum1, lum2, lum3, lum4, lum5, lum6, lum7, nsm1, nsm2, lcmf, idim[12], omdl;
 	int lsmf, lpos, lcmg, lsmg, lcsq, lssq, lcto, lsto, lrto, idoy, n_Dst_rows, i_unused = 0;
-	int *msec, *mjdy, imon, idom, jaft, jmon, jdom, jmjd = 0, jdoy, mjdl = 0, mjdh = 0, iyrl = 0, imol = 0, iyrh = 0, imoh = 0;
+	int *msec, *mjdy, imon, idom, jaft, jmon, jdom, jmjd, jdoy, mjdl = 0, mjdh = 0, iyrl = 0, imol = 0, iyrh = 0, imoh = 0;
 	int nout = 0, nygo = 0, nmax, nmin, nobo, nopo, nomn, nomx, noff, noga, nohq, nimf, nyto, nsto, ntay, mmdl;
 	int us[4355], bord[4355], bkno[4355], pbto, peto, csys, jdst[24];
 	double *mut, *dstx = NULL, dstt = 0., x, y, z, h, t, dumb, bmdl[21], jmdl[12], date, dst, mut_now, alt;
@@ -154,7 +154,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	double *essq;		/* was [13680] */
 	double *ecto;		/* was [16416] */
 	double *hyto;		/* was [49248] */
-	char line[GMT_BUFSIZ] = {""}, *c_unused = NULL;
+	char line[GMT_BUFSIZ], *c_unused = NULL;
 
 	FILE *fp;
 
@@ -175,9 +175,9 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
       PARAMETER (NTAY_MG=1,NTAY_OR=1)
  ======================================================================= */
 
-	bkpo = calloc(12415U, sizeof(double));
-	gamf = calloc(8840U, sizeof(double));
-	f107x = calloc(1200U, sizeof(double));
+	bkpo = calloc((size_t)(12415), sizeof(double));
+	gamf = calloc((size_t)(8840), sizeof(double));
+	f107x = calloc((size_t)(1200), sizeof(double));
 
 	if ((fp = fopen(Ctrl->CM4_M.path, "r")) == NULL) {
 		fprintf (stderr, "CM4: Could not open file %s\n", Ctrl->CM4_M.path);
@@ -189,7 +189,6 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	c_unused = fgets(line, GMT_BUFSIZ, fp);
 	sscanf (line, "%d", &lum1);
 	c_unused = fgets(line, GMT_BUFSIZ, fp);
-	(void)c_unused; /* silence -Wunused-but-set-variable */
 	sscanf (line, "%lf %lf %lf %lf", &epch, &re, &rp, &rm);
 	for (j = 0; j < lsmf; ++j)
 		i_unused = fscanf (fp, "%d", &bord[j]);
@@ -240,7 +239,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	i_unused = fscanf (fp, "%d %d %d", &lcto, &lsto, &lrto);
 	i_unused = fscanf (fp, "%d %d %d %d %d %d %d", &lum1, &lum2, &lum3, &lum4, &lum5, &lum6, &lum7);
 	i_unused = fscanf (fp, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", &cnmp, &enmp, &omgs, &omgd, &re, &rp, &rm, &rtay_dw, &rtay_dk);
-	if (Ctrl->CM4_DATA.pred[3]) { 	/* In other cases the next coefficients are not used, so no waste time/memory with them */
+	if (Ctrl->CM4_DATA.pred[3]) { 	/* In other cases the next coefficients are not used, so no waist time/memory with them */
 		gcto_mg = calloc((size_t)(2 * lrto * lsto * lcto), sizeof(double));
 		for (l = 0; l < 2; ++l)
 			for (k = 0; k < lrto; ++k)
@@ -257,7 +256,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	i_unused = fscanf (fp, "%d %d %d", &lcto, &lsto, &lrto);
 	i_unused = fscanf (fp, "%d %d %d %d %d %d %d", &lum1, &lum2, &lum3, &lum4, &lum5, &lum6, &lum7);
 	i_unused = fscanf (fp, "%lf %lf %lf %lf %lf %lf %lf %lf", &cnmp, &enmp, &omgs, &omgd, &re, &rp, &rm, &rtay_or);
-	if (Ctrl->CM4_DATA.pred[3] && !Ctrl->CM4_DATA.pred[4]) { 	/* In other cases the next coefficients are not used, so no waste time/memory with them */
+	if (Ctrl->CM4_DATA.pred[3] && !Ctrl->CM4_DATA.pred[4]) { 	/* In other cases the next coefficients are not used, so no waist time/memory with them */
 		gcto_or = calloc((size_t)(lrto * lsto * lcto), sizeof(double));
 		for (k = 0; k < lrto; ++k)
 			for (j = 0; j < lsto; ++j) {
@@ -266,7 +265,6 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 					i_unused = fscanf (fp, "%lf", &gcto_or[i + n]);
 			}
 	}
-	(void)i_unused; /* silence -Wunused-but-set-variable */
 
 	fclose(fp);
 	cpol = cnmp * D2R;
@@ -317,7 +315,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 					jaft = 1;
 					mjdl = jmjd;
 				}
-				if (n >= n_Dst_rows) {
+				if (n > n_Dst_rows) {
 					n_Dst_rows += 1000;
 					dstx = realloc(dstx, (size_t)(n_Dst_rows * 24) * sizeof(double));
 				}
@@ -328,7 +326,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 			}
 			fclose(fp);
 			mjdh = jmjd;
-		}
+    		}
 		if (Ctrl->CM4_DATA.n_times > 1)	/* Need to re-allocate memory for all n_times in dst array */
 			Ctrl->CM4_D.dst = realloc(Ctrl->CM4_D.dst, (size_t)(Ctrl->CM4_DATA.n_times) * sizeof(double));
 
@@ -377,25 +375,24 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 	free ( mjdy);
 
 	/* On Windows, either this or declare them as "static", otherwise ... BOOM */
-	hysq = calloc(82080U, sizeof(double));
-	epsq = calloc(13680U, sizeof(double));
-	essq = calloc(13680U, sizeof(double));
-	ecto = calloc(16416U, sizeof(double));
-	hyto = calloc(49248U, sizeof(double));
-	hq   = calloc(53040U, sizeof(double));
-	ht   = calloc(17680U, sizeof(double));
-	ws   = calloc(4355U, sizeof(double));
-	epmg = calloc(1356U, sizeof(double));
-	esmg = calloc(1356U, sizeof(double));
-	hymg = calloc(8136U, sizeof(double));
-	pleg = calloc(4422U, sizeof(double));
-	rcur = calloc(9104U, sizeof(double));
+	hysq = calloc((size_t)(82080), sizeof(double));
+	epsq = calloc((size_t)(13680), sizeof(double));
+	essq = calloc((size_t)(13680), sizeof(double));
+	ecto = calloc((size_t)(16416), sizeof(double));
+	hyto = calloc((size_t)(49248), sizeof(double));
+	hq = calloc((size_t)(53040), sizeof(double));
+	ht = calloc((size_t)(17680), sizeof(double));
+	ws = calloc((size_t)(4355), sizeof(double));
+	epmg = calloc((size_t)(1356), sizeof(double));
+	esmg = calloc((size_t)(1356), sizeof(double));
+	hymg = calloc((size_t)(8136), sizeof(double));
+	pleg = calloc((size_t)(4422), sizeof(double));
+	rcur = calloc((size_t)(9104), sizeof(double));
 
 	/* LOOP over number of input points (many computations below are useless repeated - room for improvment */
 	for (n = 0; n < Ctrl->CM4_DATA.n_pts; ++n) {
-		memset(bmdl, 0, 21 * sizeof(double));
-		if (Ctrl->CM4_L.curr)
-			memset(jmdl, 0, 12 * sizeof(double));
+		r8vset(1, 21, 0., &bmdl[0]);
+		if (Ctrl->CM4_L.curr) r8vset(1, 12, 0., &jmdl[0]);
 		clat = (90 - p_lat[n]) * D2R;
 		elon = p_lon[n] * D2R;
 
@@ -631,7 +628,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 					nsto = 3;
 					ntay = 1;
 					rtay = rtay_dw;
-					omdl = false;
+					omdl = FALSE;
 					mmdl = 1;
 				} else {
 					pbto = peto = 0;
@@ -639,7 +636,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 					nsto = 3;
 					ntay = 1;
 					rtay = rtay_dk;
-					omdl = false;
+					omdl = FALSE;
 					mmdl = 2;
 				}
 			} else {
@@ -649,7 +646,7 @@ int MGD77_cm4field (struct GMT_CTRL *GMT, struct MGD77_CM4 *Ctrl, double *p_lon,
 				nsto = 5;
 				ntay = 1;
 				rtay = rtay_or;
-				omdl = true;
+				omdl = TRUE;
 				mmdl = 1;
 			}
 			bfield(1, 60, 0, 1, 1, 12, 0, 0, 0, 0, 1, 3, 0, 0, epch, re, rp, rm,
@@ -998,7 +995,7 @@ void tsearad(int full, int ks, int kr, int ns, int ng, double f, double *t, doub
     --t;
 
     /* Function Body */
-    memset(e, 0, ng * sizeof(double));
+    r8vset(1, ng, 0., &e[0]);
     j = 1;
     s = 1.;
     r8vlinkt(1, 1, ng, s, &g[(j + ns) * ng + 1], &e[0]);
@@ -1039,7 +1036,7 @@ void tseardr(int full, int ks, int kr, int ns, int ng, double f, double *t, doub
     --t;
 
     /* Function Body */
-    memset(e, 0, ng * sizeof(double));
+    r8vset(1, ng, 0., &e[0]);
     z = 1.;
     for (k = 1; k <= kr; ++k) {
 	j = 1;
@@ -1066,7 +1063,7 @@ void mseason(int ks, int ns, int ng, double d, double *t, double *e, double *g) 
     g -= (1 + ng * (1 + ns));
 
     /* Function Body */
-    memset(e, 0, ng * sizeof(double));
+    r8vset(1, ng, 0., &e[0]);
     j = 1;
     s = 1.;
     r8vlinkt(1, 1, ng, s, &g[(j + ns) * ng + 1], &e[0]);
@@ -1089,7 +1086,7 @@ void iseason(int ks, int ns, int ng, double f, double *t, double *e, double *g) 
 	int i, j;
 	double s;
 
-	memset(e, 0, ng * sizeof(double));
+	r8vset(1, ng, 0., &e[0]);
 	j = 0;
 	r8vlinkt(1, 1, ng, f, &g[j * ng], &e[0]);
 	for (i = 1; i <= ks; ++i) {
@@ -1285,19 +1282,19 @@ void jtbcont(int pmin, int pmax, int nmax, int mmax, double rold, double rnew, i
 		ii = iz + (nz << 1);	z[ii] = fcur * z[ii];
 		ii = iz + nz * 3;	z[ii] = fpsi * z[ii];
 	    for (m = 1; m <= MIN(n,mmax); ++m) {
-			++iz;
+		++iz;
 			ii = iz + nz;		z[ii] = fcur * z[ii];
 			ii = iz + (nz << 1);	z[ii] = fcur * z[ii];
 			ii = iz + nz * 3;	z[ii] = fpsi * z[ii];
-			++iz;
+		++iz;
 			ii = iz + nz;		z[ii] = fcur * z[ii];
 			ii = iz + (nz << 1);	z[ii] = fcur * z[ii];
 			ii = iz + nz * 3;	z[ii] = fpsi * z[ii];
-			++iz;
+		++iz;
 			ii = iz + nz;		z[ii] = fcur * z[ii];
 			ii = iz + (nz << 1);	z[ii] = fcur * z[ii];
 			ii = iz + nz * 3;	z[ii] = fpsi * z[ii];
-			++iz;
+		++iz;
 			ii = iz + nz;		z[ii] = fcur * z[ii];
 			ii = iz + (nz << 1);	z[ii] = fcur * z[ii];
 			ii = iz + nz * 3;	z[ii] = fpsi * z[ii];
@@ -1412,7 +1409,7 @@ void blsgen(int nc, int nd, int ni, double *b, double *c, double *dldc) {
     --b;
 
     for (j = 1; j <= ni; ++j)
-		b[j] += r8sdot(1, 1, nc, &dldc[j * nd + 1], &c[0]);
+	b[j] += r8sdot(1, 1, nc, &dldc[j * nd + 1], &c[0]);
 }
 
 void getgmf(int nder, int ns, double *ep, double *tm, double *b, double *c, double *g, int *h, int *o, double *p) {
@@ -1459,7 +1456,7 @@ void getgmf(int nder, int ns, double *ep, double *tm, double *b, double *c, doub
 	    la = MIN(nk,y+1);
 	    r8slt(1, nk, *tm, &p[ik], &y);
 	    lb = MIN(nk,y+1);
-		memset(&b[1], 0, nw * sizeof(double));
+	    r8vset(1, nw, 0., &b[1]);
 	    dbspln_(&la, ep, &m, &null, &k, &p[ik], &b[la - 1], &b[nw + 1]);
 	    dbspln_(&lb, tm, &m, &null, &k, &p[ik], &b[no + lb - 1], &b[nw + 1]);
 	    r8vsub(1, no+1, 1, no, &b[1], &b[1], &b[1]);
@@ -1558,7 +1555,7 @@ void dbspln_(int *l, double *t, int *n, int * d__, int *k, double *x, double *b,
     posw = *d__ + *n;
     for (i__ = 1; i__ <= *n; ++i__) {
 	lenb = MIN(q, posw - *d__);
-	memset(&w[1], 0, posw * sizeof(double));
+	r8vset(1, posw, 0., &w[1]);
 	r8vgathp(1, 1, *d__ + 1, lenb, &b[1], &w[1]);
 	for (j = 1; j <= *d__; ++j) {
 	    ik = posx;
@@ -1592,7 +1589,7 @@ void getgxf(int pmin, int pmax, int nmax, int mmax, int *ng, double *e, double *
     double cosp, sinp;
 
     /* Function Body */
-    memset(g, 0, *ng * sizeof(double));
+    r8vset(1, *ng, 0., &g[0]);
     ie = 0;
     for (p = pmin; p <= pmax; ++p) {
 	ig = 0;
@@ -1628,25 +1625,23 @@ void bfield(int rgen, int nmxi, int nmxe, int nmni, int nmne, int mmxi, int mmxe
 		&bkne[0], &tdge[0], &u[0], cerr);
 	if (*cerr >= 50) return;
 	if (*nc > 0) {
-		fdsdc_(&rgen, &ityp, &etyp, &nsi, &nse, nc, &nci, &ep, &tm, &dst, &dstt, &dsti[0], &bori[0],
-			&bkni[0], &bkpi[0], &tdgi[0], &dste[0], &bore[0], &bkne[0], &bkpe[0], &tdge[0], &u[0],
-			&w[0], &dsdc[0], cerr);
-		if (*cerr >= 50) return;
-		fdlds_(&rgen, &grad, &ctyp, &clat, &phi, &h, &re, &rp, &rm, ro, &nsi, nc, &nci, &np, &ii, &ie,
-			&nmni, &nmxi, &nmne, &nmxe, &nmax, &mmni, &mmxi, &mmne, &mmxe, &mmin, &mmax, theta, &p[0],
-			&r[0], &t[0], &u[0], &w[0], &dldc[0], cerr);
+	    fdsdc_(&rgen, &ityp, &etyp, &nsi, &nse, nc, &nci, &ep, &tm, &dst, &dstt, &dsti[0], &bori[0], &bkni[0], &bkpi[0], &tdgi[0], 
+		&dste[0], &bore[0], &bkne[0], &bkpe[0], &tdge[0], &u[0], &w[0], &dsdc[0], cerr);
 	    if (*cerr >= 50) return;
-		if (rgen > 0) {
-			rgen = 0;
-			memset(b, 0, (grad * 36 + 28) * sizeof(double));
-			fdldc(grad, *nc, &dsdc[0], &dldc[0]);
-			blgen(grad, *nc, &b[0], &c[0], &dldc[0]);
-			bngen_(&b[0]);
-		}
-		if (dtyp == 2) {
-			tec(grad, atyp[0], *nc, theta, &phi, &b[0], &dldc[0], &w[0]);
-			tse(grad, atyp[1], *nc, &rse[0], &b[0], &dldc[0], &w[0]);
-		}
+	    fdlds_(&rgen, &grad, &ctyp, &clat, &phi, &h, &re, &rp, &rm, ro, &nsi, nc, &nci, &np, &ii, &ie, &nmni, &nmxi, &nmne, &nmxe, &nmax, 
+		    &mmni, &mmxi, &mmne, &mmxe, &mmin, &mmax, theta, &p[0], &r[0], &t[0], &u[0], &w[0], &dldc[0], cerr);
+	    if (*cerr >= 50) return;
+	    if (rgen > 0) {
+		rgen = 0;
+		r8vset(1, grad * 36 + 28, 0., &b[0]);
+		fdldc(grad, *nc, &dsdc[0], &dldc[0]);
+		blgen(grad, *nc, &b[0], &c[0], &dldc[0]);
+		bngen_(&b[0]);
+	    }
+	    if (dtyp == 2) {
+		tec(grad, atyp[0], *nc, theta, &phi, &b[0], &dldc[0], &w[0]);
+		tse(grad, atyp[1], *nc, &rse[0], &b[0], &dldc[0], &w[0]);
+	    }
 	}
 	r8vgathp(1, 1, 15, 14, &b[0], &b[0]);
 	if (grad == 1)
@@ -1654,7 +1649,7 @@ void bfield(int rgen, int nmxi, int nmxe, int nmni, int nmne, int mmxi, int mmxe
 
 	ia = 0;
 	if (*na > 0) {
-	    memset(dlda, 0, (*na * 6) * sizeof(double));
+	    r8vset(1, *na * 6, 0., &dlda[0]);
 	    if (dtyp == 1)
 		tbi_(&atyp[0], na, &ia, &a[0], &b[0], &dlda[0]);
 	    else if (dtyp == 2) {
@@ -1692,23 +1687,19 @@ void prebf_(int *rgen, int *ityp, int *etyp, int *dtyp, int *grad, int *nmni, in
 	i__1 = MIN(MIN(*nmni,*nmxi), *nmne);
 	if (MIN(i__1,*nmxe) < 0) {
 		fprintf(stderr, "SUBROUTINE BFIELD -- ERROR CODE 50 -- NMNI, NMXI, NMNE, OR NMXE < 0 -- ABORT\n");
-		*cerr = 50;
 		return;
 	}
 	i__1 = MIN(MIN(*mmni,*mmxi), *mmne);
 	if (MIN(i__1,*mmxe) < 0) {
 		fprintf(stderr, "SUBROUTINE BFIELD -- ERROR CODE 51 -- MMNI, MMXI, MMNE, OR MMXE < 0 -- ABORT\n");
-		*cerr = 51;
 		return;
 	}
 	if (*mmni > *mmxi || *mmne > *mmxe) {
 		fprintf(stderr, "SUBROUTINE BFIELD -- ERROR CODE 52 -- EITHER MMNI > MMXI OR MMNE > MMXE -- ABORT\n");
-		*cerr = 52;
 		return;
 	}
 	if (*mmxi > *nmxi || *mmxe > *nmxe) {
 		fprintf(stderr, "SUBROUTINE BFIELD -- ERROR CODE 53 -- EITHER MMXI > NMXI OR MMXE > NMXE -- ABORT\n");
-		*cerr = 53;
 		return;
 	}
 	isvr = *ityp % 3;
@@ -1727,14 +1718,14 @@ void prebf_(int *rgen, int *ityp, int *etyp, int *dtyp, int *grad, int *nmni, in
 	*nci = 0;
 	if (*nsi > 0) {
 	    i8vset(1, *nsi, 1, &u[1]);
-		if (isvr == 1)
-			i8vadd(1, 1, 1, *nsi, &tdgi[1], &u[1], &u[1]);
-		else if (isvr == 2) {
-			i8vadd(1, 1, 1, *nsi, &bori[1], &u[1], &u[1]);
-			i8vadd(1, 1, 1, *nsi, &bkni[1], &u[1], &u[1]);
-		}
-		if (idst == 1)
-			i8vadd(1, 1, 1, *nsi, &dsti[1], &u[1], &u[1]);
+	    if (isvr == 1)
+		i8vadd(1, 1, 1, *nsi, &tdgi[1], &u[1], &u[1]);
+	    else if (isvr == 2) {
+		i8vadd(1, 1, 1, *nsi, &bori[1], &u[1], &u[1]);
+		i8vadd(1, 1, 1, *nsi, &bkni[1], &u[1], &u[1]);
+	    }
+	    if (idst == 1)
+		i8vadd(1, 1, 1, *nsi, &dsti[1], &u[1], &u[1]);
 
 	    *nci = i8ssum(1, *nsi, &u[1]);
 	}
@@ -1820,7 +1811,7 @@ void fdlds_(int *rgen, int *grad, int *ctyp, double *clat, double *phi, double *
 	++(*rgen);
 	roo = *ro;
     }
-	if (*rgen > 0) {
+    if (*rgen > 0) {
 	if (sinthe == 0.) {
 	    if (*grad == 0)
 		fprintf(stderr, "SUBROUTINE BFIELD -- ERROR CODE 1 -- GEOGRAPHIC POLAR POSITION DETECTED, B-PHI INDETERMINABLE -- WARNING\n");
@@ -1842,7 +1833,7 @@ void fdlds_(int *rgen, int *grad, int *ctyp, double *clat, double *phi, double *
 	if (pgen > 0)
 	    trigmp(*mmax, *phi, &t[1]);
 
-	memset(&dldc[1], 0, ((*grad * 18 + 6) * *nc) * sizeof(double));
+	r8vset(1, (*grad * 18 + 6) * *nc, 0., &dldc[1]);
 	ic = 0;
 	id = 1;
 	ip = *ii;
@@ -2267,73 +2258,78 @@ void fdsdc_(int *rgen, int *ityp, int *etyp, int *nsi, int *nse, int *nc, int *n
 	double *tb, double *dst, double *dstt, int *dsti, int *bori, int *bkni, double *bkpi, int *tdgi, 
 	int *dste, int *bore, int *bkne, double *bkpe, int *tdge, int *u, double *w, double *dsdc, int *cerr) {
 
-	static double tbo = 0.;
+    static double tbo = 0.;
 
-	/* Local variables */
-	int i__1, tgen, edst, idst, esvr, isvr;
+    /* System generated locals */
+    int i__1;
 
-	/* Parameter adjustments */
-	--dsdc;
-	--w;
-	--u;
-	--tdge;
-	--bkpe;
-	--bkne;
-	--bore;
-	--dste;
-	--tdgi;
-	--bkpi;
-	--bkni;
-	--bori;
-	--dsti;
+    /* Local variables */
+    int tgen, edst, idst, esvr, isvr;
 
-	/* Function Body */
-	tgen = MAX(0,*rgen - 6);
-	if (tbo != *tb) {
-		tgen = MIN(1,tgen + *ityp + *etyp);
-		*rgen += tgen;
-		tbo = *tb;
-	}
-	if (tgen > 0) {
-		r8vset(1, *nc << 1, 0., &dsdc[1]);
-		if (*nsi > 0) {
-			isvr = *ityp % 3;
-			idst = *ityp / 3;
-			i8vcum(1, 1, *nsi, &u[1]);
-			r8vscats(1, *nsi, 1., &u[1], &dsdc[1]);
-			r8vscats(1, *nsi, 0., &u[1], &dsdc[*nc + 1]);
-			i8vadds(1, 1, *nsi, 1, &u[1], &u[1]);
-			if (isvr == 1)
-				taylor(*nc, *nsi, *ta, *tb, &tdgi[1], &u[1], &w[1], &dsdc[1]);
-			else if (isvr == 2) {
-				bsplyn(*nc, *nsi, ta, tb, &bori[1], &bkni[1], &bkpi[1], &u[1], &w[1], &dsdc[1], cerr);
-				if (*cerr >= 50) goto L10;
-			}
-			if (idst == 1)
-				dstorm(*nc, *nsi, dst, dstt, &dsti[1], &u[1], &dsdc[1]);
+    /* Parameter adjustments */
+    --dsdc;
+    --w;
+    --u;
+    --tdge;
+    --bkpe;
+    --bkne;
+    --bore;
+    --dste;
+    --tdgi;
+    --bkpi;
+    --bkni;
+    --bori;
+    --dsti;
+
+    /* Function Body */
+    tgen = MAX(0,*rgen - 6);
+    if (tbo != *tb) {
+	tgen = MIN(1,tgen + *ityp + *etyp);
+	*rgen += tgen;
+	tbo = *tb;
+    }
+    if (tgen > 0) {
+	r8vset(1, *nc << 1, 0., &dsdc[1]);
+	if (*nsi > 0) {
+	    isvr = *ityp % 3;
+	    idst = *ityp / 3;
+	    i8vcum(1, 1, *nsi, &u[1]);
+	    r8vscats(1, *nsi, 1., &u[1], &dsdc[1]);
+	    r8vscats(1, *nsi, 0., &u[1], &dsdc[*nc + 1]);
+	    i8vadds(1, 1, *nsi, 1, &u[1], &u[1]);
+	    if (isvr == 1)
+		taylor(*nc, *nsi, *ta, *tb, &tdgi[1], &u[1], &w[1], &dsdc[1]);
+	    else if (isvr == 2) {
+		bsplyn(*nc, *nsi, ta, tb, &bori[1], &bkni[1], &bkpi[1], &u[1], &w[1], &dsdc[1], cerr);
+		if (*cerr >= 50) goto L10;
+	    }
+	    if (idst == 1)
+		dstorm(*nc, *nsi, dst, dstt, &dsti[1], &u[1], &dsdc[1]);
+
 L10:
-			i8vdel(1, 1, *nsi, &u[1]);
-		}
-		if (*nse > 0) {
-			esvr = *etyp % 3;
-			edst = *etyp / 3;
-			i__1 = *nsi + 1;
-			i8vcum(1, i__1, *nse, &u[1]);
-			r8vscats(i__1, *nse, 1., &u[1], &dsdc[*nci + 1]);
-			r8vscats(i__1, *nse, 0., &u[1], &dsdc[*nc + *nci + 1]);
-			i8vadds(i__1, i__1, *nse, 1, &u[1], &u[1]);
-			if (esvr == 1)
-				taylor(*nc, *nse, *ta, *tb, &tdge[1], &u[*nsi + 1], &w[1], &dsdc[*nci + 1]);
-			else if (esvr == 2) {
-				bsplyn(*nc, *nse, ta, tb, &bore[1], &bkne[1], &bkpe[1], &u[*nsi + 1], &w[1], &dsdc[*nci + 1], cerr);
-				if (*cerr >= 50) goto L20;
-			}
-			if (edst == 1)
-				dstorm(*nc, *nse, dst, dstt, &dste[1], &u[*nsi + 1], &dsdc[*nci + 1]);
-L20:
-			i8vdel(1, *nsi + 1, *nse, &u[1]);
-		}
+	    i8vdel(1, 1, *nsi, &u[1]);
 	}
+	if (*nse > 0) {
+	    esvr = *etyp % 3;
+	    edst = *etyp / 3;
+	    i__1 = *nsi + 1;
+	    i8vcum(1, i__1, *nse, &u[1]);
+	    r8vscats(i__1, *nse, 1., &u[1], &dsdc[*nci + 1]);
+	    r8vscats(i__1, *nse, 0., &u[1], &dsdc[*nc + *nci + 1]);
+	    i8vadds(i__1, i__1, *nse, 1, &u[1], &u[1]);
+	    if (esvr == 1)
+		taylor(*nc, *nse, *ta, *tb, &tdge[1], &u[*nsi + 1], &w[1], &dsdc[*nci + 1]);
+	    else if (esvr == 2) {
+		bsplyn(*nc, *nse, ta, tb, &bore[1], &bkne[1], &bkpe[1], &u[*nsi + 1], &w[1], &dsdc[*nci + 1], cerr);
+		if (*cerr >= 50) goto L20;
+	    }
+	    if (edst == 1)
+		dstorm(*nc, *nse, dst, dstt, &dste[1], &u[*nsi + 1], &dsdc[*nci + 1]);
+
+L20:
+	    i8vdel(1, *nsi + 1, *nse, &u[1]);
+	}
+    }
 }
 
 void taylor(int nc, int ns, double ta, double tb, int *tdeg, int *u, double *dsdt, double *dsdc) {
@@ -2917,13 +2913,13 @@ void tvn_(int *grad, int *k, int *nc, int *na, int *ia, double *a, double *b, do
 void fdldsl_(int *k, int *na, int *ia, double *b, double *dlda) {
     int i, j;
 
-	i = *ia;
-	for (j = 0; j < 6; ++j) {
-		dlda[i] = 0.;
-		dlda[i + 1] = 0.;
-		dlda[i + 2] = 0.;
-		i += *na;
-	}
+    i = *ia;
+    for (j = 0; j < 6; ++j) {
+	dlda[i] = 0.;
+	dlda[i + 1] = 0.;
+	dlda[i + 2] = 0.;
+	i += *na;
+    }
     if (*k > 1) {
 	i = *ia;
 	dlda[i] = b[0];
@@ -2959,21 +2955,21 @@ void tbi_(int *k, int *na, int *ia, double *a, double *b, double *dlda) {
 void fdldbi_(int *k, int *na, int *ia, double *dlda) {
     int i, j;
 
-	i = *ia;
-	for (j = 0; j < 6; ++j) {
-		dlda[i] = 0.;
-		dlda[i + 1] = 0.;
-		dlda[i + 2] = 0.;
-		i += *na;
+    i = *ia;
+    for (j = 0; j < 6; ++j) {
+	dlda[i] = 0.;
+	dlda[i + 1] = 0.;
+	dlda[i + 2] = 0.;
+	i += *na;
     }
-	if (*k > 1) {
-		i = *ia;
-		dlda[i] = 1.;
-		i += *na;
-		dlda[i + 1] = 1.;
-		i += *na;
-		dlda[i + 2] = 1.;
-	}
+    if (*k > 1) {
+	i = *ia;
+	dlda[i] = 1.;
+	i += *na;
+	dlda[i + 1] = 1.;
+	i += *na;
+	dlda[i + 2] = 1.;
+    }
 }
 
 void ltrans(int n, int m, double *q, double *r, double *s) {
@@ -3044,8 +3040,8 @@ int i8ssum(int abeg, int alen, int *a) {
 
     ret_val = 0;
     aadr = abeg;
-	for (i = 0; i < alen; ++i)
-		ret_val += a[aadr++];
+    for (i = 0; i < alen; ++i)
+	ret_val += a[aadr++];
 
     return ret_val;
 }
@@ -3058,8 +3054,8 @@ void i8vset(int abeg, int alen, int s, int *a) {
 
     /* Function Body */
     aadr = abeg;
-	for (i = 0; i < alen; ++i)
-		a[aadr++] = s;
+    for (i = 0; i < alen; ++i)
+	a[aadr++] = s;
 }
 
 void i8vadd(int abeg, int bbeg, int cbeg, int vlen, int *a, int *b, int *c) {
@@ -3074,8 +3070,8 @@ void i8vadd(int abeg, int bbeg, int cbeg, int vlen, int *a, int *b, int *c) {
     aadr = abeg;
     badr = bbeg;
     cadr = cbeg;
-	for (i = 0; i < vlen; ++i)
-		c[cadr++] = b[badr++] + a[aadr++];
+    for (i = 0; i < vlen; ++i)
+	c[cadr++] = b[badr++] + a[aadr++];
 }
 
 void i8vadds(int abeg, int bbeg, int vlen, int s, int *a, int *b) {
@@ -3088,8 +3084,8 @@ void i8vadds(int abeg, int bbeg, int vlen, int s, int *a, int *b) {
     /* Function Body */
     aadr = abeg;
     badr = bbeg;
-	for (i = 0; i < vlen; ++i)
-		b[badr++] = a[aadr++] + s;
+    for (i = 0; i < vlen; ++i)
+	b[badr++] = a[aadr++] + s;
 }
 
 void i8vcum(int abas, int abeg, int alen, int *a) {
@@ -3101,12 +3097,12 @@ void i8vcum(int abas, int abeg, int alen, int *a) {
     aprv = a[abeg];
     a[abeg] = abas;
     aadr = abeg + 1;
-	for (i = 0; i < alen - 1; ++i) {
-		acur = a[aadr];
-		a[aadr] = a[aadr - 1] + aprv;
-		aprv = acur;
+    for (i = 0; i < alen - 1; ++i) {
+	acur = a[aadr];
+	a[aadr] = a[aadr - 1] + aprv;
+	aprv = acur;
 	++aadr;
-	}
+    }
 }
 
 void i8vdel(int abas, int abeg, int alen, int *a) {
@@ -3132,8 +3128,8 @@ void r8vset(int abeg, int alen, double s, double *a) {
     --a;
 
     aadr = abeg;
-	for (i = 0; i < alen; ++i)
-		a[aadr++] = s;
+    for (i = 0; i < alen; ++i)
+	a[aadr++] = s;
 }
 
 double r8sdot(int abeg, int bbeg, int vlen, double *a, double *b) {
@@ -3201,7 +3197,7 @@ void r8vsub(int abeg, int bbeg, int cbeg, int vlen, double *a, double *b, double
     badr = bbeg;
     cadr = cbeg;
     for (i = 0; i < vlen; ++i)
-		c[cadr++] = b[badr++] - a[aadr++];
+	c[cadr++] = b[badr++] - a[aadr++];
 }
 
 void r8vmul(int abeg, int bbeg, int cbeg, int vlen, double *a, double *b, double *c) {
@@ -3216,7 +3212,7 @@ void r8vmul(int abeg, int bbeg, int cbeg, int vlen, double *a, double *b, double
     badr = bbeg;
     cadr = cbeg;
     for (i = 0; i < vlen; ++i)
-		c[cadr++] = b[badr++] * a[aadr++];
+	c[cadr++] = b[badr++] * a[aadr++];
 }
 
 void r8vscale(int abeg, int alen, double s, double *a) {
@@ -3227,8 +3223,8 @@ void r8vscale(int abeg, int alen, double s, double *a) {
 
     aadr = abeg;
     for (i = 0; i < alen; ++i) {
-		a[aadr] *= s;
-		++aadr;
+	a[aadr] = s * a[aadr];
+	++aadr;
     }
 }
 
@@ -3241,7 +3237,7 @@ void r8vscats(int qbeg, int qlen, double s, int *q, double *a) {
 
     qadr = qbeg;
     for (i = 0; i < qlen; ++i)
-		a[q[qadr++]] = s;
+	a[q[qadr++]] = s;
 
 }
 
@@ -3255,7 +3251,7 @@ void r8vlinkt(int abeg, int bbeg, int vlen, double s, double *a, double *b) {
     aadr = abeg;
     badr = bbeg;
     for (i = 0; i < vlen; ++i)
-		b[badr++] += s * a[aadr++];
+	b[badr++] += s * a[aadr++];
 }
 
 void r8vlinkq(int abeg, int bbeg, int cbeg, int vlen, double s, double *a, double *b, double *c) {
@@ -3266,11 +3262,11 @@ void r8vlinkq(int abeg, int bbeg, int cbeg, int vlen, double s, double *a, doubl
     --b;
     --a;
 
-	aadr = abeg;
-	badr = bbeg;
-	cadr = cbeg;
-	for (i = 0; i < vlen; ++i)
-		c[cadr++] += s * a[aadr++] * b[badr++];
+    aadr = abeg;
+    badr = bbeg;
+    cadr = cbeg;
+    for (i = 0; i < vlen; ++i)
+	c[cadr++] += s * a[aadr++] * b[badr++];
 }
 
 void r8vgathp(int abeg, int ainc, int bbeg, int blen, double *a, double *b) {
@@ -3281,9 +3277,9 @@ void r8vgathp(int abeg, int ainc, int bbeg, int blen, double *a, double *b) {
 
     aadr = abeg;
     badr = bbeg;
-	for (i = 0; i < blen; ++i) {
-		b[badr++] = a[aadr];
-		aadr += ainc;
+    for (i = 0; i < blen; ++i) {
+	b[badr++] = a[aadr];
+	aadr += ainc;
     }
 }
 
@@ -3323,5 +3319,5 @@ double pow_di(double ap, int bp) {
 }
 
 int i_dnnt(double x) {
-	return (int)(x >= 0. ? floor(x + 0.5) : -floor(0.5 - x));
+	return (int)(x >= 0. ? floor(x + .5) : -floor(.5 - x));
 }

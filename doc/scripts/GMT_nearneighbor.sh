@@ -1,7 +1,9 @@
 #!/bin/bash
 #	$Id$
 #
-gmt psxy -R0/2/0/2 -Jx1i -Bg0.25 -Sc0.025 -Gblack -P -K << EOF > GMT_nearneighbor.ps
+. ./functions.sh
+
+psxy -R0/2/0/2 -Jx1i -Bg0.25 -Sc0.025 -Gblack -P -K << EOF > GMT_nearneighbor.ps
 0.04	1.8
 0.3	0.3
 0.31	0.7
@@ -21,10 +23,10 @@ gmt psxy -R0/2/0/2 -Jx1i -Bg0.25 -Sc0.025 -Gblack -P -K << EOF > GMT_nearneighbo
 1.15	1.3
 1	0.88
 EOF
-gmt psxy -R -J -O -K -Sc1 -Wthick << EOF >> GMT_nearneighbor.ps
+psxy -R -J -O -K -Sc1 -Wthick << EOF >> GMT_nearneighbor.ps
 0.75	1.25
 EOF
-gmt psxy -R -J -O -K -Wthinner << EOF >> GMT_nearneighbor.ps
+psxy -R -J -O -K -Wthinner << EOF >> GMT_nearneighbor.ps
 >
 0.25	1.25
 1.25	1.25
@@ -32,7 +34,7 @@ gmt psxy -R -J -O -K -Wthinner << EOF >> GMT_nearneighbor.ps
 0.75	0.75
 0.75	1.75
 EOF
-gmt psxy -R -J -O -K -Wthinnest << EOF >> GMT_nearneighbor.ps
+psxy -R -J -O -K -Wthinnest << EOF >> GMT_nearneighbor.ps
 >
 0.75	1.25
 0.5	0.9
@@ -49,11 +51,11 @@ gmt psxy -R -J -O -K -Wthinnest << EOF >> GMT_nearneighbor.ps
 0.75	1.25
 1	0.88
 EOF
-gmt psxy -R -J -O -K -W0.5p,.- << EOF >> GMT_nearneighbor.ps
+psxy -R -J -O -K -W0.5p,.- << EOF >> GMT_nearneighbor.ps
 0.75	1.25
 1.10355	1.60355
 EOF
-gmt pstext -R -J -O -F+f8p,Helvetica-Oblique+jBL << EOF >> GMT_nearneighbor.ps
+pstext -R -J -O -F+f8p,Helvetica-Oblique+jBL << EOF >> GMT_nearneighbor.ps
 1	1.4	R
 1.0	1	r@-i@-
 EOF

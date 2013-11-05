@@ -6,6 +6,7 @@
 # GMT progs:    libpslib, psldemo
 # Unix progs:   -
 #
-ps=psldemo.ps
-export PSL_SHAREDIR="$GMT_SHAREDIR"
+. functions.sh
+header "Test pslib capabilities"
 psldemo > $ps
+pscmp

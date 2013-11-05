@@ -1,12 +1,12 @@
 #!/bin/bash
-#	$Id$
-#
 # Test the C API for i/o involving textsets
 
+. functions.sh
 function textset_check {
 	testapi -I$1 -W$2 -Tt
 	diff -q --strip-trailing-cr ttest[io].txt >> fail
 }
+header "Test the API for various TEXTSET i/o combinations"
 
 cat << EOF > ttesti.txt
 > first segment
@@ -48,3 +48,5 @@ textset_check r s	# 5b. Stream
 textset_check r d	# 5c. File descriptor
 textset_check r c	# 5d. Copy
 textset_check r r	# 5e. Reference
+
+passfail apicheck_T

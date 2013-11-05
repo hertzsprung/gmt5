@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 2009-2013 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2012 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *--------------------------------------------------------------------*/
 /* 			PSL: PostScript Light (Fortran Binder)
@@ -35,12 +35,10 @@
  * List of API functions:
  * PSL_beginaxes
  * PSL_beginclipping	: Clips plot outside the specified polygon
- * PSL_beginlayer	: Place begin object group DSC comment.
  * PSL_beginplot	: Initialize parameters for a new plot.
  * PSL_beginsession	: Creates a new PSL session
  * PSL_endaxes		: Turns off mapping of user coordinates to PS units
  * PSL_endclipping	: Restores previous clipping path
- * PSL_endlayer		: Place end object group DSC comment.
  * PSL_endplot		: Close plotfile
  * PSL_endsession	: Terminates the PSL session
  * PSL_plotarc		: Plots a circular arc
@@ -86,14 +84,19 @@
  *
  * Authors:	Paul Wessel, Dept. of Geology and Geophysics, SOEST, U Hawaii
  *			   pwessel@hawaii.edu
- *		Remko Scharroo, EUMETSAT, Darmstadt, Germany
- *			   Remko.Scharroo@eumetsat.int
+ *		Remko Scharroo, Altimetrics
+ *			   remko@altimetrics.com
  * Date:	18-MAY-2011
  * Version:	5.0 [64-bit enabled API edition]
  *
  * Thanks to J. Goff and L. Parkes for their contributions to an earlier version.
  *
  */
+
+/*  PSL is POSIX COMPLIANT  */
+
+#define _POSIX_SOURCE 1
+#define _POSIX_C_SOURCE 199506L
 
 /*--------------------------------------------------------------------
  *			SYSTEM HEADER FILES
@@ -106,268 +109,258 @@ struct PSL_CTRL *PSL_FORTRAN;        /* Global structure needed for FORTRAN-77 (
 
 /*------------------- PUBLIC PSL API FUNCTIONS--------------------- */
 
-int PSL_beginsession_ ()	/* Initialize PSL session */
+PSL_LONG PSL_beginsession_ ()	/* Initialize PSL session */
 {       /* Fortran version: We pass the hidden global GMT_FORTRAN structure */
 	PSL_FORTRAN = New_PSL_Ctrl ("Fortran");
 	return (PSL_beginsession (PSL_FORTRAN));
 }
 
-int PSL_endsession_ ()
+PSL_LONG PSL_endsession_ ()
 {
 	return (PSL_endsession (PSL_FORTRAN));
 }
 
-int PSL_beginlayer_ (int *layer)
-{
-	return (PSL_beginlayer (PSL_FORTRAN, *layer));
-}
-
-int PSL_endlayer_ ()
-{
-	return (PSL_endlayer (PSL_FORTRAN));
-}
-
-int PSL_plotarc_ (double *x, double *y, double *radius, double *az1, double *az2, int *type)
+PSL_LONG PSL_plotarc_ (double *x, double *y, double *radius, double *az1, double *az2, PSL_LONG *type)
 {
 	 return (PSL_plotarc (PSL_FORTRAN, *x, *y, *radius, *az1, *az2, *type));
 }
 
-int PSL_plotaxis_ (double *annotation_int, char *label, double *annotfontsize, int *side, int len)
+PSL_LONG PSL_plotaxis_ (double *annotation_int, char *label, double *annotfontsize, PSL_LONG *side, int len)
 {
 	return (PSL_plotaxis (PSL_FORTRAN, *annotation_int, label, *annotfontsize, *side));
 }
 
-int PSL_plotbitimage_ (double *x, double *y, double *xsize, double *ysize, int *justify, unsigned char *buffer, int *nx, int *ny, double *f_rgb, double *b_rgb)
+PSL_LONG PSL_plotbitimage_ (double *x, double *y, double *xsize, double *ysize, PSL_LONG *justify, unsigned char *buffer, PSL_LONG *nx, PSL_LONG *ny, double *f_rgb, double *b_rgb)
 {
 	return (PSL_plotbitimage (PSL_FORTRAN, *x, *y, *xsize, *ysize, *justify, buffer, *nx, *ny, f_rgb, b_rgb));
 }
 
-int PSL_endclipping_ (int *mode) {
+PSL_LONG PSL_endclipping_ (PSL_LONG *mode) {
 	return (PSL_endclipping (PSL_FORTRAN, *mode));
 }
 
-int PSL_beginclipping_ (double *x, double *y, int *n, double *rgb, int *flag)
+PSL_LONG PSL_beginclipping_ (double *x, double *y, PSL_LONG *n, double *rgb, PSL_LONG *flag)
 {
 	return (PSL_beginclipping (PSL_FORTRAN, x, y, *n, rgb, *flag));
 }
 
-int PSL_plotcolorimage_ (double *x, double *y, double *xsize, double *ysize, int *justify, unsigned char *buffer, int *nx, int *ny, int *nbits, int len)
+PSL_LONG PSL_plotcolorimage_ (double *x, double *y, double *xsize, double *ysize, PSL_LONG *justify, unsigned char *buffer, PSL_LONG *nx, PSL_LONG *ny, PSL_LONG *nbits, int len)
 {
 	return (PSL_plotcolorimage (PSL_FORTRAN, *x, *y, *xsize, *ysize, *justify, buffer, *nx, *ny, *nbits));
 }
 
-int PSL_command_nonmacro (struct PSL_CTRL *PSL, char *text)
+PSL_LONG PSL_command_nonmacro (struct PSL_CTRL *PSL, char *text)
 {
 	PSL_command (PSL, "%s\n", text);
 	return (PSL_NO_ERROR);
 }
 
-int PSL_command_ (char *text, int len)
+PSL_LONG PSL_command_ (char *text, int len)
 {
 	return (PSL_command_nonmacro (PSL_FORTRAN, text));
 }
 
-int PSL_comment_nonmacro (struct PSL_CTRL *PSL, char *text)
+PSL_LONG PSL_comment_nonmacro (struct PSL_CTRL *PSL, char *text)
 {
 	if (PSL->internal.comments) PSL_command (PSL, "%%\n%% %s\n%%\n", text);
 	return (PSL_NO_ERROR);
 }
 
-int PSL_comment_ (char *text, int len)
+PSL_LONG PSL_comment_ (char *text, int len)
 {
 	return (PSL_comment_nonmacro (PSL_FORTRAN, text));
 }
 
-int PSL_free_ (void *ptr)
+PSL_LONG PSL_free_ (void *ptr)
 {
 	return (PSL_free_nonmacro (ptr);
 }
 
-int PSL_beginaxes_ (double *llx, double *lly, double *width, double *height, double *x0, double *y0, double *x1, double *y1)
+PSL_LONG PSL_beginaxes_ (double *llx, double *lly, double *width, double *height, double *x0, double *y0, double *x1, double *y1)
 {
 	return (PSL_beginaxes (PSL_FORTRAN, *llx, *lly, *width, *height, *x0, *y0, *x1, *y1));
 }
 
-int PSL_endaxes_ ()
+PSL_LONG PSL_endaxes_ ()
 {
 	return (PSL_endaxes (PSL_FORTRAN));
 }
 
-int PSL_plotsymbol_ (double *x, double *y, double size[], int *symbol)
+PSL_LONG PSL_plotsymbol_ (double *x, double *y, double size[], PSL_LONG *symbol)
 {
 	return (PSL_plotsymbol (PSL_FORTRAN, *x, *y, size, *symbol));
 }
 
-int PSL_plotsegment_ (double *x0, double *y0, double *x1, double *y1)
+PSL_LONG PSL_plotsegment_ (double *x0, double *y0, double *x1, double *y1)
 {
 	 return (PSL_plotsegment (PSL_FORTRAN, *x0, *y0, *x1, *y1));
 }
 
-int PSL_settransparencymode_ (char *mode)
+PSL_LONG PSL_settransparencymode_ (char *mode)
 {
 	return (PSL_settransparencymode (PSL_FORTRAN, mode));
 }
 
-int PSL_setfill_ (struct PSL_CTRL *PSL, double *rgb, int *outline)
+PSL_LONG PSL_setfill_ (struct PSL_CTRL *PSL, double *rgb, PSL_LONG *outline)
 {
 	 return (PSL_setfill (PSL_FORTRAN, rgb, *outline));
 }
 
-int PSL_setpattern_ (int *image_no, char *imagefile, int *image_dpi, double *f_rgb, double *b_rgb, int len)
+PSL_LONG PSL_setpattern_ (PSL_LONG *image_no, char *imagefile, PSL_LONG *image_dpi, double *f_rgb, double *b_rgb, int len)
 {
 	 return (PSL_setpattern (PSL_FORTRAN, *image_no, imagefile, *image_dpi, f_rgb, b_rgb));
 }
 
-int PSL_plotepsimage_ (double *x, double *y, double *xsize, double *ysize, int *justify, unsigned char *buffer, int size, int *nx, int *ny, int *ox, int *oy)
+PSL_LONG PSL_plotepsimage_ (double *x, double *y, double *xsize, double *ysize, PSL_LONG *justify, unsigned char *buffer, PSL_LONG size, PSL_LONG *nx, PSL_LONG *ny, PSL_LONG *ox, PSL_LONG *oy)
 {
 	return (PSL_plotepsimage (PSL_FORTRAN, *x, *y, *xsize, *ysize, *justify, buffer, size, *nx, *ny, *ox, *oy));
 }
 
-int PSL_plotline_ (double *x, double *y, int *n, int *type)
+PSL_LONG PSL_plotline_ (double *x, double *y, PSL_LONG *n, PSL_LONG *type)
 {
 	return (PSL_plotline (PSL_FORTRAN, x, y, *n, *type));
 }
 
-int PSL_plotpoint_ (double *x, double *y, int *pen)
+PSL_LONG PSL_plotpoint_ (double *x, double *y, PSL_LONG *pen)
 {
 	return (PSL_plotpoint (PSL_FORTRAN, *x, *y, *pen));
 }
 
-int PSL_endplot_ (int *lastpage)
+PSL_LONG PSL_endplot_ (PSL_LONG *lastpage)
 {
 	return (PSL_endplot (PSL_FORTRAN, *lastpage));
 }
 
-int PSL_beginplot_ (int *orientation, int *overlay, int *color_mode, char *origin, double offset[], double *page_size, char *title, int font_no[], int len1, int len2)
+PSL_LONG PSL_beginplot_ (PSL_LONG *orientation, PSL_LONG *overlay, PSL_LONG *color_mode, char *origin, double offset[], double *page_size, char *title, PSL_LONG font_no[], int len1, int len2)
 {
 	 return (PSL_beginplot (PSL_FORTRAN, NULL, *orientation, *overlay, *color_mode, origin, offset, page_size, title, font_no));
 }
 
-int PSL_setlinecap_ (int *cap)
+PSL_LONG PSL_setlinecap_ (PSL_LONG *cap)
 {
 	return (PSL_setlinecap (PSL_FORTRAN, *cap));
 }
 
-int PSL_setlinejoin_ (int *join)
+PSL_LONG PSL_setlinejoin_ (PSL_LONG *join)
 {
 	return (PSL_setlinejoin (PSL_FORTRAN, *join));
 }
 
-int PSL_setmiterlimit_ (int *limit)
+PSL_LONG PSL_setmiterlimit_ (PSL_LONG *limit)
 {
 	return (PSL_setmiterlimit (PSL_FORTRAN, *limit));
 }
 
-int PSL_plotbox_ (double *x0, double *y0, double *x1, double *y1)
+PSL_LONG PSL_plotbox_ (double *x0, double *y0, double *x1, double *y1)
 {
 	return (PSL_plotbox (PSL_FORTRAN, *x0, *y0, *x1, *y1));
 }
 
-int PSL_plotpolygon_ (double *x, double *y, int *n)
+PSL_LONG PSL_plotpolygon_ (double *x, double *y, PSL_LONG *n)
 {
 	return (PSL_plotpolygon (PSL_FORTRAN, x, y, *n));
 }
 
-int PSL_setdash_ (char *pattern, double *offset, int len)
+PSL_LONG PSL_setdash_ (char *pattern, double *offset, int len)
 {
 	return (PSL_setdash (PSL_FORTRAN, pattern, *offset));
 }
 
-int PSL_setfont_ (int *font_no)
+PSL_LONG PSL_setfont_ (PSL_LONG *font_no)
 {
 	return (PSL_setfont (PSL_FORTRAN, *font_no));
 }
 
-int PSL_setformat_ (int *n_decimals)
+PSL_LONG PSL_setformat_ (PSL_LONG *n_decimals)
 {
 	return (PSL_setformat (PSL_FORTRAN, *n_decimals));
 }
 
-int PSL_setlinewidth_ (double *linewidth)
+PSL_LONG PSL_setlinewidth_ (double *linewidth)
 {
 	 return (PSL_setlinewidth (PSL_FORTRAN, *linewidth));
 }
 
-int PSL_setcolor_ (double *rgb, int *mode)
+PSL_LONG PSL_setcolor_ (double *rgb, PSL_LONG *mode)
 {
 	 return (PSL_setcolor (PSL_FORTRAN, rgb, *mode));
 }
 
-int PSL_setdefaults_ (double *dpi, double xyscales[], double page_rgb[])
+PSL_LONG PSL_setdefaults_ (double *dpi, double xyscales[], double page_rgb[])
 {
 	 return (PSL_setdefaults (PSL_FORTRAN, *dpi, xyscales, page_rgb));
 }
 
-int PSL_plottextbox_ (double *x, double *y, double *fontsize, char *text, double *angle, int *justify, double offset[], int *mode, int len)
+PSL_LONG PSL_plottextbox_ (double *x, double *y, double *fontsize, char *text, double *angle, PSL_LONG *justify, double offset[], PSL_LONG *mode, int len)
 {
 	 return (PSL_plottextbox (PSL_FORTRAN, *x, *y, *fontsize, text, *angle, *justify, offset, *mode));
 }
 
-int PSL_deftextdim_ (char *dim, double *fontsize, char *text, int len1, int len2)
+PSL_LONG PSL_deftextdim_ (char *dim, double *fontsize, char *text, int len1, int len2)
 {
 	return (PSL_deftextdim (PSL_FORTRAN, dim, *fontsize, text));
 }
 
-int PSL_plottext_ (double *x, double *y, double *fontsize, char *text, double *angle, int *justify, int *mode, int len)
+PSL_LONG PSL_plottext_ (double *x, double *y, double *fontsize, char *text, double *angle, PSL_LONG *justify, PSL_LONG *mode, int len)
 {
 	return (PSL_plottext (PSL_FORTRAN, *x, *y, *fontsize, text, *angle, *justify, *mode));
 }
 
-int PSL_plottextpath_ (double x[], double y[], int *n, int node[], double *fontsize, char *label[], int *m, double angle[], int *justify, double offset[], int *mode, int len)
+PSL_LONG PSL_plottextpath_ (double x[], double y[], PSL_LONG *n, PSL_LONG node[], double *fontsize, char *label[], PSL_LONG *m, double angle[], PSL_LONG *justify, double offset[], PSL_LONG *mode, int len)
 {
 	return (PSL_plottextpath (PSL_FORTRAN, x, y, *n, node, *fontsize, label, *m, angle, *justify, offset, *mode));
 }
 
-int PSL_plottextclip_ (double x[], double y[], int *m, double *fontsize, char *label[], double angle[], int *justify, double offset[], int *mode, int len)
+PSL_LONG PSL_plottextclip_ (double x[], double y[], PSL_LONG *m, double *fontsize, char *label[], double angle[], PSL_LONG *justify, double offset[], PSL_LONG *mode, int len)
 {
 	return (PSL_plottextclip (PSL_FORTRAN, x, y, *m, *fontsize, label, angle, *justify, offset, *mode));
 }
 
-int PSL_setorigin_ (double *x, double *y, double *angle, int *mode)
+PSL_LONG PSL_setorigin_ (double *x, double *y, double *angle, PSL_LONG *mode)
 {
 	return (PSL_setorigin (PSL_FORTRAN, *x, *y, *angle, *mode));
 }
 
-int PSL_setparagraph_ (double *line_space, double *par_width, int *par_just)
+PSL_LONG PSL_setparagraph_ (double *line_space, double *par_width, PSL_LONG *par_just)
 {
 	return (PSL_setparagraph (PSL_FORTRAN, *line_space, *par_width, *par_just));
 }
 
-int PSL_plotparagraphbox_ (double *x, double *y, double *fontsize, char *paragraph, double *angle, int *justify, double offset[], int *mode, int len)
+PSL_LONG PSL_plotparagraphbox_ (double *x, double *y, double *fontsize, char *paragraph, double *angle, PSL_LONG *justify, double offset[], PSL_LONG *mode, int len)
 {
 	return (PSL_plotparagraphbox (PSL_FORTRAN, *x, *y, *fontsize, paragraph, *angle, *justify, offset, *mode));
 }
 
-int PSL_plotparagraph_ (double *x, double *y, double *fontsize, char *paragraph, double *angle, int *par_just, int len)
+PSL_LONG PSL_plotparagraph_ (double *x, double *y, double *fontsize, char *paragraph, double *angle, PSL_LONG *par_just, int len)
 {
 	return (PSL_plotparagraph (PSL_FORTRAN, *x, *y, *fontsize, paragraph, *angle, *par_just));
 }
 
-int PSL_defunits_ (char *param, double *value, int len) {
+PSL_LONG PSL_defunits_ (char *param, double *value, int len) {
 	return (PSL_defunits (PSL_FORTRAN, param, *value));
 }
 
-int PSL_defpoints_ (char *param, double *fontsize, int len)
+PSL_LONG PSL_defpoints_ (char *param, double *fontsize, int len)
 {
 	return (PSL_defpoints (PSL_FORTRAN, param, *fontsize));
 }
 
-int PSL_definteger_ (char *param, int *value, int len)
+PSL_LONG PSL_definteger_ (char *param, PSL_LONG *value, int len)
 {
 	return (PSL_definteger (PSL_FORTRAN, param, *value));
 }
 
-int PSL_defpen_ (char *param, double *linewidth, char *style, double *offset, double rgb[], int len1, int len2)
+PSL_LONG PSL_defpen_ (char *param, double *linewidth, char *style, double *offset, double rgb[], int len1, int len2)
 {
 	return (PSL_defpen (PSL_FORTRAN, param, *linewidth, style, *offset, rgb));
 }
 
-int PSL_defcolor_ (char *param, double rgb[], int len)
+PSL_LONG PSL_defcolor_ (char *param, double rgb[], int len)
 {
 	return (PSL_defcolor (PSL_FORTRAN, param, rgb));
 }
 
-int PSL_loadimage_ (char *file, struct imageinfo *h, unsigned char **picture, int len1, int len2)
+PSL_LONG PSL_loadimage_ (char *file, struct imageinfo *h, unsigned char **picture, int len1, int len2)
 {
 	return (PSL_loadimage (PSL_FORTRAN, file, h, picture));
 }

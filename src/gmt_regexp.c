@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -28,7 +28,7 @@
  *
  */
 
-#include "gmt_dev.h"
+#include "gmt.h"
 #include "gmt_internals.h"
 
 /*
@@ -42,7 +42,7 @@
 #define MAX_ERR_LENGTH 80   /* max error message length */
 #endif
 
-int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pattern, bool caseless)
+GMT_LONG gmt_regexp_match (struct GMT_CTRL *C, const char *subject, const char *pattern, GMT_LONG caseless)
 {
 /* Match string against the extended regular expression in pattern. Return 1 for match, 0 for no match. */
 
@@ -76,8 +76,8 @@ int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pat
 	/* Compilation failed: print the error message and exit */
 
 	if (re == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: PCRE compilation failed at offset %d: %s.\n", erroffset, error);
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_report (C, GMT_MSG_FATAL, "gmt_regexp_match: PCRE compilation failed at offset %d: %s.\n", erroffset, error);
+		GMT_exit (EXIT_FAILURE);
 	}
 	
 	/*************************************************************************
@@ -102,8 +102,8 @@ int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pat
 			case PCRE_ERROR_NOMATCH: break;
 			/* Handle other special cases if you like */
 			default: 
-				 GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: PCRE matching error %d.\n", rc);
-				 GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+				 GMT_report (C, GMT_MSG_FATAL, "gmt_regexp_match: PCRE matching error %d.\n", rc);
+				 GMT_exit (EXIT_FAILURE);
 				 break;
 		}
 		pcre_free(re);	/* Release memory used for the compiled pattern */
@@ -127,28 +127,28 @@ int gmt_regexp_match (struct GMT_CTRL *GMT, const char *subject, const char *pat
 	/* compile the RE */
 	if ( (status = regcomp(&re, pattern, cflags)) != 0) {
 		regerror(status, &re, err_msg, MAX_ERR_LENGTH);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: POSIX ERE compilation failed: %s\n", err_msg);
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_report (C, GMT_MSG_FATAL, "gmt_regexp_match: POSIX ERE compilation failed: %s\n", err_msg);
+		GMT_exit (EXIT_FAILURE);
 	}
 
 	/* execute the RE against the subject string */
-	status = regexec(&re, subject, 0U, NULL, 0);
+	status = regexec(&re, subject, (size_t) 0, NULL, 0);
 	regfree(&re);     /* Release memory used for the compiled pattern */
 	if ( status == 0 )
 		return (1); /* Match succeded */
 	else if ( status != REG_NOMATCH ) {
 		/* this is when errors have been encountered */
 		regerror(status, &re, err_msg, MAX_ERR_LENGTH);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: POSIX ERE matching error: %s\n", err_msg); /* Report error. */
-		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+		GMT_report (C, GMT_MSG_FATAL, "gmt_regexp_match: POSIX ERE matching error: %s\n", err_msg); /* Report error. */
+		GMT_exit (EXIT_FAILURE);
 	}
 	return (0); /* No match */
 
 #else
 
 	/* disable ERE support */
-	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "gmt_regexp_match: this GMT version was compiled without regular expression support.\n");
-	GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
+	GMT_report (C, GMT_MSG_FATAL, "gmt_regexp_match: this GMT version was compiled without regular expression support.\n");
+	GMT_exit (EXIT_FAILURE);
 
 #endif
 }

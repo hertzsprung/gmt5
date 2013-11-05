@@ -1,7 +1,9 @@
 #!/bin/bash
 #	$Id$
 #
-gmt psxy -R0/2.7/0/2.5 -Jx1i -K -L -N -P << EOF > GMT_-OK.ps
+. ./functions.sh
+
+psxy -R0/2.7/0/2.5 -Jx1i -K -L -N -P << EOF > GMT_-OK.ps
 > -Glightyellow
 0	1.2
 1	1.2
@@ -23,14 +25,14 @@ gmt psxy -R0/2.7/0/2.5 -Jx1i -K -L -N -P << EOF > GMT_-OK.ps
 1	2.1
 0	2.1
 EOF
-gmt pstext -R -J -O -K -N -F+f << EOF >> GMT_-OK.ps
+pstext -R -J -O -K -N -F+f << EOF >> GMT_-OK.ps
 0.5	2.3	9p,Helvetica		1-part PostScript file
 0.5	2.0	10p,Helvetica-Bold	HEADER
 0.5	1.65	10p,Helvetica-Bold	BODY@-1@-
 0.5	1.3	10p,Helvetica-Bold	TRAILER
 EOF
 
-gmt psxy -R -J -X1.3i -O -K -L -N << EOF >> GMT_-OK.ps
+psxy -R -J -X1.3i -O -K -L -N << EOF >> GMT_-OK.ps
 > -Glightyellow
 0	0.6
 1	0.6
@@ -65,7 +67,7 @@ gmt psxy -R -J -X1.3i -O -K -L -N << EOF >> GMT_-OK.ps
 0.5	1.3
 0.5	1.4
 EOF
-gmt pstext -R -J -O -K -N -F+f+j << EOF >> GMT_-OK.ps
+pstext -R -J -O -K -N -F+f+j << EOF >> GMT_-OK.ps
 0.5	2.3	9p,Helvetica		CM	2-part PostScript file
 0.5	2.0	10p,Helvetica-Bold	CM	HEADER
 0.5	1.65	10p,Helvetica-Bold	CM	BODY@-1@-
@@ -75,7 +77,7 @@ gmt pstext -R -J -O -K -N -F+f+j << EOF >> GMT_-OK.ps
 0.5	0.7	10p,Helvetica-Bold	CM	TRAILER
 EOF
 
-gmt psxy -R -J -X2.3i -O -K -L -N << EOF >> GMT_-OK.ps
+psxy -R -J -X2.3i -O -K -L -N << EOF >> GMT_-OK.ps
 > -Glightyellow
 0	0.0
 1	0.0
@@ -118,7 +120,7 @@ gmt psxy -R -J -X2.3i -O -K -L -N << EOF >> GMT_-OK.ps
 0.5	0.7
 0.5	0.8
 EOF
-gmt pstext -R -J -O -N -F+f+j << EOF >> GMT_-OK.ps
+pstext -R -J -O -N -F+f+j << EOF >> GMT_-OK.ps
 0.5	2.3	9p,Helvetica		CM	n-part PostScript file
 0.5	2.0	10p,Helvetica-Bold	CM	HEADER
 0.5	1.65	10p,Helvetica-Bold	CM	BODY@-1@-

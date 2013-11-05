@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -24,13 +24,7 @@
  * Version:	5 API
  */
  
-#define THIS_MODULE_NAME	"kml2gmt"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Extract GMT table data from Google Earth KML files"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:Vbh" GMT_OPT("HMm")
+#include "gmt.h"
 
 #define POINT			0
 #define LINE			1
@@ -38,11 +32,12 @@
 
 struct KML2GMT_CTRL {
 	struct In {	/* in file */
-		bool active;
+		GMT_LONG active;
 		char *file;
 	} In;
 	struct Z {	/* -Z */
-		bool active;
+		GMT_LONG active;
+		GMT_LONG n_cols;
 	} Z;
 };
 	
@@ -51,37 +46,37 @@ void *New_kml2gmt_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a new
 
 	C = GMT_memory (GMT, NULL, 1, struct KML2GMT_CTRL);
 
-	/* Initialize values whose defaults are not 0/false/NULL */
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
 
 	return (C);
 }
 
 void Free_kml2gmt_Ctrl (struct GMT_CTRL *GMT, struct KML2GMT_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
 	if (C->In.file) free (C->In.file);
 	GMT_free (GMT, C);
 }
 
-int GMT_kml2gmt_usage (struct GMTAPI_CTRL *API, int level)
+GMT_LONG GMT_kml2gmt_usage (struct GMTAPI_CTRL *C, GMT_LONG level)
 {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: kml2gmt [<kmlfiles>] [%s] [-Z] [%s] [%s] [%s] > GMTdata.txt\n", GMT_V_OPT, GMT_bo_OPT, GMT_ho_OPT, GMT_colon_OPT);
+	struct GMT_CTRL *GMT = C->GMT;
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	GMT_message (GMT, "kml2gmt %s [API] - Extract GMT table data from Google Earth KML files\n\n", GMT_VERSION);
+	GMT_message (GMT, "usage: kml2gmt [<kmlfiles>] [-V] [%s] [%s] > GMTdata.txt\n", GMT_bo_OPT, GMT_colon_OPT);
 
-	GMT_Message (API, GMT_TIME_NONE, "\tinfile is the Google Earth KML file.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t  If no file(s) is given, standard input is read.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t<kmlfiles> is one or more KML files from Google Earth or similar.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   If no files are given, standard input is read.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t-Z Output the z-column from the KML file [Only lon,lat is output].\n");
-	GMT_Option (API, "V,bo,h,:,.");
+	if (level == GMTAPI_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_message (GMT, "\tinfile is the Google Earth KML file.\n");
+	GMT_message (GMT, "\t  If no file(s) is given, standard input is read.\n");
+	GMT_message (GMT, "\n\tOPTIONS:\n");
+	GMT_message (GMT, "\t<kmlfiles> is one or more KML files from Google Earth or similar.\n");
+	GMT_message (GMT, "\t   If no files are given, standard input is read.\n");
+	GMT_message (GMT, "\t-Z Output the z-column from the KML file [Only lon,lat is output].\n");
+	GMT_explain_options (GMT, "VD0:.");
 
 	return (EXIT_FAILURE);
 }
 
-int GMT_kml2gmt_parse (struct GMT_CTRL *GMT, struct KML2GMT_CTRL *Ctrl, struct GMT_OPTION *options)
+GMT_LONG GMT_kml2gmt_parse (struct GMTAPI_CTRL *C, struct KML2GMT_CTRL *Ctrl, struct GMT_OPTION *options)
 {
 	/* This parses the options provided to kml2gmt and sets parameters in Ctrl.
 	 * Note Ctrl has already been initialized and non-zero default values set.
@@ -90,25 +85,23 @@ int GMT_kml2gmt_parse (struct GMT_CTRL *GMT, struct KML2GMT_CTRL *Ctrl, struct G
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0, n_files = 0;
+	GMT_LONG n_errors = 0, n_files = 0;
 	struct GMT_OPTION *opt = NULL;
+	struct GMT_CTRL *GMT = C->GMT;
 
 	for (opt = options; opt; opt = opt->next) {	/* Process all the options given */
 
 		switch (opt->option) {
 
 			case '<':	/* Input files */
-				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
-					Ctrl->In.file = strdup (opt->arg);
-				else
-					n_errors++;
+				Ctrl->In.active = TRUE;
+				if (n_files++ == 0) Ctrl->In.file = strdup (opt->arg);
 				break;
 
 			/* Processes program-specific parameters */
 
 			case 'Z':
- 				Ctrl->Z.active = true;
+ 				Ctrl->Z.active = TRUE;
 				break;
 			default:	/* Report bad options */
 				n_errors += GMT_default_error (GMT, opt->option);
@@ -126,14 +119,11 @@ int GMT_kml2gmt_parse (struct GMT_CTRL *GMT, struct KML2GMT_CTRL *Ctrl, struct G
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
 #define Return(code) {Free_kml2gmt_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_kml2gmt (void *V_API, int mode, void *args)
+GMT_LONG GMT_kml2gmt (struct GMTAPI_CTRL *API, GMT_LONG mode, void *args)
 {
-	unsigned int i, start, fmode = POINT;
-	int error = 0;
-	size_t length;
-	bool scan = true, first = true;
+	GMT_LONG i, start, fmode = POINT, scan = TRUE, first = TRUE, error = FALSE;
 	
-	char line[GMT_BUFSIZ] = {""}, buffer[GMT_BUFSIZ] = {""}, name[GMT_BUFSIZ] = {""}, description[GMT_BUFSIZ] = {""};
+	char line[GMT_BUFSIZ], buffer[GMT_BUFSIZ], header[GMT_BUFSIZ], name[GMT_BUFSIZ], description[GMT_BUFSIZ];
 
 	double out[3];
 	
@@ -142,99 +132,92 @@ int GMT_kml2gmt (void *V_API, int mode, void *args)
 	struct KML2GMT_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;		/* General GMT interal parameters */
 	struct GMT_OPTION *options = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_kml2gmt_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	if (API == NULL) return (GMT_Report_Error (API, GMT_NOT_A_SESSION));
+	options = GMT_Prep_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_kml2gmt_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_kml2gmt_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMTAPI_OPT_USAGE) bailout (GMT_kml2gmt_usage (API, GMTAPI_USAGE));/* Return the usage message */
+	if (options->option == GMTAPI_OPT_SYNOPSIS) bailout (GMT_kml2gmt_usage (API, GMTAPI_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	GMT = GMT_begin_module (API, "GMT_kml2gmt", &GMT_cpy);	/* Save current state */
+	if (GMT_Parse_Common (API, "-Vb:", "" GMT_OPT("HMm"), options)) Return (API->error);
 	Ctrl = New_kml2gmt_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_kml2gmt_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_kml2gmt_parse (API, Ctrl, options))) Return (error);
 
 	/*---------------------------- This is the kml2gmt main code ----------------------------*/
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input KML data\n");
-	GMT_set_geographic (GMT, GMT_IN);
-	GMT_set_geographic (GMT, GMT_OUT);
-	GMT_set_segmentheader (GMT, GMT_OUT, true);	/* Turn on segment headers on output */
+	GMT->current.io.col_type[GMT_IN][GMT_X] = GMT->current.io.col_type[GMT_OUT][GMT_X] = GMT_IS_LON;
+	GMT->current.io.col_type[GMT_IN][GMT_Y] = GMT->current.io.col_type[GMT_OUT][GMT_Y] = GMT_IS_LAT;
+	GMT_set_segmentheader (GMT, GMT_OUT, TRUE);	/* Turn on segment headers on output */
+	GMT_memset (header, GMT_BUFSIZ, char);
+	GMT_memset (name, GMT_BUFSIZ, char);
+	GMT_memset (description, GMT_BUFSIZ, char);
 	
 	if ((error = GMT_set_cols (GMT, GMT_OUT, 2 + Ctrl->Z.active)) != GMT_OK) {
 		Return (error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_PLP, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Registers default output destination, unless already set */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_REG_DEFAULT, options) != GMT_OK) {	/* Registers default output destination, unless already set */
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT) != GMT_OK) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
 
-	/* We read the input from stdin or file via fscanf and fgets. We cannot easily
-	 * switch this over to using GMT_Get_Record since the kml file may have multiple
-	 * coordinate pairs/triplets on the same line.  It is also unlikely anyone really
-	 * needs to call GMT_kml2gmt with a memory pointer, so this is a small sacrifice.
-	 * P. Wessel, April 2013. */
-	
 	if (Ctrl->In.active) {
 		if ((fp = fopen (Ctrl->In.file, "r")) == NULL) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Cannot open file %s\n", Ctrl->In.file);
+			GMT_report (GMT, GMT_MSG_FATAL, "Cannot open file %s\n", Ctrl->In.file);
 			Return (EXIT_FAILURE);
 		}
-		GMT_Report (API, GMT_MSG_VERBOSE, "Processing %s\n", Ctrl->In.file);
+		GMT_report (GMT, GMT_MSG_NORMAL, "Processing %s\n", Ctrl->In.file);
 		sprintf (buffer, "# kml2gmt: KML read from %s\n", Ctrl->In.file);
 	}
 	else {     /* Just read standard input */
 		fp = stdin;
-		GMT_Report (API, GMT_MSG_VERBOSE, "Reading from standard input\n");
+		GMT_report (GMT, GMT_MSG_NORMAL, "Reading from standard input\n");
 		sprintf (buffer, "# kml2gmt: KML read from standard input\n");
 	}
 	/* Now we are ready to take on some input values */
 
 	strcpy (GMT->current.setting.format_float_out, "%.12g");	/* Get enough decimals */
 	
-	GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, buffer);	/* Write this to output */
+	GMT_Put_Record (API, GMT_WRITE_TBLHEADER, buffer);	/* Write this to output */
 
 	while (fgets (line, GMT_BUFSIZ, fp)) {
-		if (strstr (line, "<Placemark")) scan = true;
-		if (strstr (line, "</Placemark")) scan = false;
+		if (strstr (line, "<Placemark")) scan = TRUE;
+		if (strstr (line, "</Placemark")) scan = FALSE;
 		if (!scan) continue;
 		if (strstr (line, "<Point")) fmode = POINT;
 		if (strstr (line, "<LineString")) fmode = LINE;
 		if (strstr (line, "<Polygon")) fmode = POLYGON;
-		length = strlen (line);
 		if (strstr (line, "<name>")) {
-			for (i = 0; i < length && line[i] != '>'; i++);	/* Find end of <name> */
+			for (i = 0; i < (GMT_LONG)strlen (line) && line[i] != '>'; i++);	/* Find end of <name> */
 			start = i + 1;
-			for (i = start; i < length && line[i] != '<'; i++);	/* Find start of </name> */
+			for (i = start; i < (GMT_LONG)strlen (line) && line[i] != '<'; i++);	/* Find start of </name> */
 			line[i] = '\0';
-			strncpy (name, &line[start], GMT_BUFSIZ);
+			strcpy (name, &line[start]);
 			GMT_chop (name);
 			if (first) {
 				sprintf (buffer, "# %s\n", &line[start]);
-				GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, buffer);	/* Write this to output */
+				GMT_Put_Record (API, GMT_WRITE_TBLHEADER, buffer);	/* Write this to output */
 			}
-			first = false;
+			first = FALSE;
 		}
 		if (strstr (line, "<description>")) {
-			for (i = 0; i < length && line[i] != '>'; i++);	/* Find end of <description> */
+			for (i = 0; i < (GMT_LONG)strlen (line) && line[i] != '>'; i++);	/* Find end of <description> */
 			start = i + 1;
-			for (i = start; i < length && line[i] != '<'; i++);	/* Find start of </description> */
+			for (i = start; i < (GMT_LONG)strlen (line) && line[i] != '<'; i++);	/* Find start of </description> */
 			line[i] = '\0';
-			strncpy (description, &line[start], GMT_BUFSIZ);
+			strcpy (description, &line[start]);
 			GMT_chop (description);
 			if (first) {
 				sprintf (buffer, "# %s\n", &line[start]);
-				GMT_Put_Record (API, GMT_WRITE_TABLE_HEADER, buffer);	/* Write this to output */
+				GMT_Put_Record (API, GMT_WRITE_TBLHEADER, buffer);	/* Write this to output */
 			}
-			first = false;
+			first = FALSE;
 		}
 		if (name[0] || description[0]) {
 			GMT->current.io.segment_header[0] = 0;
@@ -246,15 +229,15 @@ int GMT_kml2gmt (void *V_API, int mode, void *args)
 		if (!strstr (line, "<coordinates>")) continue;
 		/* We get here when the line says coordinates */
 		if (fmode == POINT) {	/* Process the single point */
-			for (i = 0; i < length && line[i] != '>'; i++);		/* Find end of <coordinates> */
+			for (i = 0; i < (GMT_LONG)strlen (line) && line[i] != '>'; i++);		/* Find end of <coordinates> */
 			sscanf (&line[i+1], "%lg,%lg,%lg", &out[GMT_X], &out[GMT_Y], &out[GMT_Z]);
 			if (!GMT->current.io.segment_header[0]) sprintf (GMT->current.io.segment_header, "Next Point\n");
-			GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);	/* Write segment header */
+			GMT_Put_Record (API, GMT_WRITE_SEGHEADER, NULL);	/* Write segment header */
 			GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);	/* Write this to output */
 		}
 		else {
 			if (!GMT->current.io.segment_header[0]) sprintf (GMT->current.io.segment_header, "Next feature\n");
-			GMT_Put_Record (API, GMT_WRITE_SEGMENT_HEADER, NULL);	/* Write segment header */
+			GMT_Put_Record (API, GMT_WRITE_SEGHEADER, NULL);	/* Write segment header */
 			
 			name[0] = description[0] = 0;
 			while (fscanf (fp, "%lg,%lg,%lg", &out[GMT_X], &out[GMT_Y], &out[GMT_Z])) {

@@ -1,10 +1,11 @@
 #!/bin/bash
-#	$Id: ps=headercheck.ps
-# Test that symbols pick up correct -W -G from command line or ps=headercheck.ps
+#	$Id$
+# Test that symbols pick up correct -W -G from command line or header
 
-ps=headercheck.ps
+. functions.sh
+header "Test psxy and operation of -W -G in headers"
 
-gmt psxy -R-1/10/-1/10 -JX6/4 -P -B2g1 -Sc0.2i -Gyellow -W2.5p,cyan -K << EOF > $ps
+psxy -R-1/10/-1/10 -JX6/4 -P -B2g1 -Sc0.2i -Gyellow -W2.5p,cyan -K << EOF > $ps
 > -Ggreen -W1p,black
 0	0
 1	1
@@ -27,7 +28,7 @@ cat << EOF > tt.cpt
 3	p100/9	6	-
 6	cyan	9	yellow
 EOF
-gmt psxy -R -J -O -Y4.75i -Gred -L -B2g1 -Ctt.cpt << EOF >> $ps
+psxy -R -J -O -Y4.75i -Gred -L -B2g1 -Ctt.cpt << EOF >> $ps
 > -Ggreen -W
 0	0
 2	2
@@ -55,3 +56,4 @@ gmt psxy -R -J -O -Y4.75i -Gred -L -B2g1 -Ctt.cpt << EOF >> $ps
 6	9
 EOF
 
+pscmp

@@ -3,9 +3,10 @@
 #
 # Plot all the symbols on a 1x1 inch grid pattern
 
-ps=plot_symbols.ps
+. functions.sh
+header "Test psxy and all the symbols with fill"
 
-gmt psxy -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -S1i -X2i -Y2i << EOF > $ps
+psxy -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -S1i -X2i -Y2i << EOF > $ps
 > Fat pen -W2p
 0.5	5.5	-
 > Plain red symbols -W- -Gred
@@ -21,7 +22,7 @@ gmt psxy -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -S1i -X2i -Y2i << EOF > $ps
 0.5	3.5	i
 1.5	3.5	90	1	0.5	j
 > Do orange -Gorange
-2.5	3.5	l+tM
+2.5	3.5	l/M
 3.5	3.5	n
 > Do yellowized pattern # 20 -Gp100/20:Fyellow
 0.5	2.5	1	0.5	r
@@ -39,3 +40,4 @@ gmt psxy -R0/4/1/6 -Jx1i -P -Bg1 -Gred -W0.25p -S1i -X2i -Y2i << EOF > $ps
 3.5	1.5	a
 EOF
 
+pscmp

@@ -11,17 +11,17 @@
 #  set (MAN_FILES user.1 system.2 special.4 formats.5)
 #  GMT_CREATE_MANPAGES ("${MAN_FILES}")
 #
-# Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+# Copyright (c) 1991-2011 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; version 3 or any later version.
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# GNU General Public License for more details.
 #
 # Contact info: gmt.soest.hawaii.edu
 #-------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ if(NOT DEFINED _GMT_MANPAGES_CMAKE_)
 		# Install manpages from external location
 		set (_HAVE_EXTERNAL_MAN TRUE)
 		install (DIRECTORY ${GMT_INSTALL_EXTERNAL_MAN}/
-			DESTINATION ${GMT_MANDIR}
+			DESTINATION ${GMT_MAN_PATH}
 			COMPONENT Runtime
 			USE_SOURCE_PERMISSIONS)
 	elseif (EXISTS ${GMT_INSTALL_EXTERNAL_MAN})
@@ -55,7 +55,7 @@ if(NOT DEFINED _GMT_MANPAGES_CMAKE_)
 			# parse arguments
 			set (_arg_is_man_file TRUE)
 			set (_man_files ${MAN_FILES})
-			set (_depends ${GMT_GEN_MAN_HEADERS})
+			set (_depends)
 			foreach (_arg ${ARGN})
 				if (_arg_is_man_file AND _arg STREQUAL "DEPENDS")
 					set (_arg_is_man_file FALSE)
@@ -148,25 +148,23 @@ if(NOT DEFINED _GMT_MANPAGES_CMAKE_)
 				# html manpages
 				add_custom_command (
 					OUTPUT ${_manfile}.html
-					COMMAND ${GMT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src/rman
+					COMMAND ${GMT_BINARY_DIR}/src/rman
 					-S -f HTML
 					< ${_manfile} > ${_manfile}.html
 					DEPENDS ${_manfile} rman
 					VERBATIM)
 
 				# install target for realease documentation
-				if (SVN AND HAVE_SVN_VERSION)
-					add_custom_target (gmt_manfiles_html_release_${_manfile}
-						COMMAND ${CMAKE_COMMAND} -E copy_if_different
-						${_manfile}.html
-						${GMT_RELEASE_PREFIX}/doc_release/html/${_manfile}.html
-						COMMAND ${CMAKE_COMMAND} -E copy_if_different
-						${_manfile}${_gz}
-						${GMT_RELEASE_PREFIX}/man_release/man${_man_section}/${_manfile}${_gz}
-						DEPENDS ${_manfile}${_gz} ${_manfile}.html)
-					add_depend_to_target (gmt_release
-						gmt_manfiles_html_release_${_manfile})
-				endif (SVN AND HAVE_SVN_VERSION)
+				add_custom_target (gmt_manfiles_html_release_${_manfile}
+					COMMAND ${CMAKE_COMMAND} -E copy_if_different
+					${_manfile}.html
+					${GMT_RELEASE_PREFIX}/doc_release/html/${_manfile}.html
+					COMMAND ${CMAKE_COMMAND} -E copy_if_different
+					${_manfile}${_gz}
+					${GMT_RELEASE_PREFIX}/man_release/man${_man_section}/${_manfile}${_gz}
+					DEPENDS ${_manfile}${_gz} ${_manfile}.html)
+				add_depend_to_target (gmt_release
+					gmt_manfiles_html_release_${_manfile})
 
 				# append to list of html manfiles
 				list (APPEND _manfiles_html
@@ -183,14 +181,14 @@ if(NOT DEFINED _GMT_MANPAGES_CMAKE_)
 			list (REMOVE_DUPLICATES _install_sections)
 			foreach (_man_section ${_install_sections})
 				install (FILES ${_manfilepaths_${_man_section}}
-					DESTINATION ${GMT_MANDIR}/man${_man_section}
+					DESTINATION ${GMT_MAN_PATH}/man${_man_section}
 					COMPONENT Runtime
 					OPTIONAL)
 			endforeach (_man_section ${_install_sections})
 
 			# install html manpages
 			install (FILES ${_manfiles_html}
-				DESTINATION ${GMT_DOCDIR}/html
+				DESTINATION ${GMT_DOC_PATH}/html
 				COMPONENT Documentation
 				OPTIONAL)
 

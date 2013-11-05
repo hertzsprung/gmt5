@@ -1,18 +1,18 @@
 #!/bin/bash
 #		$Id$
 #
-#	Testing GMT gmt mapproject on examples in Snyder.
+#	Testing GMT mapproject on examples in Snyder.
 #
 #
 #	usage:  snyder.sh [-v]
 #
-#	-v will report values for each gmt project. 
+#	-v will report values for each project. 
 #	scipt will report trouble if we do not match Snyder (+- 360 degrees for longitudes)
-#	Slop is 0.11 m for gmt projected values
+#	Slop is 0.11 m for projected values
 
 blabber () {
-	gf=(`echo "${sf[*]}" | gmt mapproject $* -F -C`)
-	gi=(`echo "${gf[*]}" | gmt mapproject $* -F -C -I --FORMAT_FLOAT_OUT=%lg`)
+	gf=(`echo "${sf[*]}" | mapproject $* -F -C`)
+	gi=(`echo "${gf[*]}" | mapproject $* -F -C -I --FORMAT_FLOAT_OUT=%lg`)
 	if [ $blabber -gt 0 ] ; then
 		echo "-------------------"
 		echo $p
@@ -20,53 +20,19 @@ blabber () {
 		echo "Snyder  x=${sf[0]}, y=${sf[1]} X=${si[0]} Y=${si[1]}"
 		echo "GMT     x=${gi[0]}, y=${gi[1]} X=${gf[0]} Y=${gf[1]}"
 	fi
-	echo "${sf[*]} ${gi[*]} ${si[*]} ${gf[*]} $p" | $AWK -f test.awk
+	echo "${sf[*]} ${gi[*]} ${si[*]} ${gf[*]} $p" | awk -f test.awk
 }
 
-cat << EOF > test.awk
-#!/bin/awk -f
-{
-	true_lon = \$1
-	true_lat = \$2
-	GMT_lon = \$3
-	GMT_lat = \$4
-	true_x = \$5
-	true_y = \$6
-	GMT_x = \$7
-	GMT_y = \$8
-	
-#	Check longitudes & latitudes
+. functions.sh
 
-	dx = GMT_lon - true_lon
-	dy = GMT_lat - true_lat
-	if (dy < 0.0) dy = -dy;
-	if (dx < 0.0) dx = -dx;
-	if (dx > 350) dx -= 360.0;
-	if (! (dx == 0.0 || dx == -360.0 || dx = 360.0)) {
-		printf "%s: Bad longitude conversion, d = %lg\n", \$9, dx
-	}
-	if (! (dy == 0.0)) {
-		printf "%s: Bad latitude conversion, d = %lg\n", \$9, dy
-	}
-	
-#	Check x & y
+blabber=0
+if [ $# -gt 0 ] ; then
+	blabber=1
+else
+	header "Compare mapproject forward/inverse with Snyder"
+fi
 
-	dx = GMT_x - true_x
-	dy = GMT_y - true_y
-	if (dy < 0.0) dy = -dy;
-	if (dx < 0.0) dx = -dx;
-	if (! (dx <= 0.11)) {
-		printf "%s: Bad x conversion, d = %lg\n", \$9, dx
-	}
-	if (! (dy <= 0.11)) {
-		printf "%s: Bad y conversion, d = %lg\n", \$9, dy
-	}
-}
-EOF
-
-blabber=$#
-
-gmt gmtset PROJ_SCALE_FACTOR 1
+gmtset PROJ_SCALE_FACTOR 1
 
 # Make ellipsoids (spheres) of radius 1 and 3:
 unit=1.0
@@ -345,3 +311,9 @@ p="Eckert-VI(Spherical)"
 blabber --PROJ_ELLIPSOID=$unit --FORMAT_FLOAT_OUT=%9.7lf -R90/450/-90/90 -Jks-90/1:1 >> fail
 
 #----------------------------------------------------------------------------
+
+if [ $blabber -eq 0 ]; then
+	passfail snyder
+else
+	cat fail
+fi

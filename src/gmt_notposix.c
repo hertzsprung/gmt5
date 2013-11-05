@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *      $Id$
  *
- *      Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *      Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *      See LICENSE.TXT file for copying and redistribution conditions.
  *
  *      This program is free software; you can redistribute it and/or modify
- *      it under the terms of the GNU Lesser General Public License as published by
- *      the Free Software Foundation; version 3 or any later version.
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; version 2 or any later version.
  *
  *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU Lesser General Public License for more details.
+ *      GNU General Public License for more details.
  *
  *      Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -41,20 +41,29 @@
  *      atanh:  inverse hyperbolic tangent
  */
 
-#include "gmt_dev.h"
+#define GMT_WITH_NO_PS
+#include "gmt.h"
 #include "gmt_internals.h"
 
 /*
  * POSIX replacements
  */
 
+#ifndef HAVE_BASENAME
+/* basename -- extract the base portion of a pathname */
+char* basename (char* path) {
+	char *ptr = strrchr (path, '/');
+	return ptr ? ptr + 1 : (char*)path;
+}
+#endif /* HAVE_BASENAME */
+
 #ifndef HAVE_STRDUP
 char *strdup (const char *s) {
-	size_t n;
+	GMT_LONG n;
 	char *p = NULL;
 
 	n = strlen (s) + 1;
-	p = malloc (n);
+	p = malloc ((size_t)n);
 	strncpy (p, s, n);
 	return (p);
 }
@@ -79,8 +88,7 @@ double strtod (const char *s, char **ends) {
 
 	char *t = NULL, savechar;
 	double x = 0.0;
-	int i, nsign[2], nradix[2], nexp, ndigits, error;
-	bool inside = false;
+	GMT_LONG i, nsign[2], nradix[2], nexp, ndigits, error, inside = FALSE;
 
 	t = s;
 	i = 0;
@@ -98,17 +106,17 @@ double strtod (const char *s, char **ends) {
 				case '-':
 					nsign[nexp]++;
 					if (inside) error++;
-					inside = true;
+					inside = TRUE;
 					break;
 				case '.':       /* This hardwires the radix char,
 						instead of using LOCALE  */
 					nradix[nexp]++;
-					inside = true;
+					inside = TRUE;
 					break;
 				case 'e':
 				case 'E':
 					nexp++;
-					inside = false;
+					inside = FALSE;
 					break;
 				default:
 					error++;
@@ -130,7 +138,7 @@ double strtod (const char *s, char **ends) {
 		}
 		else {
 			ndigits++;
-			inside = true;
+			inside = TRUE;
 		}
 		i++;
 	}
@@ -194,7 +202,7 @@ static double q2[5] = {1.872952849923460, 5.279051029514284e-01,
 #ifndef HAVE_ERF
 double erf (double y)
 {
-	int i, sign = 1;
+	GMT_LONG i, sign = 1;
 	double x, res, xsq, xnum, xden, xi;
 
 	x = y;
@@ -247,7 +255,7 @@ double erf (double y)
 #ifndef HAVE_ERFC
 double erfc (double y)
 {
-	int i, sign = 1;
+	GMT_LONG i, sign = 1;
 	double x, res, xsq, xnum, xden, xi;
 
 	x = y;
@@ -446,7 +454,7 @@ double jn (int n, double x)
 	}
 	else {  /* More complicated here */
 		tox = 2.0 / ax;
-		m = 2 * ((n + lrint (d_sqrt(ACC * n))) / 2);
+		m = 2 * ((n + (GMT_LONG) d_sqrt(ACC * n)) / 2);
 		jsum = 0;
 		bjp = ans = sum = 0.0;
 		bj = 1.0;
@@ -501,14 +509,14 @@ double log1p (double x) {
 #	include "s_rint.c"
 #endif /* HAVE_RINT */
 
-#if !defined(HAVE_SINCOS)
+#if !defined(HAVE_SINCOS) && !defined(HAVE_ALPHASINCOS)
 /* Platform does not have sincos - make a dummy one with sin and cos */
 void sincos (double a, double *s, double *c)
 {
 	*s = sin (a);
 	*c = cos (a);
 }
-#endif /* !defined(HAVE_SINCOS) */
+#endif /* !defined(HAVE_SINCOS) && !defined(HAVE_ALPHASINCOS) */
 
 #ifndef HAVE_Y0
 

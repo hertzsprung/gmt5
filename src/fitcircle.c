@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *    $Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -72,23 +72,17 @@
 	  2) New option to only output pole and ave, i.e., not text messages
  */
 
-#define THIS_MODULE_NAME	"fitcircle"
-#define THIS_MODULE_LIB		"core"
-#define THIS_MODULE_PURPOSE	"Find mean position and best-fitting great- or small-circle to points on sphere"
-
-#include "gmt_dev.h"
-
-#define GMT_PROG_OPTIONS "-:>Vabfghio" GMT_OPT("H")
+#include "gmt.h"
 
 struct FITCIRCLE_CTRL {	/* All control options for this program (except common args) */
-	/* active is true if the option has been activated */
+	/* active is TRUE if the option has been activated */
 	struct L {	/* -L[<n>] */
-		bool active;
-		unsigned int norm;	/* 1, 2, or 3 (both) */
+		GMT_LONG active;
+		GMT_LONG norm;	/* 1, 2, or 3 (both) */
 	} L;
 	struct S {	/* -S[<lat] */
-		bool active;
-		unsigned int mode;	/* 0 = find latitude, 1 = use specified latitude */
+		GMT_LONG active;
+		GMT_LONG mode;	/* 0 = find latitude, 1 = use specified latitude */
 		double lat;	/* 0 for great circle */
 	} S;
 };
@@ -102,37 +96,37 @@ void *New_fitcircle_Ctrl (struct GMT_CTRL *GMT) {	/* Allocate and initialize a n
 	
 	C = GMT_memory (GMT, NULL, 1, struct FITCIRCLE_CTRL);
 	
-	/* Initialize values whose defaults are not 0/false/NULL */
+	/* Initialize values whose defaults are not 0/FALSE/NULL */
 	
 	return (C);
 }
 
 void Free_fitcircle_Ctrl (struct GMT_CTRL *GMT, struct FITCIRCLE_CTRL *C) {	/* Deallocate control structure */
-	if (!C) return;
 	GMT_free (GMT, C);	
 }
 
-int GMT_fitcircle_usage (struct GMTAPI_CTRL *API, int level)
+GMT_LONG GMT_fitcircle_usage (struct GMTAPI_CTRL *C, GMT_LONG level)
 {
-	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
-	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
-	GMT_Message (API, GMT_TIME_NONE, "usage: fitcircle [<table>] -L[<norm>] [-S[<lat>]] [%s] [%s]\n", GMT_V_OPT, GMT_a_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
-		GMT_bi_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_colon_OPT);
+	struct GMT_CTRL *GMT = C->GMT;
 
-	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
+	GMT_message (GMT, "fitcircle %s [API] - Find mean position and best-fitting great- or small-circle to points on sphere\n\n", GMT_VERSION);
+	GMT_message (GMT, "usage: fitcircle [<table>] -L[<norm>] [-S[<lat>]] [%s] [%s]\n", GMT_V_OPT, GMT_bi_OPT);
+	GMT_message (GMT, "\t[%s] [%s] [%s]\n\t[%s] [%s] [%s]\n\n",
+		GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_colon_OPT);
 
-	GMT_Message (API, GMT_TIME_NONE, "\t-L Specify <norm> as -L1 or -L2; or use -L or -L3 to give both.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
-	GMT_Option (API, "<");
-	GMT_Message (API, GMT_TIME_NONE, "\t-S Attempt to fit a small circle rather than a great circle.\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally append the latitude <lat> of the small circle you want to fit.\n");
-	GMT_Option (API, "V,a,bi,f,g,h,i,o,:,.");
+	if (level == GMTAPI_SYNOPSIS) return (EXIT_FAILURE);
+
+	GMT_message (GMT, "\t-L Specify <norm> as -L1 or -L2; or use -L or -L3 to give both.\n");
+	GMT_message (GMT, "\n\tOPTIONS:\n");
+	GMT_explain_options (GMT, "<");
+	GMT_message (GMT, "\t-S Attempt to fit a small circle rather than a great circle.\n");
+	GMT_message (GMT, "\t   Optionally append the latitude <lat> of the small circle you want to fit.\n");
+	GMT_explain_options (GMT, "VC0fghio:.");
 	
 	return (EXIT_FAILURE);
 }
 
-int GMT_fitcircle_parse (struct GMT_CTRL *GMT, struct FITCIRCLE_CTRL *Ctrl, struct GMT_OPTION *options)
+GMT_LONG GMT_fitcircle_parse (struct GMTAPI_CTRL *C, struct FITCIRCLE_CTRL *Ctrl, struct GMT_OPTION *options)
 {
 	/* This parses the options provided to fitcircle and sets parameters in CTRL.
 	 * Any GMT common options will override values set previously by other commands.
@@ -140,24 +134,24 @@ int GMT_fitcircle_parse (struct GMT_CTRL *GMT, struct FITCIRCLE_CTRL *Ctrl, stru
 	 * returned when registering these sources/destinations with the API.
 	 */
 
-	unsigned int n_errors = 0;
+	GMT_LONG n_errors = 0;
 	struct GMT_OPTION *opt = NULL;
+	struct GMT_CTRL *GMT = C->GMT;
 
 	for (opt = options; opt; opt = opt->next) {
 		switch (opt->option) {
 
 			case '<':	/* Skip input files */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
 
 			case 'L':	/* Select norm */
-				Ctrl->L.active = true;
+				Ctrl->L.active = TRUE;
 				Ctrl->L.norm = (opt->arg[0]) ? atoi(opt->arg) : 3;
 				break;
 			case 'S':	/* Fit small-circle instead [optionally fix the latitude] */
-				Ctrl->S.active = true;
+				Ctrl->S.active = TRUE;
   				if (opt->arg[0]) {
 					Ctrl->S.lat = atof (opt->arg);
 					Ctrl->S.mode = 1;
@@ -176,12 +170,12 @@ int GMT_fitcircle_parse (struct GMT_CTRL *GMT, struct FITCIRCLE_CTRL *Ctrl, stru
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
 
-double circle_misfit (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, uint64_t ndata, double *pole, int norm, double *work, double *circle_distance)
+double circle_misfit (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, GMT_LONG ndata, double *pole, GMT_LONG norm, double *work, double *circle_distance)
 {
 	/* Find the L(norm) misfit between a small circle through
 	   center with pole pole.  Return misfit in radians.  */
 
-	uint64_t i;
+	GMT_LONG i;
 	double distance, delta_distance, misfit = 0.0;
 
 	/* At first, I thought we could use the center to define
@@ -196,7 +190,7 @@ double circle_misfit (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, uint64_
 
 	if (norm == 1) {
 		for (i = 0; i < ndata; i++) work[i] = d_acos (GMT_dot3v (GMT, &data[i].x[0], pole));
-		GMT_sort_array (GMT, work, ndata, GMT_DOUBLE);
+		GMT_sort_array (GMT, work, ndata, GMTAPI_DOUBLE);
 		*circle_distance = (ndata%2) ?  work[ndata/2] : 0.5 * (work[(ndata/2)-1] + work[ndata/2]);
 	}
 	else {
@@ -215,16 +209,16 @@ double circle_misfit (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, uint64_
 	return (norm == 1) ? misfit : sqrt (misfit);
 }
 
-double get_small_circle (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, uint64_t ndata, double *center, double *gcpole, double *scpole, int norm, double *work, int mode, double slat)
+double get_small_circle (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, GMT_LONG ndata, double *center, double *gcpole, double *scpole, GMT_LONG norm, double *work, GMT_LONG mode, double slat)
 {
 	/* Find scpole, the pole to the best-fit small circle, 
 	   by L(norm) iterative search along arc between center
 	   and +/- gcpole, the pole to the best fit great circle.  */
 
-	uint64_t i, j;
+	GMT_LONG i, j;
 	double temppole[3], a[3], b[3], oldpole[3];
 	double trypos, tryneg, afit, bfit, afactor, bfactor, fit, oldfit;
-	double length_ab, length_aold, length_bold, circle_distance, angle;
+	double length_ab, length_aold, length_bold, circle_distance;
 
 	/* First find out if solution is between center and gcpole, or center and -gcpole */
 
@@ -261,8 +255,7 @@ double get_small_circle (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, uint
 	bfit = circle_misfit (GMT, data, ndata, b, norm, work, &circle_distance);
 	j = 1;
 	do {
-		angle = (double)j;
-		sincosd (angle, &afactor, &bfactor);
+		sincosd ((double)j, &afactor, &bfactor);
 		for (i = 0; i < 3; i++) temppole[i] = (afactor * a[i] + bfactor * b[i]);
 		GMT_normalize3v (GMT, temppole);
 		fit = circle_misfit (GMT, data, ndata, temppole, norm, work, &circle_distance);
@@ -270,7 +263,7 @@ double get_small_circle (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, uint
 	} while (j < 90 && fit > bfit && fit > afit);
 
 	if (j == 90) {	/* Bad news.  There isn't a better fitting pole anywhere.  */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Sorry.  Cannot find small circle fitting better than great circle.\n");
+		GMT_report (GMT, GMT_MSG_FATAL, "Sorry.  Cannot find small circle fitting better than great circle.\n");
 		GMT_cpy3v (scpole, gcpole);
 		return (-1.0);
 	}
@@ -321,16 +314,12 @@ double get_small_circle (struct GMT_CTRL *GMT, struct FITCIRCLE_DATA *data, uint
 #define bailout(code) {GMT_Free_Options (mode); return (code);}
 #define Return(code) {Free_fitcircle_Ctrl (GMT, Ctrl); GMT_end_module (GMT, GMT_cpy); bailout (code);}
 
-int GMT_fitcircle (void *V_API, int mode, void *args)
+GMT_LONG GMT_fitcircle (struct GMTAPI_CTRL *API, GMT_LONG mode, void *args)
 {
-	bool greenwich = false, allocate;
-	unsigned int imin, imax, nrots, j, k, n, np;
-	int error = 0;
-	uint64_t i, n_data;
-	size_t n_alloc;
+	GMT_LONG error = FALSE, greenwich = FALSE, allocate, n, np;
+	GMT_LONG imin, imax, nrots, i, j, k, n_alloc, n_data;
 
-	char format[GMT_BUFSIZ] = {""}, record[GMT_BUFSIZ] = {""}, item[GMT_BUFSIZ] = {""};
-	char *type[2] = {"great", "small"}, *way[3] = {"L1","L2","L1 and L2"};
+	char format[GMT_BUFSIZ], record[GMT_BUFSIZ], item[GMT_BUFSIZ];
 
 	double lonsum, latsum, rad, *work = NULL, *in = NULL;
 	double meanv[3], cross[3], cross_sum[3], gcpole[3], scpole[3];		/* Extra vectors  */
@@ -339,36 +328,32 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 	struct FITCIRCLE_DATA *data = NULL;
 	struct FITCIRCLE_CTRL *Ctrl = NULL;
 	struct GMT_CTRL *GMT = NULL, *GMT_cpy = NULL;
-	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	/*----------------------- Standard module initialization and parsing ----------------------*/
 
-	if (API == NULL) return (GMT_NOT_A_SESSION);
-	if (mode == GMT_MODULE_PURPOSE) return (GMT_fitcircle_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
-	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
+	if (API == NULL) return (GMT_Report_Error (API, GMT_NOT_A_SESSION));
+	options = GMT_Prep_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_fitcircle_usage (API, GMT_USAGE));	/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_fitcircle_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (!options || options->option == GMTAPI_OPT_USAGE) bailout (GMT_fitcircle_usage (API, GMTAPI_USAGE));	/* Return the usage message */
+	if (options->option == GMTAPI_OPT_SYNOPSIS) bailout (GMT_fitcircle_usage (API, GMTAPI_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
-	GMT = GMT_begin_module (API, THIS_MODULE_LIB, THIS_MODULE_NAME, &GMT_cpy); /* Save current state */
-	if (GMT_Parse_Common (API, GMT_PROG_OPTIONS, options)) Return (API->error);
+	GMT = GMT_begin_module (API, "GMT_fitcircle", &GMT_cpy);	/* Save current state */
+	if (GMT_Parse_Common (API, "-Vbf:", "ghio>" GMT_OPT("H"), options)) Return (API->error);
 	Ctrl = New_fitcircle_Ctrl (GMT);	/* Allocate and initialize a new control structure */
-	if ((error = GMT_fitcircle_parse (GMT, Ctrl, options))) Return (error);
+	if ((error = GMT_fitcircle_parse (API, Ctrl, options))) Return (error);
 
 	/*---------------------------- This is the fitcircle main code ----------------------------*/
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
-
 	/* Initialize the i/o since we are doing record-by-record reading/writing */
-	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data input */
+	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_IN,  GMT_REG_DEFAULT, options) != GMT_OK) {	/* Establishes data input */
 		Return (API->error);
 	}
-	if (GMT_Init_IO (API, GMT_IS_TEXTSET, GMT_IS_NONE,  GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
+	if (GMT_Init_IO (API, GMT_IS_TEXTSET, GMT_IS_TEXT,  GMT_OUT, GMT_REG_DEFAULT, options) != GMT_OK) {	/* Establishes data output */
 		Return (API->error);
 	}
-	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN, GMT_HEADER_ON) != GMT_OK) {	/* Enables data input and sets access mode */
+	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_IN) != GMT_OK) {	/* Enables data input and sets access mode */
 		Return (API->error);
 	}
 	
@@ -391,17 +376,17 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 		/* Data record to process */
 
 		lonsum += in[GMT_X];	latsum += in[GMT_Y];
-		GMT_geo_to_cart (GMT, in[GMT_Y], in[GMT_X], data[n_data].x, true);
+		GMT_geo_to_cart (GMT, in[GMT_Y], in[GMT_X], data[n_data].x, TRUE);
 
 		if (++n_data == n_alloc) data = GMT_memory (GMT, data, n_alloc <<= 1, struct FITCIRCLE_DATA);
-	} while (true);
+	} while (TRUE);
 	
   	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {
 		Return (API->error);				/* Disables further data input */
 	}
 
  	if (n_data == 0) {	/* Blank/empty input files */
-		GMT_Report (API, GMT_MSG_VERBOSE, "No data records found; no output produced");
+		GMT_report (GMT, GMT_MSG_NORMAL, "No data records found; no output produced");
 		GMT_free (GMT, data);
 		Return (EXIT_SUCCESS);
 	}
@@ -410,14 +395,12 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 	allocate = (Ctrl->S.active && (Ctrl->L.norm%2));	/* Will need work array */
 	if (allocate) work = GMT_memory (GMT, NULL, n_data, double);
 
-	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {
+	if (GMT_Begin_IO (API, GMT_IS_TEXTSET, GMT_OUT) != GMT_OK) {
 		Return (API->error);	/* Enables data output and sets access mode */
 	}
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Fitting %s circle using %s norm.\n", type[Ctrl->S.active], way[Ctrl->L.norm]);
-
 	lonsum /= n_data;	latsum /= n_data;
-	sprintf (record, "%" PRIu64 " points read, Average Position (Flat Earth): ", n_data);
+	sprintf (record, "%ld points read, Average Position (Flat Earth): ", n_data);
 	sprintf (item, format, lonsum, latsum);	strcat (record, item);
 	GMT_Put_Record (API, GMT_WRITE_TEXT, record);
 
@@ -426,10 +409,10 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 	GMT_memset (meanv, 3, double);
 	for (i = 0; i < n_data; i++) for (j = 0; j < 3; j++) meanv[j] += data[i].x[j];
 	GMT_normalize3v (GMT, meanv);
-	if (lonsum > 180.0) greenwich = true;
+	if (lonsum > 180.0) greenwich = TRUE;
 
 	if (Ctrl->L.norm%2) {	/* Want L1 solution */
-		GMT_cart_to_geo (GMT, &latsum, &lonsum, meanv, true);
+		GMT_cart_to_geo (GMT, &latsum, &lonsum, meanv, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		sprintf (record, format, lonsum, latsum);
 		sprintf (item, "%sL1 Average Position (Fisher's Method)", GMT->current.setting.io_col_separator);	strcat (record, item);
@@ -445,7 +428,7 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 		GMT_normalize3v (GMT, cross_sum);
 		if (Ctrl->S.active) GMT_cpy3v (gcpole, cross_sum);
 
-		GMT_cart_to_geo (GMT, &latsum, &lonsum, cross_sum, true);
+		GMT_cart_to_geo (GMT, &latsum, &lonsum, cross_sum, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		sprintf (record, format, lonsum, latsum);
 		sprintf (item, "%sL1 N Hemisphere Great Circle Pole (Cross-Averaged)", GMT->current.setting.io_col_separator);	strcat (record, item);
@@ -457,9 +440,10 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 		sprintf (item, "%sL1 S Hemisphere Great Circle Pole (Cross-Averaged)", GMT->current.setting.io_col_separator);	strcat (record, item);
 		GMT_Put_Record (API, GMT_WRITE_TEXT, record);
 		if (Ctrl->S.active) {	/* Determine small circle pole */
+			GMT_report (GMT, GMT_MSG_NORMAL, "Fitting small circle using L1 norm.\n");
 			rad = get_small_circle (GMT, data, n_data, meanv, gcpole, scpole, 1, work, Ctrl->S.mode, Ctrl->S.lat);
 			if (rad >= 0.0) {
-				GMT_cart_to_geo (GMT, &latsum, &lonsum, scpole, true);
+				GMT_cart_to_geo (GMT, &latsum, &lonsum, scpole, TRUE);
 				if (greenwich && lonsum < 0.0) lonsum += 360.0;
 				sprintf (record, format, lonsum, latsum);
 				sprintf (item, "%sL1 Small Circle Pole.  ", GMT->current.setting.io_col_separator);	strcat (record, item);
@@ -484,17 +468,17 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 		for (i = 0; i < n_data; i++) for (j = 0; j < n; j++) for (k = 0; k < n; k++)
 			a[j + k*np] += (data[i].x[j]*data[i].x[k]);
 
-		if (GMT_jacobi (GMT, a, n, np, lambda, v, b, z, &nrots)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Eigenvalue routine failed to converge in 50 sweeps.\n");
-			GMT_Report (API, GMT_MSG_NORMAL, "The reported L2 positions might be garbage.\n");
+		if (GMT_jacobi (GMT, a, &n, &np, lambda, v, b, z, &nrots)) {
+			GMT_report (GMT, GMT_MSG_FATAL, "Eigenvalue routine failed to converge in 50 sweeps.\n");
+			GMT_report (GMT, GMT_MSG_FATAL, "The reported L2 positions might be garbage.\n");
 		}
-		GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Eigenvalue routine converged in %d rotations.\n", nrots);
+		GMT_report (GMT, GMT_MSG_NORMAL, "Eigenvalue routine converged in %ld rotations.\n", nrots);
 		imax = 0;	imin = 2;
 		if (d_acos (GMT_dot3v (GMT, v, meanv)) > M_PI_2)
 			for (i = 0; i < 3; i++) meanv[i] = -v[imax*np+i];
 		else
 			for (i = 0; i < 3; i++) meanv[i] = v[imax*np+i];
-		GMT_cart_to_geo (GMT, &latsum, &lonsum, meanv, true);
+		GMT_cart_to_geo (GMT, &latsum, &lonsum, meanv, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		sprintf (record, format, lonsum, latsum);
 		sprintf (item, "%sL2 Average Position (Eigenval Method)", GMT->current.setting.io_col_separator);	strcat (record, item);
@@ -505,7 +489,7 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 		else
 			for (i = 0; i < 3; i++) gcpole[i] = v[imin*np+i];
 
-		GMT_cart_to_geo (GMT, &latsum, &lonsum, gcpole, true);
+		GMT_cart_to_geo (GMT, &latsum, &lonsum, gcpole, TRUE);
 		if (greenwich && lonsum < 0.0) lonsum += 360.0;
 		sprintf (record, format, lonsum, latsum);
 		sprintf (item, "%sL2 N Hemisphere Great Circle Pole (Eigenval Method)\n", GMT->current.setting.io_col_separator);	strcat (record, item);
@@ -523,10 +507,11 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 		GMT_free (GMT, lambda);
 		GMT_free (GMT, a);
 		if (Ctrl->S.active) {	/* Want small circle pole */
+			GMT_report (GMT, GMT_MSG_NORMAL, "Fitting small circle using L2 norm.\n");
 			rad = get_small_circle (GMT, data, n_data, meanv, gcpole, scpole, 2, work, Ctrl->S.mode, Ctrl->S.lat);
 			if (rad >= 0.0) {
 				/* True when small circle fits better than great circle */
-				GMT_cart_to_geo (GMT, &latsum, &lonsum, scpole, true);
+				GMT_cart_to_geo (GMT, &latsum, &lonsum, scpole, TRUE);
 				if (greenwich && lonsum < 0.0) lonsum += 360.0;
 				sprintf (record, format, lonsum, latsum);
 				sprintf (item, "%sL2 Small Circle Pole.  ", GMT->current.setting.io_col_separator);	strcat (record, item);
@@ -536,7 +521,7 @@ int GMT_fitcircle (void *V_API, int mode, void *args)
 			}
 		}
 	}
-	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
+  	if (GMT_End_IO (API, GMT_OUT, 0) != GMT_OK) {	/* Disables further data output */
 		Return (API->error);
 	}
 

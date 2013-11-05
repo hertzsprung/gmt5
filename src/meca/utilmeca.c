@@ -1,10 +1,11 @@
 /*	$Id$
  *    Copyright (c) 1996-2012 by G. Patau
- *    Distributed under the Lesser GNU Public Licence
+ *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  */
 
-#include "gmt_dev.h"	/* to have gmt environment */
+#include "pslib.h"	/* to have pslib environment */
+#include "gmt.h"	/* to have gmt environment */
 #include "meca.h"
 #include "utilmeca.h"
 #include "nrutil.h"
@@ -27,23 +28,13 @@ void get_trans (struct GMT_CTRL *GMT, double slon, double slat, double *t11, dou
 
 	/* OUTPUT (returned) */
 	/*   t11,t12,t21,t22 transformation matrix */
-	/* COMMENT BY PW: Fails as provided if slat > 89.0 and for projection that
-	 * gives the same x-coordinates for two different longitudes, as might happen
-	 * at the N or S pole.  Some minor protections were added below to handle this.
-	 */
 
 	/* LOCAL VARIABLES */
 	double su, sv, udlat, vdlat, udlon, vdlon, dudlat, dvdlat, dudlon, dvdlon, dl;
-	int flip = 0;
 
 	/* how much does x,y change for a 1 degree change in lon,lon ? */
 	GMT_geo_to_xy (GMT, slon,     slat,     &su,    &sv );
-	if ((slat+1.0) >= 90.0) {	/* PW: Must do something different at/near NP */
-	        GMT_geo_to_xy (GMT, slon,     slat-1.0, &udlat, &vdlat);
-		flip = 1;
-	}
-	else
-		GMT_geo_to_xy (GMT, slon,     slat+1.0, &udlat, &vdlat);
+	GMT_geo_to_xy (GMT, slon,     slat+1.0, &udlat, &vdlat);
 	GMT_geo_to_xy (GMT, slon+1.0, slat    , &udlon, &vdlon);
 
 	/* Compute dudlat, dudlon, dvdlat, dvdlon */
@@ -51,21 +42,17 @@ void get_trans (struct GMT_CTRL *GMT, double slon, double slat, double *t11, dou
 	dvdlat = vdlat - sv;
 	dudlon = udlon - su;
 	dvdlon = vdlon - sv;
-	if (flip) {	/* Fix what we did above */
-		dudlat = -dudlat;
-		dvdlat = -dvdlat;
-	}
 
 	/* Make unit vectors for the long (e/x) and lat (n/y) */
 	/* to construct local transformation matrix */
 
 	dl = sqrt (dudlon*dudlon + dvdlon*dvdlon);
-	*t11 = (dl == 0.0) ? 0.0 : dudlon/dl;
-	*t21 = (dl == 0.0) ? 0.0 : dvdlon/dl;
+	*t11 = dudlon/dl ;
+	*t21 = dvdlon/dl ;
 
 	dl = sqrt (dudlat*dudlat + dvdlat*dvdlat);
-	*t12 = (dl == 0.0) ? 0.0 : dudlat/dl;
-	*t22 = (dl == 0.0) ? 0.0 : dvdlat/dl;
+	*t12 = dudlat/dl ;
+	*t22 = dvdlat/dl ;
 }
 
 double null_axis_dip (double str1, double dip1, double str2, double dip2)
@@ -128,7 +115,7 @@ double proj_radius(double str1, double dip1, double str)
 }
 
 /***********************************************************************************************************/
-double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, struct GMT_FILL *F, struct GMT_FILL *E, int outline)
+double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, struct GMT_FILL *F, struct GMT_FILL *E, GMT_LONG outline)
 {	/* By Genevieve Patau */
 
 	double x[1000], y[1000];
@@ -136,7 +123,7 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 	int fault = (meca.NP1.rake > 0 ? 1 : -1);
 	double radius_size, str, radius, increment, si, co, ssize[1];
 
-	int i;
+	GMT_LONG i;
 
 	struct AXIS N_axis;
 
@@ -327,10 +314,10 @@ double ps_mechanism (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, doub
 }
 
 /*********************************************************************/
-double ps_plan (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, int num_of_plane)
+double ps_plan (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, st_me meca, double size, GMT_LONG num_of_plane)
 {	/* By Genevieve Patau */
 
-	int i;
+	GMT_LONG i;
 
 	double x[1000], y[1000], ssize[1];
 	double radius_size, str, radius, si, co;
@@ -340,7 +327,7 @@ double ps_plan (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0
 
 	/*  argument is DIAMETER!!*/
 	ssize[0] = size;
-	PSL_setfill (PSL, GMT->session.no_rgb, true);
+	PSL_setfill (PSL, GMT->session.no_rgb, TRUE);
 	PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 
 	if (num_of_plane != 2) {
@@ -415,10 +402,10 @@ double computed_strike1 (struct nodal_plane NP1)
 	sincosd (NP1.str, &ss, &cs);
 	if (cd1 < EPSIL && fabs (cr) < EPSIL) {
 #if 0
-		GMT_Report (API, GMT_MSG_DEBUG, "\nThe second plane is horizontal;");
-		GMT_Report (API, GMT_MSG_DEBUG, "\nStrike is undetermined.");
-		GMT_Report (API, GMT_MSG_DEBUG, "\nstr2 = NP1.str + 180. is taken to define");
-		GMT_Report (API, GMT_MSG_DEBUG, "\nrake in the second plane.\n");
+		GMT_report (GMT, GMT_MSG_DEBUG, "\nThe second plane is horizontal;");
+		GMT_report (GMT, GMT_MSG_DEBUG, "\nStrike is undetermined.");
+		GMT_report (GMT, GMT_MSG_DEBUG, "\nstr2 = NP1.str + 180. is taken to define");
+		GMT_report (GMT, GMT_MSG_DEBUG, "\nrake in the second plane.\n");
 #endif
 		str2 = NP1.str + 180.0;
 	}
@@ -552,7 +539,7 @@ void define_second_plane (struct nodal_plane NP1, struct nodal_plane *NP2)
 void moment2axe (struct GMT_CTRL *GMT, struct M_TENSOR mt, struct AXIS *T, struct AXIS *N, struct AXIS *P)
 {
 	/* This version uses GMT_jacobi and does not suffer from the convert_matrix bug */
-	unsigned int j, nrots, np = 3;
+	GMT_LONG j, nrots, np = 3;
 	double *a, *d, *b, *z, *v;
 	double az[3], pl[3];
 
@@ -566,8 +553,8 @@ void moment2axe (struct GMT_CTRL *GMT, struct M_TENSOR mt, struct AXIS *T, struc
 	a[3]=mt.f[3];	a[4]=mt.f[1];	a[5]=mt.f[5];
 	a[6]=mt.f[4];	a[7]=mt.f[5];	a[8]=mt.f[2];
 
-	if (GMT_jacobi (GMT, a, np, np, d, v, b, z, &nrots))
-		fprintf(GMT->session.std[GMT_ERR],"%s: Eigenvalue routine failed to converge in 50 sweeps.\n", GMT->init.module_name);
+	if (GMT_jacobi (GMT, a, &np, &np, d, v, b, z, &nrots))
+		fprintf(GMT->session.std[GMT_ERR],"%s: Eigenvalue routine failed to converge in 50 sweeps.\n", GMT->init.progname);
 
 	for (j = 0; j < np; j++) {
 		pl[j] = asin(-v[j*np]);
@@ -593,11 +580,11 @@ void moment2axe (struct GMT_CTRL *GMT, struct M_TENSOR mt, struct AXIS *T, struc
 }
 
 /***************************************************************************************/
-double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, double size, struct AXIS T, struct AXIS N, struct AXIS P, struct GMT_FILL *C, struct GMT_FILL *E, int outline, int plot_zerotrace)
+double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double y0, double size, struct AXIS T, struct AXIS N, struct AXIS P, struct GMT_FILL *C, struct GMT_FILL *E, GMT_LONG outline, GMT_LONG plot_zerotrace)
 {
-	int d, b = 1, m, i, ii, n = 0, j = 1, j2 = 0, j3 = 0;
-	int big_iso = 0;
-	int djp, mjp, jp_flag;
+	GMT_LONG d, b = 1, m, i, ii, n = 0, j = 1, j2 = 0, j3 = 0;
+	GMT_LONG big_iso = 0;
+	GMT_LONG djp, mjp, jp_flag;
 
 	double a[3], p[3], v[3], azi[3][2];
 	double vi, iso, f, fir, s2alphan, alphan;
@@ -626,12 +613,12 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 		ssize[0] = radius_size*2.0;
 		if (vi > 0.) {
 			ssize[0] = radius_size*2.0;
-			GMT_setfill (GMT, C, true);
+			GMT_setfill (GMT, C, TRUE);
 			PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		}
 		if (vi < 0.) {
 			ssize[0] = radius_size*2.0;
-			GMT_setfill (GMT, E, true);
+			GMT_setfill (GMT, E, TRUE);
 			PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		}
 		return (radius_size*2.);
@@ -660,12 +647,12 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
  	 * between -1 and 1 - f there will be no nodes whatsoever */
 
 	if (iso < -1) {
-		GMT_setfill (GMT, E, true);
+		GMT_setfill (GMT, E, TRUE);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		return (size);
 	}
 	else if (iso > 1 - f) {
-		GMT_setfill (GMT, C, true);
+		GMT_setfill (GMT, C, TRUE);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		return (size);
 	}
@@ -840,23 +827,23 @@ double ps_tensor (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double x0, double 
 		F1 = E,	F2 = C;
 
 	if (!big_iso) {
-		GMT_setfill (GMT, F2, true);
+		GMT_setfill (GMT, F2, TRUE);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 	}
 	else if (jp_flag == 1) {
 		fprintf (stderr, "Warning: big isotropic component, case not fully tested! \n");
-		GMT_setfill (GMT, F1, true);
+		GMT_setfill (GMT, F1, TRUE);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		F1 = E, F2 = C;
 	}
 	else if (jp_flag == 2) {
 		fprintf (stderr, "Warning: big isotropic component, case not fully tested! \n");
-		GMT_setfill (GMT, F1, true);
+		GMT_setfill (GMT, F1, TRUE);
 		PSL_plotsymbol (PSL, x0, y0, ssize, GMT_SYMBOL_CIRCLE);
 		F2 = E, F1 = C;
 	}
 
-	GMT_setfill (GMT, F1, false);
+	GMT_setfill (GMT, F1, FALSE);
 	switch (n) {
 		case 0 :
 			for (i = 0; i < 360; i++) {
@@ -1141,10 +1128,10 @@ void trace_arrow (struct GMT_CTRL *GMT, double slon, double slat, double dxp, do
 	*y1 = yt;
 }
 
-void trace_ellipse (double angle, double major, double minor, int npoints, double *x, double *y)
+void trace_ellipse (double angle, double major, double minor, GMT_LONG npoints, double *x, double *y)
 {	/* Given specs for an ellipse, return it in x,y */
 	double phi = 0.0, sd, cd, s, c;
-	int i;
+	GMT_LONG i;
 
 	sincosd (angle, &sd, &cd);
 
@@ -1204,11 +1191,11 @@ void ellipse_convert (double sigx, double sigy, double rho, double conrad, doubl
 	/*    that is all */
 }
 
-void paint_ellipse (struct GMT_CTRL *GMT, double x0, double y0, double angle, double major, double minor, double scale, double t11, double t12, double t21, double t22, int polygon, struct GMT_FILL *fill, int outline)
+void paint_ellipse (struct PSL_CTRL *PSL, double x0, double y0, double angle, double major, double minor, double scale, double t11, double t12, double t21, double t22, GMT_LONG polygon, double *rgb, GMT_LONG outline)
 {	/* Make an ellipse at center x0,y0  */
 #define NPOINTS_ELLIPSE 362
 
-	int npoints = NPOINTS_ELLIPSE, i;
+	GMT_LONG npoints = NPOINTS_ELLIPSE, i;
 	/* relative to center of ellipse */
 	double dxe[NPOINTS_ELLIPSE],dye[NPOINTS_ELLIPSE];
 	/* absolute paper coordinates */
@@ -1218,15 +1205,15 @@ void paint_ellipse (struct GMT_CTRL *GMT, double x0, double y0, double angle, do
 
 	for (i = 0; i < npoints - 2; i++) transform_local (x0, y0, dxe[i], dye[i], scale, t11, t12, t21, t22, &axe[i], &aye[i]);
 	if (polygon) {
-		GMT_setfill (GMT, fill, outline);
-		PSL_plotpolygon (GMT->PSL, axe, aye, npoints - 2);
+		PSL_setfill (PSL, rgb, TRUE);
+		PSL_plotpolygon (PSL, axe, aye, npoints - 2);
 	}
 	else
-		PSL_plotline (GMT->PSL, axe, aye, npoints - 2, PSL_MOVE + PSL_STROKE + PSL_CLOSE);
+		PSL_plotline (PSL, axe, aye, npoints - 2, PSL_MOVE + PSL_STROKE + PSL_CLOSE);
 }
 
 /************************************************************************/
-int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, double eps2, double theta, double sscale, double v_width, double h_length, double h_width, double vector_shape,int outline,struct GMT_PEN pen)
+GMT_LONG trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, double eps2, double theta, double sscale, double v_width, double h_length, double h_width, double vector_shape,GMT_LONG outline,struct GMT_PEN pen)
 {
 	/* make a Strain rate cross at(slat,slon) */
 
@@ -1253,8 +1240,8 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps1 < 0.0) {
-		double_swap (x1, x2);
-		double_swap (y1, y2);
+		d_swap (x1, x2);
+		d_swap (y1, y2);
 	}
 
 	if (hypot (x1-x2,y1-y2) <= 1.5 * h_length) {
@@ -1280,8 +1267,8 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	trace_arrow (GMT, slon, slat, -dx, -dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps1 < 0.0) {
-		double_swap (x1, x2);
-		double_swap (y1, y2);
+		d_swap (x1, x2);
+		d_swap (y1, y2);
 	}
 
 	if (hypot (x1-x2,y1-y2) <= 1.5 * h_length) {
@@ -1308,8 +1295,8 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	trace_arrow (GMT, slon, slat, dx, dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps2 > 0.0) {
-		double_swap (x1, x2);
-		double_swap (y1, y2);
+		d_swap (x1, x2);
+		d_swap (y1, y2);
 	}
 
 	/* arrow should go toward slat, slon */
@@ -1335,8 +1322,8 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	trace_arrow (GMT, slon, slat, -dx, -dy, sscale, &x1, &y1, &x2, &y2);
 
 	if (eps2 > 0.0) {
-		double_swap (x1, x2);
-		double_swap (y1, y2);
+		d_swap (x1, x2);
+		d_swap (y1, y2);
 	}
 
 	/* arrow should go toward slat, slon */
@@ -1361,7 +1348,7 @@ int trace_cross (struct GMT_CTRL *GMT, double slon, double slat, double eps1, do
 	return 0;
 }
 
-int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double *x, double *y)
+GMT_LONG trace_wedge (double spin, double sscale, double wedge_amp, GMT_LONG lines, double *x, double *y)
 {
 	/* make a rotation rate wedge and return in x,y */
 
@@ -1375,7 +1362,7 @@ int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double
 	/*   spin        : CW spin rate in rad/yr */
 	/*   line        : if true, draw lines                  */
 
-	int nstep, i1, i, nump;
+	GMT_LONG nstep, i1, i, nump;
 	double th, x0, y0, spin10, th0, x1, y1, s, c;
 
 	/*     How far would we spin */
@@ -1423,7 +1410,7 @@ int trace_wedge (double spin, double sscale, double wedge_amp, int lines, double
 	return nump;
 }
 
-int trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp, double *x, double *y)
+GMT_LONG trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp, double *x, double *y)
 {
 	/* make a rotation rate uncertainty wedge and return in x,y */
 
@@ -1436,7 +1423,7 @@ int trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp
 	/*   wedge_amp   : scaling factor for angular size of wedge */
 	/*   spin,spinsig:CW rotation rate and sigma in rad/yr */
 
-	int nstep, i, nump;
+	GMT_LONG nstep, i, nump;
 	double th, x0, y0, spin10, sig10, th0, x1, y1, s, c;
 
 	/*     How far would we spin */
@@ -1472,16 +1459,16 @@ int trace_sigwedge (double spin, double spinsig, double sscale, double wedge_amp
 }
 
 void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, double spinsig, double sscale, double wedge_amp, double t11, double t12, double t21, double t22,
-	int polygon, double *rgb,
-	int epolygon, double *ergb,
-	int outline)
+	GMT_LONG polygon, double *rgb,
+	GMT_LONG epolygon, double *ergb,
+	GMT_LONG outline)
 {
 
 	/* Make a wedge at center x0,y0  */
 
 #define NPOINTS 1000
 
-	int npoints = NPOINTS, i;
+	GMT_LONG npoints = NPOINTS, i;
 
 	/* relative to center of ellipse */
 	double dxe[NPOINTS], dye[NPOINTS];
@@ -1490,12 +1477,12 @@ void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, doubl
 
 	/* draw wedge */
 
-	npoints = trace_wedge (spin, 1.0, wedge_amp, true, dxe, dye);
+	npoints = trace_wedge (spin, 1.0, wedge_amp, TRUE, dxe, dye);
 
 	for (i = 0; i <= npoints - 1; i++) transform_local (x0, y0, dxe[i], dye[i], sscale, t11, t12, t21, t22, &axe[i], &aye[i]);
 
 	if (polygon) {
-		PSL_setfill (PSL, rgb, true);
+		PSL_setfill (PSL, rgb, TRUE);
 		PSL_plotpolygon (PSL, axe, aye, npoints);
 	}
 	else
@@ -1508,7 +1495,7 @@ void paint_wedge (struct PSL_CTRL *PSL, double x0, double y0, double spin, doubl
 	for (i = 0; i < npoints - 1; i++) transform_local (x0, y0, dxe[i], dye[i], sscale, t11, t12, t21, t22, &axe[i], &aye[i]);
 
 	if (epolygon) {
-		PSL_setfill (PSL, ergb, true);
+		PSL_setfill (PSL, ergb, TRUE);
 		PSL_plotpolygon (PSL, axe, aye, npoints - 1);
 	}
 	else

@@ -38,6 +38,10 @@ if (NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE Release)
 endif (NOT CMAKE_BUILD_TYPE)
 
+if (CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo")
+	set (DEBUG_BUILD TRUE)
+endif (CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo")
+
 # Here we change it to add the SVN revision number for non-public releases - see Package.cmake for
 # why this has to be done here.
 set (GMT_PACKAGE_VERSION_WITH_SVN_REVISION ${GMT_PACKAGE_VERSION})
@@ -77,24 +81,27 @@ set (GMT_VERSION_STRING "${GMT_PACKAGE_NAME} ${GMT_PACKAGE_VERSION_WITH_SVN_REVI
 set (GMT_LONG_VERSION_STRING "${GMT_PACKAGE_NAME} - ${GMT_PACKAGE_DESCRIPTION_SUMMARY}, Version ${GMT_PACKAGE_VERSION_WITH_SVN_REVISION}")
 
 # Get date
-try_run (_exit_today _compiled_today
-	${CMAKE_BINARY_DIR}/CMakeTmp
-	${CMAKE_MODULE_PATH}/today.c
-	CMAKE_FLAGS
-	RUN_OUTPUT_VARIABLE _today)
-
-if (NOT _compiled_today OR _exit_today EQUAL -1)
-	message (WARNING "Date not implemented, please file a bug report.")
-	set(_today "1313;13;13;Undecember")
-endif (NOT _compiled_today OR _exit_today EQUAL -1)
-
-list(GET _today 0 YEAR)
-list(GET _today 1 MONTH)
-list(GET _today 2 DAY)
-list(GET _today 3 MONTHNAME)
-list(GET _today 0 1 2 DATE)
-string (REPLACE ";" "-" DATE "${DATE}")
-set (_today)
+if (WIN32)
+	execute_process (COMMAND "${GMT_SOURCE_DIR}/getdate.bat" OUTPUT_VARIABLE _today)
+	#string (REGEX REPLACE "(..)/(..)/(....).*" "\3-\2-\1" _today ${_today})
+elseif (UNIX)
+	set(ENV{LANG} en_US)
+	execute_process (COMMAND "date" "+%Y %m %d %B" OUTPUT_VARIABLE _today)
+else (WIN32)
+	message (WARNING "Date not implemented")
+	set(_today "2013 13 13 Undecember")
+endif (WIN32)
+if (_today)
+	string (REPLACE "\n" "" _today ${_today})
+	string (REPLACE " " ";" _today ${_today})
+	list(GET _today 0 YEAR)
+	list(GET _today 1 MONTH)
+	list(GET _today 2 DAY)
+	list(GET _today 3 MONTHNAME)
+	list(GET _today 0 1 2 DATE)
+	string (REPLACE ";" "-" DATE "${DATE}")
+	set (_today)
+endif ()
 
 # set package date
 if (NOT GMT_VERSION_YEAR)
@@ -112,63 +119,69 @@ if (LICENSE_RESTRICTED) # on
 		message (WARNING "unknown license: ${LICENSE_RESTRICTED}")
 	endif (LICENSE_RESTRICTED STREQUAL GPL)
 	# restrictions that apply to any of the above licenses
+	# disable Shewchuk's triangle routine
+	set (TRIANGLE_D OFF)
 else (LICENSE_RESTRICTED) # off
 	# no restrictions at all
+	# enable Shewchuk's triangle routine
+	set (TRIANGLE_D ON)
+	set (GMT_EXTRA_LICENSE_FILES ${GMT_SOURCE_DIR}/src/README.TRIANGLE)
 endif (LICENSE_RESTRICTED)
-
-# reset list of extra license files
-set (GMT_EXTRA_LICENSE_FILES)
 
 # location of GNU license files
 set (COPYING_GPL ${GMT_SOURCE_DIR}/COPYINGv3)
 set (COPYING_LGPL ${GMT_SOURCE_DIR}/COPYING.LESSERv3)
 
+# set default triangulation method
+if (TRIANGLE_D)
+	set (GMT_TRIANGULATE "Shewchuk")
+else (TRIANGLE_D)
+	set (GMT_TRIANGULATE "Watson")
+endif (TRIANGLE_D)
+
 # GMT paths used in the code
-if (NOT GMT_DATADIR)
+if (NOT GMT_SHARE_PATH)
 	# do not reset user setting
-	if (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-		set (GMT_DATADIR "share")
-	else(GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-		set (GMT_DATADIR
-			"share/gmt${GMT_INSTALL_NAME_SUFFIX}")
-	endif(GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-endif (NOT GMT_DATADIR)
+	if (GMT_INSTALL_MONOLITHIC)
+		set (GMT_SHARE_PATH "share")
+	else(GMT_INSTALL_MONOLITHIC)
+		set (GMT_SHARE_PATH
+			"share/gmt-${GMT_PACKAGE_VERSION_WITH_SVN_REVISION}")
+	endif(GMT_INSTALL_MONOLITHIC)
+endif (NOT GMT_SHARE_PATH)
 
-# Install path GMT_DOCDIR
-if (NOT GMT_DOCDIR)
+# Install path GMT_DOC_PATH
+if (NOT GMT_DOC_PATH)
 	# do not reset user setting
-	if (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-		set (GMT_DOCDIR "${GMT_DATADIR}/doc")
-	else(GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-		set (GMT_DOCDIR
-			"share/doc/gmt${GMT_INSTALL_NAME_SUFFIX}")
-	endif(GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-endif (NOT GMT_DOCDIR)
+	if (GMT_INSTALL_MONOLITHIC)
+		set (GMT_DOC_PATH "${GMT_SHARE_PATH}/doc")
+	else(GMT_INSTALL_MONOLITHIC)
+		set (GMT_DOC_PATH
+			"share/doc/gmt-${GMT_PACKAGE_VERSION_WITH_SVN_REVISION}")
+	endif(GMT_INSTALL_MONOLITHIC)
+endif (NOT GMT_DOC_PATH)
 
-# Install path GMT_MANDIR
-if (NOT GMT_MANDIR)
+# Install path GMT_MAN_PATH
+if (NOT GMT_MAN_PATH)
 	# do not reset user setting
-	if (GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-		set (GMT_MANDIR "${GMT_DATADIR}/man")
-	else(GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-		set (GMT_MANDIR
-			"${GMT_DOCDIR}/man")
-	endif(GMT_INSTALL_TRADITIONAL_FOLDERNAMES)
-endif (NOT GMT_MANDIR)
+	if (GMT_INSTALL_MONOLITHIC)
+		set (GMT_MAN_PATH "${GMT_SHARE_PATH}/man")
+	else(GMT_INSTALL_MONOLITHIC)
+		set (GMT_MAN_PATH
+			"${GMT_DOC_PATH}/man")
+	endif(GMT_INSTALL_MONOLITHIC)
+endif (NOT GMT_MAN_PATH)
 
 # Install path for GMT binaries, headers and libraries
-include (GNUInstallDirs) # defines CMAKE_INSTALL_LIBDIR (lib/lib64)
-if (NOT GMT_LIBDIR)
-	set (GMT_LIBDIR ${CMAKE_INSTALL_LIBDIR})
-endif(NOT GMT_LIBDIR)
-
-if (NOT GMT_BINDIR)
+if (GMT_INSTALL_MONOLITHIC)
+	set (GMT_INCDIR include)
+	set (GMT_LIBDIR lib)
 	set (GMT_BINDIR bin)
-endif(NOT GMT_BINDIR)
-
-if (NOT GMT_INCLUDEDIR)
-	set (GMT_INCLUDEDIR include/gmt${GMT_INSTALL_NAME_SUFFIX})
-endif(NOT GMT_INCLUDEDIR)
+else (GMT_INSTALL_MONOLITHIC)
+	set (GMT_INCDIR include/gmt-${GMT_PACKAGE_VERSION_WITH_SVN_REVISION})
+	set (GMT_LIBDIR lib/gmt-${GMT_PACKAGE_VERSION_WITH_SVN_REVISION}/lib)
+	set (GMT_BINDIR lib/gmt-${GMT_PACKAGE_VERSION_WITH_SVN_REVISION}/bin)
+endif (GMT_INSTALL_MONOLITHIC)
 
 # use, i.e. don't skip the full RPATH for the build tree
 set (CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -188,7 +201,7 @@ if (UNIX AND NOT CYGWIN)
 	string (REGEX REPLACE "/$" "" _rpath "${_rpath}")
 	if (APPLE)
 		# relative RPATH on osx
-		set (CMAKE_INSTALL_NAME_DIR @executable_path/${_rpath})
+		set (CMAKE_INSTALL_NAME_DIR @loader_path/${_rpath})
 	else (APPLE)
 		# relative RPATH on Linux, Solaris, etc.
 		set (CMAKE_INSTALL_RPATH "\$ORIGIN/${_rpath}")
@@ -198,29 +211,5 @@ endif (UNIX AND NOT CYGWIN)
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# When running examples/tests with CTest (out-of-source) we need support for
-# running GMT programs from within ${GMT_BINARY_DIR}:
-if (DO_EXAMPLES OR DO_TESTS AND NOT SUPPORT_EXEC_IN_BINARY_DIR)
-	message (WARNING "Enabling SUPPORT_EXEC_IN_BINARY_DIR (required for "
-	"testing). Please disable testing on release builds.")
-	set (SUPPORT_EXEC_IN_BINARY_DIR ON)
-endif (DO_EXAMPLES OR DO_TESTS AND NOT SUPPORT_EXEC_IN_BINARY_DIR)
-
-# Make GNU and Intel C compiler default to C99
-if (CMAKE_C_COMPILER_ID MATCHES "(GNU|Intel)" AND NOT CMAKE_C_FLAGS MATCHES "-std=")
-	set (CMAKE_C_FLAGS "-std=gnu99 ${CMAKE_C_FLAGS}")
-endif ()
-
-# Handle the special developer option GMT_DOCS_DEPEND_ON_GMT
-# Normally this is ON.
-if (NOT DEFINED GMT_DOCS_DEPEND_ON_GMT)
-	set (GMT_DOCS_DEPEND_ON_GMT TRUE)
-endif (NOT DEFINED GMT_DOCS_DEPEND_ON_GMT)
-if (GMT_DOCS_DEPEND_ON_GMT)
-	add_custom_target (gmt_for_img_convert DEPENDS gmt)
-else (GMT_DOCS_DEPEND_ON_GMT)
-	add_custom_target (gmt_for_img_convert)
-endif (GMT_DOCS_DEPEND_ON_GMT)
 
 # vim: textwidth=78 noexpandtab tabstop=2 softtabstop=2 shiftwidth=2

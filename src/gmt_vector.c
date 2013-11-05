@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2013 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2012 by P. Wessel, W. H. F. Smith, R. Scharroo, and J. Luis
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU Lesser General Public License as published by
- *	the Free Software Foundation; version 3 or any later version.
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; version 2 or any later version.
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU Lesser General Public License for more details.
+ *	GNU General Public License for more details.
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
@@ -22,17 +22,13 @@
  * Version:	5.x
  */
  
-#include "gmt_dev.h"
+#define GMT_WITH_NO_PS
+#include "gmt.h"
 #include "gmt_internals.h"
 
 #define MAX_SWEEPS 50
 
-struct GMT_SINGULAR_VALUE {	/* Used for sorting of eigenvalues in the SVD functions */
-	double value;
-	unsigned int order;
-};
-
-int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m, double *d, double *v, double *b, double *z, unsigned int *nrots) {
+GMT_LONG GMT_jacobi (struct GMT_CTRL *C, double *a, GMT_LONG *n, GMT_LONG *m, double *d, double *v, double *b, double *z, GMT_LONG *nrots) {
 /*
  *
  * Find eigenvalues & eigenvectors of a square symmetric matrix by Jacobi's
@@ -115,7 +111,7 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
  * This routine determines whether y is small compared to x by testing
  * if (fabs(y) + fabs(x) == fabs(x) ).  It is assumed that the
  * underflow which may occur here is nevertheless going to allow this
- * expression to be evaluated as true or false and execution to 
+ * expression to be evaluated as TRUE or FALSE and execution to 
  * continue.  If the run environment doesn't allow this, the routine
  * won't work properly.
  *
@@ -123,18 +119,18 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
  * Revised:	PW: 12-MAR-1998 for GMT 3.1
  * Revision by WHF Smith, March 03, 2000, to speed up loop indexes.
  */
-	unsigned int p, q, pp, pq, mp1, pm, qm, nsweeps, j, jm, i, k;
+	GMT_LONG p, q, pp, pq, mp1, pm, qm, nsweeps, j, jm, i, k;
 	double sum, threshold, g, h, t, theta, c, s, tau;
 
 	/* Begin by initializing v, b, d, and z.  v = identity matrix,
 		b = d = diag(a), and z = 0:  */
 
-	GMT_memset (v, m*n, double);
-	GMT_memset (z, n, double);
+	GMT_memset (v, (*m)*(*n), double);
+	GMT_memset (z, (*n), double);
 
-	mp1 = m + 1;
+	mp1 = (*m) + 1;
 
-	for (p = 0, pp = 0; p < n; p++, pp+=mp1) {
+	for (p = 0, pp = 0; p < (*n); p++, pp+=mp1) {
 		v[pp] = 1.0;
 		b[p] = a[pp];
 		d[p] = b[p];
@@ -149,7 +145,7 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
 
 		/* Sum off-diagonal elements of upper triangle.  */
 		sum = 0.0;
-		for (q = 1, qm = m; q < n; q++, qm += m ) {
+		for (q = 1, qm = (*m); q < (*n); q++, qm += (*m) ) {
 			for (p = 0, pq = qm; p < q; p++, pq++) sum += fabs(a[pq]);
 		}
 
@@ -157,11 +153,11 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
 		if (sum == 0.0) break;
 
 		/* If (nsweeps < 3) do only bigger elements;  else all  */
-		threshold =  (nsweeps < 3) ? 0.2 * sum / ( n * n ) : 0.0;
+		threshold =  (nsweeps < 3) ? 0.2 * sum / ( (*n) * (*n) ) : 0.0;
 
 		/* Now sweep whole upper triangle doing Givens rotations:  */
-		for (q = 1, qm = m; q < n; q++, qm += m ) {
-			for (p = 0, pm = 0, pq = qm; p < q; p++, pm += m, pq++) {
+		for (q = 1, qm = (*m); q < (*n); q++, qm += (*m) ) {
+			for (p = 0, pm = 0, pq = qm; p < q; p++, pm += (*m), pq++) {
 				/* In 3/2000 I swapped order of these loops,
 					to allow simple incrementing of pq  */
 
@@ -206,20 +202,20 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
 						a[j + pm] = g - s * (h + g * tau);
 						a[j + qm] = h + s * (g - h * tau);
 					}
-					for (j = p+1, jm = m*(p+1); j < q; j++, jm += m ) {
+					for (j = p+1, jm = (*m)*(p+1); j < q; j++, jm += (*m) ) {
 						g = a[p + jm];
 						h = a[j + qm];
 						a[p + jm] = g - s * (h + g * tau);
 						a[j + qm] = h + s * (g - h * tau);
 					}
-					for (j = q+1, jm = m*(q+1); j < n; j++, jm += m ) {
+					for (j = q+1, jm = (*m)*(q+1); j < (*n); j++, jm += (*m) ) {
 						g = a[p + jm];
 						h = a[q + jm];
 						a[p + jm] = g - s * (h + g * tau);
 						a[q + jm] = h + s * (g - h * tau);
 					}
 
-					for (j = 0; j < n; j++) {
+					for (j = 0; j < (*n); j++) {
 						g = v[j + pm];
 						h = v[j + qm];
 						v[j + pm] = g - s * (h + g * tau);
@@ -235,7 +231,7 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
 
 		nsweeps++;
 
-		for (p = 0; p < n; p++) {
+		for (p = 0; p < (*n); p++) {
 			b[p] += z[p];	/* Update the b copy of diagonal  */
 			d[p] = b[p];	/* Replace d with b to reduce round-off error  */
 			z[p] = 0.0;	/* Clear z.  */
@@ -245,10 +241,10 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
 	/* Get here via break when converged, or when nsweeps == MAX_SWEEPS.
 		Sort eigenvalues by insertion:  */
 
-	for (i = 0; i < n-1; i++) {
+	for (i = 0; i < (*n)-1; i++) {
 		k = i;
 		g = d[i];
-		for (j = i+1; j < n; j++) {  /* Find max location  */
+		for (j = i+1; j < (*n); j++) {  /* Find max location  */
 			if (d[j] >= g) {
 				k = j;
 				g = d[j];
@@ -257,9 +253,9 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
 		if (k != i) {  /*  Need to swap value and vector  */
 			d[k] = d[i];
 			d[i] = g;
-			p = i * m;
-			q = k * m;
-			for (j = 0; j < n; j++) {
+			p = i * (*m);
+			q = k * (*m);
+			for (j = 0; j < (*n); j++) {
 				g = v[j + p];
 				v[j + p] = v[j + q];
 				v[j + q] = g;
@@ -270,13 +266,13 @@ int GMT_jacobi (struct GMT_CTRL *GMT, double *a, unsigned int n, unsigned int m,
 	/* Return 0 if converged; else print warning and return -1:  */
 
 	if (nsweeps == MAX_SWEEPS) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "GMT_jacobi failed to converge in %d sweeps\n", nsweeps);
+		GMT_report (C, GMT_MSG_FATAL, "GMT_jacobi failed to converge in %ld sweeps\n", nsweeps);
 		return(-1);
 	}
 	return(0);
 }
 
-int GMT_gauss (struct GMT_CTRL *GMT, double *a, double *vec, unsigned int n, unsigned int nstore, bool itriag)
+void GMT_gauss (struct GMT_CTRL *C, double *a, double *vec, GMT_LONG n_in, GMT_LONG nstore_in, double test, GMT_LONG *ierror, GMT_LONG itriag)
 {
 
 /* subroutine gauss, by william menke */
@@ -287,20 +283,21 @@ int GMT_gauss (struct GMT_CTRL *GMT, double *a, double *vec, unsigned int n, uns
  *      a	(sent, destroyed)	n by n matrix
  *      vec	(sent, overwritten)	n vector, replaced w/ solution
  *      nstore	(sent)			dimension of a
+ *      test	(sent)			div by zero check number
  *      ierror	(returned)		zero on no error
  *      itriag	(sent)			matrix triangularized only
- *					on true useful when solving
+ *					on TRUE useful when solving
  *					multiple systems with same a
  */
-	static unsigned int l1;
-	unsigned int *line = NULL, i = 0, j, k, l, j1, j2, *isub = NULL;
-	int iet, ieb;
-	size_t n_alloc = 0;
+	static GMT_LONG l1;
+	GMT_LONG *line = NULL, *isub = NULL, i = 0, j, k, l, j2, n, nstore, iet, ieb, n_alloc = 0;
 	double big, testa, b, sum;
 
 	iet = 0;  /* initial error flags, one for triagularization*/
 	ieb = 0;  /* one for backsolving */
-	GMT_malloc2 (GMT, line, isub, n, &n_alloc, unsigned int);
+	n = n_in;
+	nstore = nstore_in;
+	GMT_malloc2 (C, line, isub, n, &n_alloc, GMT_LONG);
 
 /* triangularize the matrix a */
 /* replacing the zero elements of the triangularized matrix */
@@ -320,14 +317,14 @@ int GMT_gauss (struct GMT_CTRL *GMT, double *a, double *vec, unsigned int n, uns
 				  /* of unused portion of matrix*/
 			for (l1=0; l1<n; l1++) {
 				if (line[l1]==0) {
-					testa = fabs ((*(a+l1*nstore+j)));
+					testa = fabs ((double)(*(a+l1*nstore+j)));
 					if (testa>big) {
 						i=l1;
 						big=testa;
 					}
 				}
 			}
-			if (big<=DBL_EPSILON) iet=1;   /* test for div by 0 */
+			if (big<=test) iet=1;   /* test for div by 0 */
  
 			line[i]=1;  /* selected unused line becomes used line */
 			isub[j]=i;  /* isub points to j-th row of tri. matrix */
@@ -368,15 +365,14 @@ int GMT_gauss (struct GMT_CTRL *GMT, double *a, double *vec, unsigned int n, uns
 	}
  
 	b = *(a+l1*nstore+(n-1));   /* apex of triangle */
-	if (fabs(b)<=DBL_EPSILON) ieb=2; /* check for div by zero in backsolving */
+	if (fabs((double)b)<=test) ieb=2; /* check for div by zero in backsolving */
 	vec[isub[n-1]]=vec[isub[n-1]]/b;
  
-	for (j1=n-1; j1>0; j1--) { /* backsolve rest of triangle*/
-		j = j1 - 1;
+	for (j=n-2; j>=0; j--) { /* backsolve rest of triangle*/
 		sum=vec[isub[j]];
 		for (j2=j+1; j2<n; j2++) sum -= (vec[isub[j2]] * (*(a+isub[j]*nstore+j2)));
 		b = *(a+isub[j]*nstore+j);
-		if (fabs(b)<=DBL_EPSILON) ieb=2; /* test for div by 0 in backsolving */
+		if (fabs((double)b)<=test) ieb=2; /* test for div by 0 in backsolving */
 		vec[isub[j]]=sum/b;   /* solution returned in vec */
 	}
 
@@ -395,22 +391,21 @@ int GMT_gauss (struct GMT_CTRL *GMT, double *a, double *vec, unsigned int n, uns
 		line[j] = line[i];
 	}
  
-	GMT_free (GMT, isub);
-	GMT_free (GMT, line);
-	return (iet + ieb);   /* Return final error flag*/
+	GMT_free (C, isub);
+	GMT_free (C, line);
+	*ierror = iet + ieb;   /* set final error flag*/
 }
 
 /* Modified from similar function in Numerical Recipes */
 
-int GMT_gaussjordan (struct GMT_CTRL *GMT, double *a, unsigned int n_in, unsigned int ndim, double *b, unsigned int m_in, unsigned int mdim)
+GMT_LONG GMT_gaussjordan (struct GMT_CTRL *GMT, double *a, GMT_LONG n, GMT_LONG ndim, double *b, GMT_LONG m, GMT_LONG mdim)
 {
-	int i, j, k, l, ll, *ipiv = NULL, *indxc = NULL, *indxr = NULL, irow = 0, icol = 0;
-	int n = n_in, m = m_in;
+	GMT_LONG i, j, k, l, ll, *ipiv = NULL, *indxc = NULL, *indxr = NULL, irow = 0, icol = 0;
 	double big, dum, pivinv;
 	
-	ipiv  = GMT_memory (GMT, NULL, n, int);
-	indxc = GMT_memory (GMT, NULL, n, int);
-	indxr = GMT_memory (GMT, NULL, n, int);
+	ipiv  = GMT_memory (GMT, NULL, n, GMT_LONG);
+	indxc = GMT_memory (GMT, NULL, n, GMT_LONG);
+	indxr = GMT_memory (GMT, NULL, n, GMT_LONG);
 	
 	for (i = 0; i < n; i++) {
 		big = 0.0;
@@ -425,7 +420,7 @@ int GMT_gaussjordan (struct GMT_CTRL *GMT, double *a, unsigned int n_in, unsigne
 						}
 					}
 					else if (ipiv[k] > 1) {
-						GMT_Report (GMT->parent, GMT_MSG_NORMAL, "GMT_gaussjordan: Singular matrix!\n");
+						GMT_report (GMT, GMT_MSG_FATAL, "GMT_gaussjordan: Singular matrix!\n");
 						GMT_free (GMT, ipiv);
 						GMT_free (GMT, indxc);
 						GMT_free (GMT, indxr);
@@ -452,7 +447,7 @@ int GMT_gaussjordan (struct GMT_CTRL *GMT, double *a, unsigned int n_in, unsigne
 		indxr[i] = irow;
 		indxc[i] = icol;
 		if (a[icol*ndim+icol] == 0.0) {
-			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "GMT_gaussjordan: Singular matrix!\n");
+			GMT_report (GMT, GMT_MSG_FATAL, "GMT_gaussjordan: Singular matrix!\n");
 			GMT_free (GMT, ipiv);
 			GMT_free (GMT, indxc);
 			GMT_free (GMT, indxr);
@@ -500,17 +495,17 @@ int GMT_gaussjordan (struct GMT_CTRL *GMT, double *a, unsigned int n_in, unsigne
 
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 
-int GMT_svdcmp (struct GMT_CTRL *GMT, double *a, unsigned int m_in, unsigned int n_in, double *w, double *v)
+GMT_LONG GMT_svdcmp (struct GMT_CTRL *GMT, double *a, GMT_LONG m, GMT_LONG n, double *w, double *v)
 {
 	/* void svdcmp(double *a,int m,int n,double *w,double *v) */
 	
-	int flag,i,its,j,jj,k,l=0,nm = 0, n = n_in, m = m_in;
+	GMT_LONG flag,i,its,j,jj,k,l=0,nm = 0;
 	double c,f,h,s,x,y,z;
 	double anorm=0.0,tnorm, g=0.0,scale=0.0;
 	double *rv1 = NULL;
 	
 	if (m < n) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in GMT_svdcmp: m < n augment A with additional rows\n");
+		GMT_report (GMT, GMT_MSG_FATAL, "Error in GMT_svdcmp: m < n augment A with additional rows\n");
 		return (EXIT_FAILURE);
 	}
 	
@@ -656,7 +651,7 @@ int GMT_svdcmp (struct GMT_CTRL *GMT, double *a, unsigned int m_in, unsigned int
 				break;
 			}
 			if (its == 30) {
-				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in GMT_svdcmp: No convergence in 30 iterations\n");
+				GMT_report (GMT, GMT_MSG_FATAL, "Error in GMT_svdcmp: No convergence in 30 iterations\n");
 				return (EXIT_FAILURE);
 			}
 			x=w[l];		/* shift from bottom 2-by-2 minor */
@@ -716,18 +711,18 @@ int GMT_svdcmp (struct GMT_CTRL *GMT, double *a, unsigned int m_in, unsigned int
 	return (GMT_NOERROR);
 }
 
-void gmt_mat_trans (double a[], unsigned int mrow, unsigned int ncol, double at[])
+void gmt_mat_trans (double a[], GMT_LONG mrow, GMT_LONG ncol, double at[])
 {
 	/* Return the transpose of a */
-	unsigned int i, j;
+	GMT_LONG i, j;
 	for (i = 0; i < ncol; i++) for (j = 0; j < mrow; j++) at[mrow*i+j] = a[ncol*j+i];
 }
 
-void gmt_mat_mult (double a[], unsigned int mrow, unsigned int ncol, double b[], unsigned int kcol, double c[])
+void gmt_mat_mult (double a[], GMT_LONG mrow, GMT_LONG ncol, double b[], GMT_LONG kcol, double c[])
 {
 	/* Matrix multiplication a * b = c */
 	
-	unsigned int i, j, k, ij;
+	GMT_LONG i, j, k, ij;
 	
 	for (i = 0; i < kcol; i++) {
 		for (j = 0; j < mrow; j++) {
@@ -748,86 +743,30 @@ void gmt_mat_mult (double a[], unsigned int mrow, unsigned int ncol, double b[],
 	
 */
 
-int compare_singular_values (const void *point_1v, const void *point_2v)
+GMT_LONG GMT_solve_svd (struct GMT_CTRL *GMT, double *u, GMT_LONG m, GMT_LONG n, double *v, double *w, double *b, GMT_LONG k, double *x, double cutoff)
 {
-	/*  Routine for qsort to sort struct GMT_SINGULAR_VALUE on decreasing eigenvalues
-	 * keeping track of the original order before sorting.
-	 */
-	const struct GMT_SINGULAR_VALUE *E_1 = point_1v, *E_2 = point_2v;
-
-	if (E_1->value < E_2->value) return (+1);
-	if (E_1->value > E_2->value) return (-1);
-	return (0);
-}
-
-int GMT_solve_svd (struct GMT_CTRL *GMT, double *u, unsigned int m, unsigned int n, double *v, double *w, double *b, unsigned int k, double *x, double *cutoff, unsigned int mode)
-{
-	double *ut = NULL, sing_max, total_variance, variance = 0.0, limit;
-	unsigned int i, j, n_use = 0;
+	double *ut = NULL, sing_max;
+	GMT_LONG i, j, n_use = 0;
 
 	/* allocate work space */
 	
 	ut = GMT_memory (GMT, NULL, n*m, double);	/* space for the transpose */
 	
-	/* find maximum singular value and total variance */
+	/* find maximum singular value */
 	
 	sing_max = w[0];
-	total_variance = w[0];
-	for (i = 1; i < n; i++) {
-		sing_max = MAX (sing_max, w[i]);
-		total_variance += w[i];
+	for (i = 1; i < n; i++) sing_max = MAX (sing_max, w[i]);
+		
+	/* loop through singular values removing small ones */
+		
+	for (i = 0; i < n; i++) {
+		if ((w[i]/sing_max) > cutoff) {
+			w[i] = 1.0 / w[i];
+			n_use++;
+		}
+		else
+			w[i] = 0.0;
 	}
-	
-	if (mode) {
-		/* mode = 1: Find the m largest singular values needed to explain the specified variance level.
-		 * mode = 2: Find the m largest singular values, with m = limit.
-		 * Either case requires sorted singular values so we need to do some work first.
-		 * It also assumes that the matrix passed is a squared normal equation kind of matrix
-		 * so that the singular values are the individual variace contributions. */
-		struct GMT_SINGULAR_VALUE {
-			double value;
-			unsigned int order;
-		} *eigen;
-		unsigned int n_eigen = 0;
-		eigen = GMT_memory (GMT, NULL, n, struct GMT_SINGULAR_VALUE);
-		for (i = 0; i < n; i++) {	/* Load in original order from w */
-			eigen[i].value = w[i];
-			eigen[i].order = i;
-		}
-		qsort (eigen, n, sizeof (struct GMT_SINGULAR_VALUE), compare_singular_values);
-		/* Need desired variance level in % */
-		limit = (*cutoff) * total_variance * 0.01;
-		if (mode == 2) n_eigen = (unsigned int)lrint (*cutoff);
-		for (i = 0; i < n; i++) {	/* Visit all singular values in decreasing magnitude */
-			if ((mode == 1 && variance <= limit) || (mode == 2 && i < n_eigen)) {	/* Still within specified limit so we add this singular value */
-				variance += eigen[i].value;
-				w[eigen[i].order] = 1.0 / w[eigen[i].order];
-				n_use++;
-			}
-			else	/* Sorry, we're letting you go */
-				w[eigen[i].order] = 0.0;
-		}
-		GMT_free (GMT, eigen);
-	}
-	else {	/* Loop through singular values removing small ones (if limit is nonzero) */
-		limit = *cutoff;
-		for (i = 0; i < n; i++) {
-			if ((w[i]/sing_max) > limit) {
-				variance += w[i];
-				w[i] = 1.0 / w[i];
-				n_use++;
-			}
-			else
-				w[i] = 0.0;
-		}
-	}		
-	*cutoff *= (100.0 * variance / total_variance);	/* Actual explained variance level in % */
-	if (mode == 0)
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "GMT_solve_svd: Ratio limit %g gave %d singular values that explain %g %% of total variance %g\n", limit, n_use, *cutoff, total_variance);
-	if (mode == 1)
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "GMT_solve_svd: Found %d singular values needed to explain %g %% of total variance %g\n", n_use, *cutoff, total_variance);
-	else
-		GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "GMT_solve_svd: Selected %d singular values that explain %g %% of total variance %g\n", n_use, *cutoff, total_variance);
 	
 	/* multiply V by 1/w */
 	
@@ -852,37 +791,37 @@ int GMT_solve_svd (struct GMT_CTRL *GMT, double *u, unsigned int m, unsigned int
 	return (n_use);
 }
 
-double GMT_dot3v (struct GMT_CTRL *GMT, double *a, double *b)
+double GMT_dot3v (struct GMT_CTRL *C, double *a, double *b)
 {
 	return (a[GMT_X]*b[GMT_X] + a[GMT_Y]*b[GMT_Y] + a[GMT_Z]*b[GMT_Z]);
 }
 
-double GMT_dot2v (struct GMT_CTRL *GMT, double *a, double *b)
+double GMT_dot2v (struct GMT_CTRL *C, double *a, double *b)
 {
 	return (a[GMT_X]*b[GMT_X] + a[GMT_Y]*b[GMT_Y]);
 }
 
-double GMT_mag3v (struct GMT_CTRL *GMT, double *a)
+double GMT_mag3v (struct GMT_CTRL *C, double *a)
 {
 	return (d_sqrt(a[GMT_X]*a[GMT_X] + a[GMT_Y]*a[GMT_Y] + a[GMT_Z]*a[GMT_Z]));
 }
 
-void GMT_add3v (struct GMT_CTRL *GMT, double *a, double *b, double *c)
+void GMT_add3v (struct GMT_CTRL *C, double *a, double *b, double *c)
 {	/* C = A + B */
 	int k;
 	for (k = 0; k < 3; k++) c[k] = a[k] + b[k];
 }
 
-void GMT_sub3v (struct GMT_CTRL *GMT, double *a, double *b, double *c)
+void GMT_sub3v (struct GMT_CTRL *C, double *a, double *b, double *c)
 {	/* C = A - B */
 	int k;
 	for (k = 0; k < 3; k++) c[k] = a[k] - b[k];
 }
 
-void GMT_normalize3v (struct GMT_CTRL *GMT, double *a)
+void GMT_normalize3v (struct GMT_CTRL *C, double *a)
 {
 	double r_length;
-	r_length = GMT_mag3v (GMT,a);
+	r_length = GMT_mag3v (C,a);
 	if (r_length != 0.0) {
 		r_length = 1.0 / r_length;
 		a[GMT_X] *= r_length;
@@ -891,7 +830,7 @@ void GMT_normalize3v (struct GMT_CTRL *GMT, double *a)
 	}
 }
 
-void GMT_normalize2v (struct GMT_CTRL *GMT, double *a)
+void GMT_normalize2v (struct GMT_CTRL *C, double *a)
 {
 	double r_length;
 	r_length = hypot (a[GMT_X], a[GMT_Y]);
@@ -902,72 +841,17 @@ void GMT_normalize2v (struct GMT_CTRL *GMT, double *a)
 	}
 }
 
-void GMT_cross3v (struct GMT_CTRL *GMT, double *a, double *b, double *c)
+void GMT_cross3v (struct GMT_CTRL *C, double *a, double *b, double *c)
 {
 	c[GMT_X] = a[GMT_Y] * b[GMT_Z] - a[GMT_Z] * b[GMT_Y];
 	c[GMT_Y] = a[GMT_Z] * b[GMT_X] - a[GMT_X] * b[GMT_Z];
 	c[GMT_Z] = a[GMT_X] * b[GMT_Y] - a[GMT_Y] * b[GMT_X];
 }
 
-void GMT_matrix_vect_mult (struct GMT_CTRL *GMT, unsigned int dim, double a[3][3], double b[3], double c[3])
-{	/* c = A * b for 2 or 3 D */
-	unsigned int i, j;
-
-	for (i = 0; i < dim; i++) for (j = 0, c[i] = 0.0; j < dim; j++) c[i] += a[i][j] * b[j];
-}
-
-void GMT_make_rot_matrix2 (struct GMT_CTRL *GMT, double E[3], double w, double R[3][3])
-{	/* Based on Cox and Hart, 1986 */
-/*	E	Euler pole in in cartesian coordinates
- *	w	angular rotation in degrees
- *
- *	R	the 3x3 rotation matrix
- */
-
-	double sin_w, cos_w, c, E_x, E_y, E_z, E_12c, E_13c, E_23c;
-
-	sincosd (w, &sin_w, &cos_w);
-	c = 1 - cos_w;
-
-	E_x = E[0] * sin_w;
-	E_y = E[1] * sin_w;
-	E_z = E[2] * sin_w;
-	E_12c = E[0] * E[1] * c;
-	E_13c = E[0] * E[2] * c;
-	E_23c = E[1] * E[2] * c;
-
-	R[0][0] = E[0] * E[0] * c + cos_w;
-	R[0][1] = E_12c - E_z;
-	R[0][2] = E_13c + E_y;
-
-	R[1][0] = E_12c + E_z;
-	R[1][1] = E[1] * E[1] * c + cos_w;
-	R[1][2] = E_23c - E_x;
-
-	R[2][0] = E_13c - E_y;
-	R[2][1] = E_23c + E_x;
-	R[2][2] = E[2] * E[2] * c + cos_w;
-}
-
-void GMT_make_rot_matrix (struct GMT_CTRL *GMT, double lonp, double latp, double w, double R[3][3])
-{
-/*	lonp, latp	Euler pole in degrees
- *	w		angular rotation in degrees
- *
- *	R		the rotation matrix
- */
-
-	double E[3];
-
-        GMT_geo_to_cart (GMT, latp, lonp, E, true);
-	GMT_make_rot_matrix2 (GMT, E, w, R);
-}
-
-
-void GMT_geo_to_cart (struct GMT_CTRL *GMT, double lat, double lon, double *a, bool degrees)
+void GMT_geo_to_cart (struct GMT_CTRL *C, double lat, double lon, double *a, GMT_LONG degrees)
 {
 	/* Convert geographic latitude and longitude (lat, lon)
-	   to a 3-vector of unit length (a). If degrees = true,
+	   to a 3-vector of unit length (a). If degrees = TRUE,
 	   input coordinates are in degrees, otherwise in radian */
 
 	double clat, clon, slon;
@@ -982,10 +866,10 @@ void GMT_geo_to_cart (struct GMT_CTRL *GMT, double lat, double lon, double *a, b
 	a[GMT_Y] = clat * slon;
 }
 
-void GMT_cart_to_geo (struct GMT_CTRL *GMT, double *lat, double *lon, double *a, bool degrees)
+void GMT_cart_to_geo (struct GMT_CTRL *C, double *lat, double *lon, double *a, GMT_LONG degrees)
 {
 	/* Convert a 3-vector (a) of unit length into geographic
-	   coordinates (lat, lon). If degrees = true, the output coordinates
+	   coordinates (lat, lon). If degrees = TRUE, the output coordinates
 	   are in degrees, otherwise in radian. */
 
 	if (degrees) {
@@ -998,10 +882,10 @@ void GMT_cart_to_geo (struct GMT_CTRL *GMT, double *lat, double *lon, double *a,
 	}
 }
 
-void GMT_polar_to_cart (struct GMT_CTRL *GMT, double r, double theta, double *a, bool degrees)
+void GMT_polar_to_cart (struct GMT_CTRL *C, double r, double theta, double *a, GMT_LONG degrees)
 {
 	/* Convert polar (cylindrical) coordinates r, theta
-	   to a 2-vector of unit length (a). If degrees = true,
+	   to a 2-vector of unit length (a). If degrees = TRUE,
 	   input theta is in degrees, otherwise in radian */
 
 	if (degrees) theta *= D2R;
@@ -1010,10 +894,10 @@ void GMT_polar_to_cart (struct GMT_CTRL *GMT, double r, double theta, double *a,
 	a[GMT_Y] *= r;
 }
 
-void GMT_cart_to_polar (struct GMT_CTRL *GMT, double *r, double *theta, double *a, bool degrees)
+void GMT_cart_to_polar (struct GMT_CTRL *C, double *r, double *theta, double *a, GMT_LONG degrees)
 {
 	/* Convert a 2-vector (a) of unit length into polar (cylindrical)
-	   coordinates (r, theta). If degrees = true, the output coordinates
+	   coordinates (r, theta). If degrees = TRUE, the output coordinates
 	   are in degrees, otherwise in radian. */
 
 	*r = hypot (a[GMT_X], a[GMT_Y]);
@@ -1021,7 +905,7 @@ void GMT_cart_to_polar (struct GMT_CTRL *GMT, double *r, double *theta, double *
 	if (degrees) *theta *= R2D;
 }
 
-uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, uint64_t n, double step, unsigned int mode)
+GMT_LONG GMT_fix_up_path (struct GMT_CTRL *C, double **a_lon, double **a_lat, GMT_LONG n, double step, GMT_LONG mode)
 {
 	/* Takes pointers to a list of <n> lon/lat pairs (in degrees) and adds
 	 * auxiliary points if the great circle distance between two given points exceeds
@@ -1032,111 +916,109 @@ uint64_t GMT_fix_up_path (struct GMT_CTRL *GMT, double **a_lon, double **a_lat, 
 	 * Returns the new number of points (original plus auxiliary).
 	 */
 
-	unsigned int k = 1;
-	bool meridian;
-	uint64_t i, j, n_new, n_step = 0;
+	GMT_LONG i, j, k = 1, n_tmp, n_step = 0, n_alloc = 0, meridian;
+	double *lon_tmp = NULL, *lat_tmp = NULL;
 	double a[3], b[3], x[3], *lon = NULL, *lat = NULL;
 	double c, d, fraction, theta, minlon, maxlon;
 
-	lon = *a_lon;	lat = *a_lat;	/* Input arrays */
+	lon = *a_lon;	lat = *a_lat;
 
-	GMT_geo_to_cart (GMT, lat[0], lon[0], a, true);	/* Start point of current arc */
-	GMT_prep_tmp_arrays (GMT, 1, 2);	/* Init or reallocate tmp vectors */
-	GMT->hidden.mem_coord[GMT_X][0] = lon[0];
-	GMT->hidden.mem_coord[GMT_Y][0] = lat[0];
-	n_new = 1;
-	if (step <= 0.0) step = GMT->current.map.path_step;	/* Based on GMT->current.setting.map_line_step converted to degrees */
+	GMT_geo_to_cart (C, lat[0], lon[0], a, TRUE);
+	GMT_malloc2 (C, lon_tmp, lat_tmp, 1, &n_alloc, double);
+	lon_tmp[0] = lon[0];	lat_tmp[0] = lat[0];
+	n_tmp = 1;
+	if (step <= 0.0) step = C->current.map.path_step;	/* Based on C->current.setting.map_line_step converted to degrees */
 	if (step <= 0.0) step = 0.1;				/* Safety valve when no -J and step not set. */
 
 	for (i = 1; i < n; i++) {
 
-		GMT_geo_to_cart (GMT, lat[i], lon[i], b, true);	/* End point of current arc */
+		GMT_geo_to_cart (C, lat[i], lon[i], b, TRUE);
 
 		if (mode == 1) {	/* First follow meridian, then parallel */
 			theta = fabs (lon[i]-lon[i-1]) * cosd (lat[i-1]);
-			n_step = lrint (theta / step);
+			n_step = irint (theta / step);
 			for (j = 1; j < n_step; j++) {
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i-1] * (1 - c) + lon[i] * c;
-				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i-1];
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, lon_tmp, lat_tmp, n_tmp, &n_alloc, double);
+				lon_tmp[n_tmp] = lon[i-1] * (1 - c) + lon[i] * c;
+				lat_tmp[n_tmp] = lat[i-1];
+				n_tmp++;
 			}
 			theta = fabs (lat[i]-lat[i-1]);
-			n_step = lrint (theta / step);
+			n_step = irint (theta / step);
 			for (j = k; j < n_step; j++) {	/* Start at 0 to make sure corner point is saved */
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i];
-				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i-1] * (1 - c) + lat[i] * c;
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, lon_tmp, lat_tmp, n_tmp, &n_alloc, double);
+				lon_tmp[n_tmp] = lon[i];
+				lat_tmp[n_tmp] = lat[i-1] * (1 - c) + lat[i] * c;
+				n_tmp++;
 			}
 			k = 0;
 		}
 
 		else if (mode == 2) {	/* First follow parallel, then meridian */
 			theta = fabs (lat[i]-lat[i-1]);
-			n_step = lrint (theta / step);
+			n_step = irint (theta / step);
 			for (j = 1; j < n_step; j++) {
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i-1];
-				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i-1] * (1 - c) + lat[i] * c;
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, lon_tmp, lat_tmp, n_tmp, &n_alloc, double);
+				lon_tmp[n_tmp] = lon[i-1];
+				lat_tmp[n_tmp] = lat[i-1] * (1 - c) + lat[i] * c;
+				n_tmp++;
 			}
 			theta = fabs (lon[i]-lon[i-1]) * cosd(lat[i]);
-			n_step = lrint (theta / step);
+			n_step = irint (theta / step);
 			for (j = k; j < n_step; j++) {	/* Start at 0 to make sure corner point is saved */
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = lon[i-1] * (1 - c) + lon[i] * c;
-				GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i];
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, lon_tmp, lat_tmp, n_tmp, &n_alloc, double);
+				lon_tmp[n_tmp] = lon[i-1] * (1 - c) + lon[i] * c;
+				lat_tmp[n_tmp] = lat[i];
+				n_tmp++;
 			}
 			k = 0;
 		}
 
 		/* Follow great circle */
-		else if ((theta = d_acosd (GMT_dot3v (GMT, a, b))) == 180.0)	/* trouble, no unique great circle */
-			GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning: Two points in input list are antipodal - no resampling taken place!\n");
+		else if ((theta = d_acosd (GMT_dot3v (C, a, b))) == 180.0)	/* trouble, no unique great circle */
+			GMT_report (C, GMT_MSG_NORMAL, "Warning: Two points in input list are antipodal - no resampling taken place!\n");
 
-		else if ((n_step = lrint (theta / step)) > 1) {	/* Must insert (n_step - 1) points, i.e. create n_step intervals */
+		else if ((n_step = irint (theta / step)) > 1) {	/* Must insert (n_step - 1) points, i.e. create n_step intervals */
 			fraction = 1.0 / (double)n_step;
-			minlon = MIN (lon[i-1], lon[i]);
-			maxlon = MAX (lon[i-1], lon[i]);
+			minlon = MIN (lon[i-1],lon[i]);
+			maxlon = MAX (lon[i-1],lon[i]);
 			meridian = doubleAlmostEqualZero (maxlon, minlon);	/* A meridian; make a gap so tests below will give right range */
 			for (j = 1; j < n_step; j++) {
 				c = j * fraction;
 				d = 1 - c;
 				for (k = 0; k < 3; k++) x[k] = a[k] * d + b[k] * c;
-				GMT_normalize3v (GMT, x);		/* Make unit vector */
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT_cart_to_geo (GMT, &GMT->hidden.mem_coord[GMT_Y][n_new], &GMT->hidden.mem_coord[GMT_X][n_new], x, true);
+				GMT_normalize3v (C, x);
+				if (n_tmp == n_alloc) GMT_malloc2 (C, lon_tmp, lat_tmp, n_tmp, &n_alloc, double);
+				GMT_cart_to_geo (C, &lat_tmp[n_tmp], &lon_tmp[n_tmp], x, TRUE);
 				if (meridian)
-					GMT->hidden.mem_coord[GMT_X][n_new] = minlon;
-				else if (GMT->hidden.mem_coord[GMT_X][n_new] < minlon)
-					GMT->hidden.mem_coord[GMT_X][n_new] += 360.0;
-				else if (GMT->hidden.mem_coord[GMT_X][n_new] > maxlon)
-					GMT->hidden.mem_coord[GMT_X][n_new] -= 360.0;
-				n_new++;
+					lon_tmp[n_tmp] = minlon;
+				else if (lon_tmp[n_tmp] < minlon)
+					lon_tmp[n_tmp] += 360.0;
+				else if (lon_tmp[n_tmp] > maxlon)
+					lon_tmp[n_tmp] -= 360.0;
+				n_tmp++;
 			}
 		}
-		GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-		GMT->hidden.mem_coord[GMT_X][n_new] = lon[i];	GMT->hidden.mem_coord[GMT_Y][n_new] = lat[i];
-		n_new++;
+		if (n_tmp == n_alloc) GMT_malloc2 (C, lon_tmp, lat_tmp, n_tmp, &n_alloc, double);
+		lon_tmp[n_tmp] = lon[i];	lat_tmp[n_tmp] = lat[i];
+		n_tmp++;
 		GMT_cpy3v (a, b);
 	}
+	GMT_malloc2 (C, lon_tmp, lat_tmp, 0, &n_tmp, double);
 
-	/* Destroy old allocated memory and put the new one in place */
-	GMT_free (GMT, lon);
-	GMT_free (GMT, lat);
-	*a_lon = GMT_assign_vector (GMT, n_new, GMT_X);
-	*a_lat = GMT_assign_vector (GMT, n_new, GMT_Y);
-	
-	return (n_new);
+	/* Destroy old alocated memory and put the new none in place */
+	GMT_free (C, lon);
+	GMT_free (C, lat);
+	*a_lon = lon_tmp;
+	*a_lat = lat_tmp;
+	return (n_tmp);
 }
 
-uint64_t gmt_fix_up_path_cartesian (struct GMT_CTRL *GMT, double **a_x, double **a_y, uint64_t n, double step, unsigned int mode)
+GMT_LONG GMT_fix_up_path_cartesian (struct GMT_CTRL *C, double **a_x, double **a_y, GMT_LONG n, double step, GMT_LONG mode)
 {
 	/* Takes pointers to a list of <n> x/y pairs (in user units) and adds
 	 * auxiliary points if the distance between two given points exceeds
@@ -1147,274 +1029,77 @@ uint64_t gmt_fix_up_path_cartesian (struct GMT_CTRL *GMT, double **a_x, double *
 	 * Returns the new number of points (original plus auxiliary).
 	 */
 
-	unsigned int k = 1;
-	uint64_t i, j, n_new, n_step = 0;
-	double *x = NULL, *y = NULL, c;
+	GMT_LONG i, j, k = 1, n_tmp, n_step = 0, n_alloc = 0;
+	double *x_tmp = NULL, *y_tmp = NULL, *x = NULL, *y = NULL, c;
 
 	x = *a_x;	y = *a_y;
 
-	GMT_prep_tmp_arrays (GMT, 1, 2);	/* Init or reallocate tmp vectors */
-	GMT->hidden.mem_coord[GMT_X][0] = x[0];	GMT->hidden.mem_coord[GMT_Y][0] = y[0];	n_new = 1;
+	GMT_malloc2 (C, x_tmp, y_tmp, 1, &n_alloc, double);
+	x_tmp[0] = x[0];	y_tmp[0] = y[0];	n_tmp = 1;
 	if (step <= 0.0) step = 1.0;	/* Sanity valve; if step not given we set it to 1 */
 
 	for (i = 1; i < n; i++) {
 		if (mode == 1) {	/* First follow x, then y */
-			n_step = lrint (fabs (x[i] - x[i-1]) / step);
+			n_step = irint (fabs (x[i] - x[i-1]) / step);
 			for (j = 1; j < n_step; j++) {
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = x[i-1] * (1 - c) + x[i] * c;
-				GMT->hidden.mem_coord[GMT_Y][n_new] = y[i-1];
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, x_tmp, y_tmp, n_tmp, &n_alloc, double);
+				x_tmp[n_tmp] = x[i-1] * (1 - c) + x[i] * c;
+				y_tmp[n_tmp] = y[i-1];
+				n_tmp++;
 			}
-			n_step = lrint (fabs (y[i]-y[i-1]) / step);
+			n_step = irint (fabs (y[i]-y[i-1]) / step);
 			for (j = k; j < n_step; j++) {	/* Start at 0 to make sure corner point is saved */
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = x[i];
-				GMT->hidden.mem_coord[GMT_Y][n_new] = y[i-1] * (1 - c) + y[i] * c;
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, x_tmp, y_tmp, n_tmp, &n_alloc, double);
+				x_tmp[n_tmp] = x[i];
+				y_tmp[n_tmp] = y[i-1] * (1 - c) + y[i] * c;
+				n_tmp++;
 			}
 			k = 0;
 		}
 		else if (mode == 2) {	/* First follow y, then x */
-			n_step = lrint (fabs (y[i]-y[i-1]) / step);
+			n_step = irint (fabs (y[i]-y[i-1]) / step);
 			for (j = 1; j < n_step; j++) {
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = x[i-1];
-				GMT->hidden.mem_coord[GMT_Y][n_new] = y[i-1] * (1 - c) + y[i] * c;
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, x_tmp, y_tmp, n_tmp, &n_alloc, double);
+				x_tmp[n_tmp] = x[i-1];
+				y_tmp[n_tmp] = y[i-1] * (1 - c) + y[i] * c;
+				n_tmp++;
 			}
-			n_step = lrint (fabs (x[i]-x[i-1]) / step);
+			n_step = irint (fabs (x[i]-x[i-1]) / step);
 			for (j = k; j < n_step; j++) {	/* Start at 0 to make sure corner point is saved */
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = x[i-1] * (1 - c) + x[i] * c;
-				GMT->hidden.mem_coord[GMT_Y][n_new] = y[i];
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, x_tmp, y_tmp, n_tmp, &n_alloc, double);
+				x_tmp[n_tmp] = x[i-1] * (1 - c) + x[i] * c;
+				y_tmp[n_tmp] = y[i];
+				n_tmp++;
 			}
 			k = 0;
 		}
 		/* Follow straight line */
-		else if ((n_step = lrint (hypot (x[i]-x[i-1], y[i]-y[i-1]) / step)) > 1) {	/* Must insert (n_step - 1) points, i.e. create n_step intervals */
+		else if ((n_step = irint (hypot (x[i]-x[i-1], y[i]-y[i-1]) / step)) > 1) {	/* Must insert (n_step - 1) points, i.e. create n_step intervals */
 			for (j = 1; j < n_step; j++) {
 				c = j / (double)n_step;
-				GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-				GMT->hidden.mem_coord[GMT_X][n_new] = x[i-1] * (1 - c) + x[i] * c;
-				GMT->hidden.mem_coord[GMT_Y][n_new] = y[i-1] * (1 - c) + y[i] * c;
-				n_new++;
+				if (n_tmp == n_alloc) GMT_malloc2 (C, x_tmp, y_tmp, n_tmp, &n_alloc, double);
+				x_tmp[n_tmp] = x[i-1] * (1 - c) + x[i] * c;
+				y_tmp[n_tmp] = y[i-1] * (1 - c) + y[i] * c;
+				n_tmp++;
 			}
 		}
-		GMT_prep_tmp_arrays (GMT, n_new, 2);	/* Init or reallocate tmp read vectors */
-		GMT->hidden.mem_coord[GMT_X][n_new] = x[i];	GMT->hidden.mem_coord[GMT_Y][n_new] = y[i];	n_new++;
+		if (n_tmp == n_alloc) GMT_malloc2 (C, x_tmp, y_tmp, n_tmp, &n_alloc, double);
+		x_tmp[n_tmp] = x[i];	y_tmp[n_tmp] = y[i];	n_tmp++;
 	}
+	GMT_malloc2 (C, x_tmp, y_tmp, 0, &n_tmp, double);
 
-	/* Destroy old allocated memory and put the new one in place */
-	GMT_free (GMT, x);	GMT_free (GMT, y);
-	*a_x = GMT_assign_vector (GMT, n_new, GMT_X);
-	*a_y = GMT_assign_vector (GMT, n_new, GMT_Y);
+	/* Destroy old alocated memory and put the knew none in place */
+	GMT_free (C, x);	GMT_free (C, y);
+	*a_x = x_tmp;	*a_y = y_tmp;
 	
-	return (n_new);
+	return (n_tmp);
 }
 
-uint64_t gmt_resample_path_spherical (struct GMT_CTRL *GMT, double **lon, double **lat, uint64_t n_in, double step_out, enum GMT_enum_track mode)
-{
-	/* See GMT_resample_path below for details. */
-
-	bool meridian, new_pair;
-	uint64_t last_row_in = 0, row_in, row_out, n_out;
-	unsigned int k;
-	double dist_out, gap, d_lon = 0.0, L = 0.0, frac_to_a, frac_to_b, minlon, maxlon, a[3], b[3], c[3];
-	double P[3], Rot0[3][3], Rot[3][3], total_angle_rad = 0.0, angle_rad, ya = 0.0, yb = 0.0;
-	double *dist_in = NULL, *lon_out = NULL, *lat_out = NULL, *lon_in = *lon, *lat_in = *lat;
-
-	if (step_out < 0.0) {	/* Safety valve */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal error: gmt_resample_path_spherical given negative step-size\n");
-		return (EXIT_FAILURE);
-	}
-	if (mode > GMT_TRACK_SAMPLE_ADJ) {	/* Bad mode*/
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal error: gmt_resample_path_spherical given bad mode %d\n", mode);
-		return (EXIT_FAILURE);
-	}
-	
-	if (mode < GMT_TRACK_SAMPLE_FIX) {
-		if (GMT->current.map.dist[GMT_MAP_DIST].arc)	/* Gave an increment in arc lenght (degree, min, sec) */
-			step_out /= GMT->current.map.dist[GMT_MAP_DIST].scale;	/* Get degrees */
-		else	/* Gave increment in spatial distance (km, meter, etc.) */
-			step_out = (step_out / GMT->current.map.dist[GMT_MAP_DIST].scale) / GMT->current.proj.DIST_M_PR_DEG;	/* Get degrees */
-		return (GMT_fix_up_path (GMT, lon, lat, n_in, step_out, mode));	/* Insert extra points only */
-	}
-	
-	dist_in = GMT_dist_array (GMT, lon_in, lat_in, n_in, true);	/* Compute cumulative distances along line */
-	
-	if (step_out == 0.0) step_out = (dist_in[n_in-1] - dist_in[0])/100.0;	/* If nothing is selected we get 101 points */
-	/* Determine n_out, the number of output points */
-	if (mode == GMT_TRACK_SAMPLE_ADJ) {	/* Round to nearest multiple of step_out, then adjust step to match exactly */
-		n_out = lrint (dist_in[n_in-1] / step_out);
-		step_out = dist_in[n_in-1] / n_out;	/* Ensure exact fit */
-	}
-	else {	/* Stop when last multiple is reached */
-		n_out = lrint (floor (dist_in[n_in-1] / step_out));
-	}
-	n_out++;	/* Since number of points = number of segments + 1 */
-	
-	lon_out = GMT_memory (GMT, NULL, n_out, double);
-	lat_out = GMT_memory (GMT, NULL, n_out, double);
-	
-	lon_out[0] = lon_in[0];	lat_out[0] = lat_in[0];	/* Start at same origin */
-	for (row_in = row_out = 1; row_out < n_out; row_out++) {	/* For remaining output points */
-		dist_out = row_out * step_out;	/* Rhe desired output distance */
-		while (row_in < n_in && dist_in[row_in] < dist_out) row_in++;	/* Wind so row points to the next input point with a distance >= dist_out */
-		gap = dist_in[row_in] - dist_out;	/* Distance to next input datapoint */
-		new_pair = (row_in > last_row_in);
-		if (GMT_IS_ZERO (gap)) {	/* Use the input point as is */
-			lon_out[row_out] = lon_in[row_in];	lat_out[row_out] = lat_in[row_in];
-		}
-		else {	/* Must interpolate along great-circle arc from a (point row_in-1) to b (point row_in) */
-			if (new_pair) {	/* Must perform calculations on the two points */
-				L = dist_in[row_in] - dist_in[row_in-1];	/* Distance between points a and b */
-				ya = GMT_lat_swap (GMT, lat_in[row_in-1], GMT_LATSWAP_G2O);	/* Convert to geocentric */
-				yb = GMT_lat_swap (GMT, lat_in[row_in],   GMT_LATSWAP_G2O);	/* Convert to geocentric */
-			}
-			frac_to_a = gap / L;
-			frac_to_b = 1.0 - frac_to_a;
-			if (GMT->current.map.loxodrome) {	/* Linear resampling along Mercator straight line */
-				if (new_pair) GMT_set_delta_lon (lon_in[row_in-1], lon_in[row_in], d_lon);
-				a[0] = D2R * lon_in[row_in-1];	a[1] = d_log (GMT, tand (45.0 + 0.5 * ya));
-				b[0] = D2R * (lon_in[row_in-1] + d_lon);	b[1] = d_log (GMT, tand (45.0 + 0.5 * yb));
-				for (k = 0; k < 2; k++) c[k] = a[k] * frac_to_a + b[k] * frac_to_b;	/* Linear interpolation to find output point c */
-				lon_out[row_out] = c[0] * R2D;
-				lat_out[row_out] = atand (sinh (c[1]));
-				lat_out[row_out] = GMT_lat_swap (GMT, lat_out[row_out], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
-			}
-			else {	/* Spherical resampling along segment */
-				if (new_pair) {	/* Must perform calculations on the two points */
-					GMT_geo_to_cart (GMT, ya, lon_in[row_in-1], a, true);
-					GMT_geo_to_cart (GMT, yb, lon_in[row_in],   b, true);
-					total_angle_rad = d_acos (GMT_dot3v (GMT, a, b));	/* Get spherical angle from a to b in radians; this is same distance as L */
-					GMT_cross3v (GMT, a, b, P);	/* Get pole P of plane trough a and b (and center of Earth) */
-					GMT_normalize3v (GMT, P);		/* Make sure P has unit length */
-					gmt_init_rot_matrix (Rot0, P);	/* Get partial rotation matrix since no actual angle is applied yet */
-				}
-				GMT_memcpy (Rot, Rot0, 9, double);			/* Get a copy of the "0-angle" rotation matrix */
-				angle_rad = total_angle_rad * frac_to_b;		/* Angle we need to rotate from a to c */
-				gmt_load_rot_matrix (angle_rad, Rot, P);		/* Build the actual rotation matrix for this angle */
-				gmt_matrix_vect_mult (Rot, a, c);			/* Rotate from a to get c */
-				GMT_cart_to_geo (GMT, &lat_out[row_out], &lon_out[row_out], c, true);
-				lat_out[row_out] = GMT_lat_swap (GMT, lat_out[row_out], GMT_LATSWAP_O2G);	/* Convert back to geodetic */
-			}
-			minlon = MIN (lon_in[row_in-1], lon_in[row_in]);
-			maxlon = MAX (lon_in[row_in-1], lon_in[row_in]);
-			meridian = doubleAlmostEqualZero (maxlon, minlon);	/* A meridian; make sure we get right lon value */
-			if (meridian)
-				lon_out[row_out] = minlon;
-			else if (lon_out[row_out] < minlon)
-				lon_out[row_out] += 360.0;
-			else if (lon_out[row_out] > maxlon)
-				lon_out[row_out] -= 360.0;
-		}
-		last_row_in = row_in;
-	}
-	
-	/* Destroy old allocated memory and put the new one in place */
-	
-	GMT_free (GMT, lon_in);
-	GMT_free (GMT, lat_in);
-	GMT_free (GMT, dist_in);
-	*lon = lon_out;
-	*lat = lat_out;
-	return (n_out);
-}
-
-uint64_t gmt_resample_path_cartesian (struct GMT_CTRL *GMT, double **x, double **y, uint64_t n_in, double step_out, enum GMT_enum_track mode)
-{
-	/* See GMT_resample_path below for details. */
-
-	uint64_t last_row_in = 0, row_in, row_out, n_out;
-	bool new_pair;
-	double dist_out, gap, L = 0.0, frac_to_a, frac_to_b;
-	double *dist_in = NULL, *x_out = NULL, *y_out = NULL, *x_in = *x, *y_in = *y;
-
-	if (step_out < 0.0) {	/* Safety valve */
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal error: gmt_resample_path_cartesian given negative step-size\n");
-		return (EXIT_FAILURE);
-	}
-	if (mode > GMT_TRACK_SAMPLE_ADJ) {	/* Bad mode*/
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal error: gmt_resample_path_cartesian given bad mode %d\n", mode);
-		return (EXIT_FAILURE);
-	}
-	
-	if (mode < GMT_TRACK_SAMPLE_FIX) return (gmt_fix_up_path_cartesian (GMT, x, y, n_in, step_out, mode));	/* Insert extra points only */
-	
-	dist_in = GMT_dist_array (GMT, x_in, y_in, n_in, true);	/* Compute cumulative distances along line */
-	if (step_out == 0.0) step_out = (dist_in[n_in-1] - dist_in[0])/100.0;	/* If nothing is selected we get 101 points */
-	
-	/* Determine n_out, the number of output points */
-	if (mode == GMT_TRACK_SAMPLE_ADJ) {	/* Round to nearest multiples, then adjust step to match exactly */
-		n_out = lrint (dist_in[n_in-1] / step_out);
-		step_out = dist_in[n_in-1] / n_out;
-	}
-	else {	/* Stop when last multiple is reached */
-		n_out = lrint (floor (dist_in[n_in-1] / step_out));
-	}
-	n_out++;	/* Since number of points = number of segments + 1 */
-	
-	x_out = GMT_memory (GMT, NULL, n_out, double);
-	y_out = GMT_memory (GMT, NULL, n_out, double);
-	
-	x_out[0] = x_in[0];	y_out[0] = y_in[0];	/* Start at same origin */
-	for (row_in = row_out = 1; row_out < n_out; row_out++) {	/* For remaining output points */
-		dist_out = row_out * step_out;	/* The desired output distance */
-		while (row_in < n_in && dist_in[row_in] < dist_out) row_in++;	/* Wind so row points to the next input point with a distance >= dist_out */
-		gap = dist_in[row_in] - dist_out;	/* Distance to next input datapoint */
-		new_pair = (row_in > last_row_in);
-		if (GMT_IS_ZERO (gap)) {	/* Use the input point as is */
-			x_out[row_out] = x_in[row_in];	y_out[row_out] = y_in[row_in];
-		}
-		else {	/* Must interpolate along great-circle arc from a (point row_in-1) to b (point row_in) */
-			if (new_pair) L = dist_in[row_in] - dist_in[row_in-1];	/* Distance between points a and b */
-			frac_to_a = gap / L;
-			frac_to_b = 1.0 - frac_to_a;
-			x_out[row_out] = x_in[row_in-1] * frac_to_a + x_in[row_in] * frac_to_b;	/* Linear interpolation to find output point */
-			y_out[row_out] = y_in[row_in-1] * frac_to_a + y_in[row_in] * frac_to_b;	/* Linear interpolation to find output point */
-		}
-		last_row_in = row_in;
-	}
-	
-	/* Destroy old allocated memory and put the new one in place */
-	
-	GMT_free (GMT, x_in);
-	GMT_free (GMT, y_in);
-	GMT_free (GMT, dist_in);
-	*x = x_out;
-	*y = y_out;
-	return (n_out);
-}
-
-uint64_t GMT_resample_path (struct GMT_CTRL *GMT, double **x, double **y, uint64_t n_in, double step_out, enum GMT_enum_track mode)
-{
-	/* Takes pointers to a list of <n_in> x/y pairs (in degrees or Cartesian units) and computes
-	 * the distance along that path.  We then determine new coordinates at new distances that are
-	 * multiples of the desired step <step_out> which are in the unit set via GMT_init_distaz (geo)
-	 * or user Cartesian.  The new path will always contain the first input point, but anything
-	 * beyond that start depends on the mode:
-	 * mode = GMT_TRACK_FILL	: Keep input points; add intermediates if any gap exceeds step_out.
-	 * mode = GMT_TRACK_FILL_M	: Same, but traverse along meridians, then parallels between points.
-	 * mode = GMT_TRACK_FILL_P	: Same, but traverse along parallels, then meridians between points.
-	 * mode = GMT_TRACK_SAMPLE_FIX	: Resample track equidistantly; old points may be lost. Use given spacing.
-	 * mode = GMT_TRACK_SAMPLE_ADJ	: Resample track equidistantly; old points may be lost. Adjust spacing to fit tracklength exactly.
-	 * Returns the new number of points.
-	 */
-	uint64_t n_out;
-	if (GMT_is_geographic (GMT, GMT_IN))
-		n_out = gmt_resample_path_spherical (GMT, x, y, n_in, step_out, mode);
-	else
-		n_out = gmt_resample_path_cartesian (GMT, x, y, n_in, step_out, mode);
-	return (n_out);
-}
-
-int GMT_chol_dcmp (struct GMT_CTRL *GMT, double *a, double *d, double *cond, int nr, int n) {
+GMT_LONG GMT_chol_dcmp (struct GMT_CTRL *C, double *a, double *d, double *cond, GMT_LONG nr, GMT_LONG n) {
 
 	/* Given a, a symmetric positive definite matrix
 	of size n, and row dimension nr, compute a lower
@@ -1443,7 +1128,7 @@ int GMT_chol_dcmp (struct GMT_CTRL *GMT, double *a, double *d, double *cond, int
 
 	W H F Smith, 18 Feb 2000.
 */
-	int i, j, k, ik, ij, kj, kk, nrp1;
+	GMT_LONG i, j, k, ik, ij, kj, kk, nrp1;
 	double eigmax, eigmin;
 
 	nrp1 = nr + 1;
@@ -1470,7 +1155,7 @@ int GMT_chol_dcmp (struct GMT_CTRL *GMT, double *a, double *d, double *cond, int
 	return (0);
 }
 
-void GMT_chol_recover (struct GMT_CTRL *GMT, double *a, double *d, int nr, int n, int nerr, bool donly) {
+void GMT_chol_recover (struct GMT_CTRL *C, double *a, double *d, GMT_LONG nr, GMT_LONG n, GMT_LONG nerr, GMT_LONG donly) {
 
 	/* Given a, a symmetric positive definite matrix of row dimension nr,
 	and size n >= abs(nerr), one uses GMT_chol_dcmp() to attempt to find
@@ -1505,9 +1190,9 @@ void GMT_chol_recover (struct GMT_CTRL *GMT, double *a, double *d, int nr, int n
 	W H F Smith, 18 Feb 2000
 */
 
-	int kbad, i, j, ii, ij, ji, nrp1;
+	GMT_LONG kbad, i, j, ii, ij, ji, nrp1;
 
-	kbad = abs (nerr) - 1;
+	kbad = GMT_abs (nerr) - 1;
 	nrp1 = nr + 1;
 
 	for (i = 0, ii = 0; i <= kbad; i++, ii += nrp1) a[ii] = d[i];
@@ -1520,7 +1205,7 @@ void GMT_chol_recover (struct GMT_CTRL *GMT, double *a, double *d, int nr, int n
 	return;
 }
 
-void GMT_chol_solv (struct GMT_CTRL *GMT, double *a, double *x, double *y, int nr, int n) {
+void GMT_chol_solv (struct GMT_CTRL *C, double *a, double *x, double *y, GMT_LONG nr, GMT_LONG n) {
 	/* Given an n by n linear system ax = y, with a a symmetric, 
 	positive-definite matrix, y a known vector, and x an unknown
 	vector, this routine finds x, if a holds the lower-triangular
@@ -1538,7 +1223,7 @@ void GMT_chol_solv (struct GMT_CTRL *GMT, double *a, double *x, double *y, int n
 
 	W H F Smith, 18 Feb 2000
 */
-	int i, j, ij, ji, ii, nrp1;
+	GMT_LONG i, j, ij, ji, ii, nrp1;
 
 	nrp1 = nr + 1;
 

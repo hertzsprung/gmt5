@@ -1,6 +1,6 @@
 /*	$Id$
  *    Copyright (c) 1996-2012 by G. Patau
- *    Distributed under the Lesser GNU Public Licence
+ *    Distributed under the GNU Public Licence
  *    See README file for copying and redistribution conditions.
  */
 
@@ -9,11 +9,11 @@
 
 #define EPSIL 0.0001
 
-#ifndef true
-#define true 1
+#ifndef TRUE
+#define TRUE 1
 #endif
-#ifndef false
-#define false 0
+#ifndef FALSE
+#define FALSE 0
 #endif
 
 #ifndef M_PI_4
@@ -29,13 +29,13 @@ struct AXIS {
 	double str;
 	double dip;
 	double val;
-	int e;
+	GMT_LONG e;
 };
 /* val in 10**e dynes-cm */
 
 struct MOMENT {
 	double mant;
-	int exponent;
+	GMT_LONG exponent;
 };
 
 struct nodal_plane {
@@ -52,7 +52,7 @@ struct MECHANISM {
 };
 
 struct M_TENSOR {
-	int expo;
+	GMT_LONG expo;
 	double f[6];
 };
 /* mrr mtt mff mrt mrf mtf in 10**expo dynes-cm */

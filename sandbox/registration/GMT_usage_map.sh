@@ -48,8 +48,8 @@ HDF5_DISABLE_VERSION_CHECK=2
 
 if [ "X$GMTHOME" = "X" ]; then	# Running crontab and environment is not set
 	GS_LIB=/opt/local/share/ghostscript/9.10/lib
-	GMTHOME4=/Volumes/MacNutHD3/UH/RESEARCH/CVSPROJECTS/GMTdev/gmt4-dev
-	GMTHOME5=/Volumes/MacNutHD3/UH/RESEARCH/CVSPROJECTS/GMTdev/gmt5-dev
+	GMTHOME4=/Volumes/MacNutRAID/UH/RESEARCH/CVSPROJECTS/GMTdev/gmt4-dev
+	GMTHOME5=/Volumes/MacNutRAID/UH/RESEARCH/CVSPROJECTS/GMTdev/gmt5-dev
 	PATH=$GMTHOME5/trunk/build/gmt5/bin:/usr/local/bin:/opt/local/bin:$PATH
 	export PATH
 	export GS_LIB
@@ -66,7 +66,7 @@ help	Give a brief help message
 EOF
 	exit
 fi
-REGHOME4=/Volumes/MacNutHD3/UH/RESEARCH/CVSPROJECTS/GMTdev/gmtadmin/registration	# Where to do the work
+REGHOME4=/Volumes/MacNutRAID/UH/RESEARCH/CVSPROJECTS/GMTdev/gmtadmin/registration	# Where to do the work
 REGHOME5=$GMTHOME5/sandbox/registration	# Where to do the work
 
 cd $REGHOME5

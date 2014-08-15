@@ -7,4 +7,5 @@ tar:
 	chmod og+r ../gmt-sdsc.tgz
 
 place:
-	scp ../gmt-sdsc.tgz imina.soest.hawaii.edu:/export/imina2/httpd/htdocs/pwessel
+	scp ../gmt-sdsc.tgz imina.soest.hawaii.edu:/export/imina2/httpd/htdocs/pwessel/sdsc
+	scp index.html imina.soest.hawaii.edu:/export/imina2/httpd/htdocs/pwessel/sdsc

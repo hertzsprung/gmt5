@@ -1,4 +1,8 @@
 #!/bin/sh
+# I used this to prep the data sets.  We get a chunk of
+# Etopo1m topo over eastern US and then randomly sample
+# 1000 points for use in gridding.
+exit
 N=1010
 #grdcut -R80W/64W/34N/42N etopo1m.nc -Gtopo.nc
 #grdgradient topo.nc -A45 -Nt1 -Gint.nc

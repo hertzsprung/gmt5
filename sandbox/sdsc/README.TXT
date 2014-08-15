@@ -1,3 +1,6 @@
+#
+# Also see http://www.soest.hawaii.edu/pwessel/sdsc
+
 This directory was set up for the 3 test cases that demonstrate GMT
 usage that SDSC might be able to speed up using parallelization. The
 top level dir has the demonstration data sets topo.nc and topo.xyz

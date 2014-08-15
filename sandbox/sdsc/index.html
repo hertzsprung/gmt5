@@ -2,15 +2,18 @@
 <body bgcolor="#f0f0ff">
 <center><h2>GMT 5.2.0 Parallelization Case Studies</h2>
 	<h3>Paul Wessel, Dave Sandwell, Kurt Feigl</h3></center>
+	
+<h3>Overview</h3>
 We have set up the 3 test cases discussed at our August 12, 2014 meeting
 at SDSC that demonstrate GMT processing bottlenecks that SDSC might be able
 to speed up using parallelization and linear algebra optimization.<P>
 Test scripts and data demonstrating GMT use for these cases
-are available from this <a href="http://www.soest.hawaii.edu/pwessel/gmt-sdsc.tgz"> gzipped tarball</a>.
+are available from this <a href="http://www.soest.hawaii.edu/pwessel/sdsc/gmt-sdsc.tgz"> gzipped tarball</a>.
 After expanding the tarball the top-level sdsc directory contains the demonstration data sets topo.nc (a netCDF grid)
 and topo.xyz (3-column lon,lat,height ascii table), with subdirectories 1, 2 and 3 corresponding to the
 three cases.<P>
 
+<h3>GMT 5.2.0 installation</h3>
 SDSC developers must use the 5.2.0 branch of GMT, which can only
 be installed via svn:<P>
 
@@ -20,6 +23,7 @@ Follow the "Building Instructions" on the <a href="http://gmt.soest.hawaii.edu" 
 but ignore the svn command to get source from trunk since you will be
 using the branch discussed above instead.<P>
 
+<h3>The three test cases</h3>
 <OL>
 	<LI><B>Linear Algebra [Directory 1: spline.sh].</B>
 	The program greenspline.c solves the 1-, 2-, or 3-D gridding problem
@@ -60,6 +64,15 @@ using the branch discussed above instead.<P>
 	the default convergence parameters and once with tighter constraints and over-relaxation of 1.4.  The
 	two maps look fairly similar (surf.pdf).
 </OL>
+<h3>GMT and multiple cores</h3>
+GMT knows how many cores are available.  If you just type
+gmt
+it will report its splash screen and list how many cores in brackets. I.e., the first line on output for me
+today on a new Mac Pro looks like this:<P>
+GMT - The Generic Mapping Tools, Version 5.2.0_r13429 [64-bit] [24 cores]<P>
+The variable API->n_cores is available throughout the modules.
+There will also be a command-line option (probably -x<n_cores>) that can be used by the user to tell GMT how
+many cores to use (or use all).  You will find there are 
 <B>Questions:</B> Send them to <A HREF="mailto:pwessel@hawaii.edu?Subject=SDSC+GMT">Paul Wessel</A>
 <P>
 <HR><P>

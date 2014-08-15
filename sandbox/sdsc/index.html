@@ -21,7 +21,8 @@ svn checkout svn://gmtserver.soest.hawaii.edu/gmt5/branches/5.2.0 gmt5.2.0<P>
 
 Follow the "Building Instructions" on the <a href="http://gmt.soest.hawaii.edu" target="blank"> GMT wiki</a> side-bar
 but ignore the svn command to get source from trunk since you will be
-using the branch discussed above instead.<P>
+using the branch discussed above instead.  Since 5.2.0 will change with time you should do a "svn up" once in a while to
+get the latest changes.<P>
 
 <h3>The three test cases</h3>
 <OL>
@@ -45,7 +46,7 @@ using the branch discussed above instead.<P>
 	the solution, greenspline.c is presently not practical for larger data sets. Directory 1 contains
 	a demonstration script spline.sh which explores both exact and approximate fits to a test data set
 	and makes simple maps for comparison on one page (spline.pdf)<P>
-	<LI><B>Simple Parallel [Directory 2].</B>
+	<LI><B>Simple Parallel [Directory 2; filt.sh].</B>
 	The program grdfilter.c performs filtering operations in the 2-D space domain. Users can choose
 	among convolution filters (e.g., Gaussian, boxcar) or geospatial operators (e.g., median, mode).
 	Regardless of filter, the solution is obtained by visiting all desired output nodes and for each
@@ -54,7 +55,7 @@ using the branch discussed above instead.<P>
 	in the source [OpenMP is currently not active during compilation]. Directory 2 contains
 	a demonstration script filt.sh which shows both a convolution and geospatial filter operation and
 	presents a single page plot with the two filtered solutions (filt.pdf.)<P>
-	<LI><B>Finite Difference Solver [Directory 3].</B>
+	<LI><B>Finite Difference Solver [Directory 3; surf.sh].</B>
 	The program surface.c solves the Cartesian 2-D gridding problem using a continuous surface spline,
 	optionally in tension.  It does this by solving a 4th order (biharmonic) equation using finite
 	differences with a multigrid strategy.  It can handle enormous data sets and output grids. It would
@@ -65,14 +66,14 @@ using the branch discussed above instead.<P>
 	two maps look fairly similar (surf.pdf).
 </OL>
 <h3>GMT and multiple cores</h3>
-GMT knows how many cores are available.  If you just type
-gmt
+GMT knows how many cores are available.  If you just type<br>
+gmt<br>
 it will report its splash screen and list how many cores in brackets. I.e., the first line on output for me
 today on a new Mac Pro looks like this:<P>
 GMT - The Generic Mapping Tools, Version 5.2.0_r13429 [64-bit] [24 cores]<P>
 The variable API->n_cores is available throughout the modules.
-There will also be a command-line option (probably -x<n_cores>) that can be used by the user to tell GMT how
-many cores to use (or use all).  You will find there are 
+There will also be a command-line option (probably <B>-x</B><I>n_cores</I>>) that can be used by the user to tell GMT how
+many cores to use (or use all).<P>
 <B>Questions:</B> Send them to <A HREF="mailto:pwessel@hawaii.edu?Subject=SDSC+GMT">Paul Wessel</A>
 <P>
 <HR><P>

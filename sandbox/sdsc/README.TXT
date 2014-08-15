@@ -8,6 +8,8 @@ be installed via svn:
 svn checkout svn://gmtserver.soest.hawaii.edu/branches/5.2.0 gmt520
 
 Follow the "Building GMT" instructions on the gmt.soest.hawaii.edu wiki
+but ignore the svn command to get source from trunk since you will be
+using a branch instead.
 
 Case 1 [Directory 1]:
   Demonstrates use of greenspline which involves two labor-intensive

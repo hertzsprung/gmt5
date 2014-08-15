@@ -1,0 +1,67 @@
+<title>GMT 5.2.0 Parallelization Case Studies</title>
+<body bgcolor="#f0f0ff">
+<center><h2>GMT 5.2.0 Parallelization Case Studies</h2>
+	<h3>Paul Wessel, Dave Sandwell, Kurt Feigl</h3></center>
+We have set up the 3 test cases discussed at our August 12, 2014 meeting
+at SDSC that demonstrate GMT processing bottlenecks that SDSC might be able
+to speed up using parallelization and linear algebra optimization.<P>
+Test scripts and data demonstrating GMT use for these cases
+are available from this <a href="http://www.soest.hawaii.edu/pwessel/gmt-sdsc.tgz"> gzipped tarball</a>.
+After expanding the tarball the top-level sdsc directory contains the demonstration data sets topo.nc (a netCDF grid)
+and topo.xyz (3-column lon,lat,height ascii table), with subdirectories 1, 2 and 3 corresponding to the
+three cases.<P>
+
+SDSC developers must use the 5.2.0 branch of GMT, which can only
+be installed via svn:<P>
+
+svn checkout svn://gmtserver.soest.hawaii.edu/gmt5/branches/5.2.0 gmt5.2.0<P>
+
+Follow the "Building Instructions" on the <a href="http://gmt.soest.hawaii.edu" target="blank"> GMT wiki</a> side-bar
+but ignore the svn command to get source from trunk since you will be
+using the branch discussed above instead.<P>
+
+<OL>
+	<LI><B>Linear Algebra [Directory 1: spline.sh].</B>
+	The program greenspline.c solves the 1-, 2-, or 3-D gridding problem
+	exactly using Green's functions that correspond to the various splines
+	of interest (e.g., minimum curvature, splines in tension, regularized splines)
+	and geometries (Cartesian, spherical surface).  This approach to gridding is
+	discussed in <a href="http://dx.doi.org/10.1016/j.cageo.2008.08.012" target="blank"> Wessel, 2009</a>
+	and references therein.
+	Regardless of spline, there are two key tasks that are computer-intensive:
+	<UL>
+		<LI>Solving the square <B>Ax</B> = <B>b</B> linear system with the weights for each Green's function
+		<LI>Evaluate solution at all output nodes.
+	</UL>
+	The first task is either done using a Gauss-Jordan approach which yields an exact fit, or
+	we select an approximate fit by decomposing <B>A</B> via a SVD routine and then set smaller
+	eigenvalues to zero.  The second tasks involves a loop over all the Green's functions for
+	each output node.  A simple Open MP approach should work well for the second task, while the
+	first task may require more optimized solvers, e.g., BLAS/LaPack stuff. Because the slowness of
+	the solution, greenspline.c is presently not practical for larger data sets. Directory 1 contains
+	a demonstration script spline.sh which explores both exact and approximate fits to a test data set
+	and makes simple maps for comparison on one page (spline.pdf)<P>
+	<LI><B>Simple Parallel [Directory 2].</B>
+	The program grdfilter.c performs filtering operations in the 2-D space domain. Users can choose
+	among convolution filters (e.g., Gaussian, boxcar) or geospatial operators (e.g., median, mode).
+	Regardless of filter, the solution is obtained by visiting all desired output nodes and for each
+	node compute the result using all data notes inside the selected filter radius.  Again, a simple
+	Open MP approach should work well for this case, and you can see preliminary attempts at doing this
+	in the source [OpenMP is currently not active during compilation]. Directory 2 contains
+	a demonstration script filt.sh which shows both a convolution and geospatial filter operation and
+	presents a single page plot with the two filtered solutions (filt.pdf.)<P>
+	<LI><B>Finite Difference Solver [Directory 3].</B>
+	The program surface.c solves the Cartesian 2-D gridding problem using a continuous surface spline,
+	optionally in tension.  It does this by solving a 4th order (biharmonic) equation using finite
+	differences with a multigrid strategy.  It can handle enormous data sets and output grids. It would
+	be nice if we were able to use more than one core to solve these equations but we dont know how.
+	The details of this algorithm is discussed in <a href="http://dx.doi.org/10.1190/1.1442837" target="blank"> Smith and Wessel, 1990</a>.
+	Directory 3 contains a demonstration script surf.sh which grids the same data set twice: Once using
+	the default convergence parameters and once with tighter constraints and over-relaxation of 1.4.  The
+	two maps look fairly similar (surf.pdf).
+</OL>
+<B>Questions:</B> Send them to <A HREF="mailto:pwessel@hawaii.edu?Subject=SDSC+GMT">Paul Wessel</A>
+<P>
+<HR><P>
+<I>Last update August 14, 2014 by Paul Wessel</I>
+</HTML>

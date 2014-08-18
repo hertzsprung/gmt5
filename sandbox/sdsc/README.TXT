@@ -5,14 +5,14 @@ This directory was set up for the 3 test cases that demonstrate GMT
 usage that SDSC might be able to speed up using parallelization. The
 top level dir has the demonstration data sets topo.nc and topo.xyz
 
-It is assumed SDSC will be using the 5.2.0 branch of GMT which must
+It is assumed SDSC will be using the sdsc branch of GMT which must
 be installed via svn:
 
-svn checkout svn://gmtserver.soest.hawaii.edu/branches/5.2.0 gmt520
+svn checkout svn://gmtserver.soest.hawaii.edu/branches/sdsc gmt5-sdsc
 
 Follow the "Building GMT" instructions on the gmt.soest.hawaii.edu wiki
 but ignore the svn command to get source from trunk since you will be
-using a branch instead.
+using the sdsc branch instead.
 
 Case 1 [Directory 1]:
   Demonstrates use of greenspline which involves two labor-intensive

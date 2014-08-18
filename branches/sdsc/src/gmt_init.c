@@ -10310,6 +10310,7 @@ struct GMT_CTRL *New_GMT_Ctrl (char *GMT_UNUSED(session), unsigned int pad) {	/*
 	GMT_make_fnan (GMT->session.f_NaN);
 	GMT_make_dnan (GMT->session.d_NaN);
 	for (i = 0; i < 3; i++) GMT->session.no_rgb[i] = -1.0;
+	GMT->common.x.n_threads = 1;
 
 	return (GMT);
 }

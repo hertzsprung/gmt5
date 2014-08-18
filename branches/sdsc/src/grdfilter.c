@@ -785,6 +785,8 @@ int GMT_grdfilter (void *V_API, int mode, void *args)
 
 	/*---------------------------- This is the grdfilter main code ----------------------------*/
 
+	/* For Open MP you should use the GMT->common.x.n_threads variable which is set via -x<ncores> */
+	
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid\n");
 	if ((Gin = GMT_Read_Data (API, GMT_IS_GRID, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->In.file, NULL)) == NULL) {	/* Get entire grid */
 		Return (API->error);

@@ -561,10 +561,10 @@ void GMT_explain_options (struct GMT_CTRL *GMT, char *options)
 			break;
 
 		case 'y':	/* Number of threads (reassigned from -x in GMT_Option) */
-			GMT_message (GMT, "\t-x Choose the number of processors used in multi-threading.\n");
-			GMT_message (GMT, "\t   -x+a Use all available processors.\n");
-			GMT_message (GMT, "\t   -xn  Use n processors (not more than max available off course).\n");
-			GMT_message (GMT, "\t   -x-n Use (all - n) processors.\n");
+			GMT_message (GMT, "\t-x Choose number of processors to use in multi-threading.\n");
+			GMT_message (GMT, "\t   -xa Use all available processors [%u].\n", GMT->parent->n_cores);
+			GMT_message (GMT, "\t   -x<n_proc>  Use <n_proc> processors (up to max processors available).\n");
+			GMT_message (GMT, "\t   -x-<n_proc> Use (all - <n_proc>) processors.\n");
 			break;
 
 		case 'Z':	/* Vertical scaling for 3-D plots */
@@ -1289,10 +1289,10 @@ void GMT_syntax (struct GMT_CTRL *GMT, char option)
 
 		case 'x':	/* Number of threads */
 			GMT_message (GMT, "\t%s\n", GMT_x_OPT);
-			GMT_message (GMT, "\t   Control the number of processors used in multi-threading.\n");
-			GMT_message (GMT, "\t   -x+a Use all available processors.\n");
-			GMT_message (GMT, "\t   -xn Use n processors (not more than max available off course).\n");
-			GMT_message (GMT, "\t   -x-n Use (all - n) processors.\n");
+			GMT_message (GMT, "\t-x Choose number of processors to use in multi-threading.\n");
+			GMT_message (GMT, "\t   -xa Use all available processors [%u].\n", GMT->parent->n_cores);
+			GMT_message (GMT, "\t   -x<n_proc>  Use <n_proc> processors (up to max processors available).\n");
+			GMT_message (GMT, "\t   -x-<n_proc> Use (all - <n_proc>) processors.\n");
 			break;
 
 		case ':':	/* lon/lat vs lat/lon i/o option  */
@@ -1366,9 +1366,7 @@ int GMT_default_error (struct GMT_CTRL *GMT, char option)
 		case 'r': error += GMT->common.r.active == false; break;
 		case 's': error += GMT->common.s.active == false; break;
 		case 't': error += GMT->common.t.active == false; break;
-#ifdef USE_GTHREADS
 		case 'x': error += GMT->common.x.active == false; break;
-#endif
 		case ':': error += GMT->common.colon.active == false; break;
 
 		default:
@@ -2435,27 +2433,24 @@ int gmt_parse_U_option (struct GMT_CTRL *GMT, char *item) {
 	return (error);
 }
 
-#ifdef USE_GTHREADS
 int gmt_parse_x_option (struct GMT_CTRL *GMT, char *arg) {
-	/* -x+a|[-]n */
-	char *s = NULL;
+	/* -xa|[-]n */
 
-	if (!arg || !arg[0]) return (GMT_NOERROR);      /* For the time being we ignore this, but in future it may mean -x1 */
-	if (s = strstr (arg, "+a"))                     /* Use all processors */
-		GMT->common.x.n_threads = g_get_num_processors();
+	if (!arg || !arg[0]) return (GMT_NOERROR);	/* For the time being we ignore this, but in future it may mean -x1 */
+	if (arg[0] == 'a')	/* Use all available processors */
+		GMT->common.x.n_threads = GMT->parent->n_cores;
 	else
-		GMT->common.x.n_threads = atoi(arg);
+		GMT->common.x.n_threads = atoi (arg);
 
 	if (GMT->common.x.n_threads == 0)
 		GMT->common.x.n_threads = 1;
 	else if (GMT->common.x.n_threads < 0)
-		GMT->common.x.n_threads = MAX(g_get_num_processors() - GMT->common.x.n_threads, 1);		/* Max -n but at least one */
+		GMT->common.x.n_threads = MAX (GMT->parent->n_cores - GMT->common.x.n_threads, 1);	/* Max -n but at least one */
 	else
-		GMT->common.x.n_threads = MIN((int)g_get_num_processors(), GMT->common.x.n_threads);	/* No more than maximum available */
+		GMT->common.x.n_threads = MIN (GMT->parent->n_cores, GMT->common.x.n_threads);		/* No more than maximum available */
 
 	return (GMT_NOERROR);
 }
-#endif
 
 int gmt_parse_colon_option (struct GMT_CTRL *GMT, char *item) {
 	int error = 0, way, off = 0;
@@ -9967,12 +9962,10 @@ int GMT_parse_common_options (struct GMT_CTRL *GMT, char *list, char option, cha
 			}
 			break;
 
-#ifdef USE_GTHREADS
 		case 'x':
 			error += (GMT_more_than_once (GMT, GMT->common.x.active) || gmt_parse_x_option (GMT, item));
 			GMT->common.x.active = true;
 			break;
-#endif
 
 		case ':':
 			error += (GMT_more_than_once (GMT, GMT->common.colon.active) || gmt_parse_colon_option (GMT, item));

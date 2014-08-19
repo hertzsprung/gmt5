@@ -1,27 +1,27 @@
-<title>GMT 5 Parallelization Case Studies</title>
+<title>GMT 5/XSEDE Parallelization Case Studies</title>
 <body bgcolor="#f0f0ff">
-<center><h2>GMT 5 Parallelization Case Studies</h2>
+<center><h2>GMT 5/XSEDE Parallelization Case Studies</h2>
 	<h3>Paul Wessel, Dave Sandwell, Kurt Feigl</h3></center>
 	
 <h3>Overview</h3>
 We have set up the 3 test cases discussed at our August 12, 2014 meeting
-at SDSC that demonstrate GMT processing bottlenecks that SDSC might be able
+at XSEDE that demonstrate GMT processing bottlenecks that XSEDE might be able
 to speed up using parallelization and linear algebra optimization.<P>
 Test scripts and data demonstrating GMT use for these cases
-are available from this <a href="http://www.soest.hawaii.edu/pwessel/sdsc/gmt-sdsc.tgz"> gzipped tarball</a>.
-After expanding the tarball the top-level sdsc directory contains the demonstration data sets topo.nc (a netCDF grid)
+are available from this <a href="http://www.soest.hawaii.edu/pwessel/xsede/gmt-xsede.tgz"> gzipped tarball</a>.
+After expanding the tarball the top-level xsede directory contains the demonstration data sets topo.nc (a netCDF grid)
 and topo.xyz (3-column lon,lat,height ascii table), with subdirectories 1, 2 and 3 corresponding to the
 three cases.  The scripts in these subdirectories can be run as soon as GMT .has been installed<P>
 
-<h3>GMT 5 SDSC branch installation</h3>
-SDSC developers must use the SDSC branch of GMT 5, which can only
+<h3>GMT 5 XSEDE branch installation</h3>
+XSEDE developers must use the XSEDE branch of GMT 5, which can only
 be installed via svn:<P>
 
-svn checkout svn://gmtserver.soest.hawaii.edu/gmt5/branches/sdsc gmt5-sdsc<P>
+svn checkout svn://gmtserver.soest.hawaii.edu/gmt5/branches/xsede gmt5-xsede<P>
 
 Follow the "Building Instructions" on the <a href="http://gmt.soest.hawaii.edu" target="blank"> GMT wiki</a> side-bar
 but ignore the svn command to get source from trunk since you will be
-using the sdsc branch discussed above instead.  Since the sdsc branch will change with time (as we merge in bug fixes and other issues)
+using the xsede branch discussed above instead.  Since the xsede branch will change with time (as we merge in bug fixes and other issues)
 you should do a "svn up" once in a while to get the latest changes.  We will try hard to avoid stepping on the code sections you
 are working with in order to minimize conflicts.  Note that the cmake process checks for Open MP flags so presumably much of the
 machinery for setting up the environment is built in.<P>
@@ -88,7 +88,7 @@ GMT - The Generic Mapping Tools, Version 5.2.0_r13429 [64-bit] [24 cores]<P>
 There is also be a command-line option  (<B>-x</B><I>n_cores</I>>) that can be used by the user to tell a
 parallelized GMT module how many cores to use (or use all).  You will see grdfilter.c has this option.
 So when Open MP stuff has been implemented you can run the grdfilter examples by adding <B>-xa</B> (for all cores).<P>
-<B>Questions:</B> Send them to <A HREF="mailto:pwessel@hawaii.edu?Subject=SDSC+GMT">Paul Wessel</A>
+<B>Questions:</B> Send them to <A HREF="mailto:pwessel@hawaii.edu?Subject=XSEDE+GMT">Paul Wessel</A>
 <P>
 <HR><P>
 <I>Last update August 18, 2014 by Paul Wessel</I>

@@ -11,7 +11,7 @@ Test scripts and data demonstrating GMT use for these cases
 are available from this <a href="http://www.soest.hawaii.edu/pwessel/sdsc/gmt-sdsc.tgz"> gzipped tarball</a>.
 After expanding the tarball the top-level sdsc directory contains the demonstration data sets topo.nc (a netCDF grid)
 and topo.xyz (3-column lon,lat,height ascii table), with subdirectories 1, 2 and 3 corresponding to the
-three cases.<P>
+three cases.  The scripts in these subdirectories can be run as soon as GMT .has been installed<P>
 
 <h3>GMT 5 SDSC branch installation</h3>
 SDSC developers must use the SDSC branch of GMT 5, which can only
@@ -23,20 +23,21 @@ Follow the "Building Instructions" on the <a href="http://gmt.soest.hawaii.edu" 
 but ignore the svn command to get source from trunk since you will be
 using the sdsc branch discussed above instead.  Since the sdsc branch will change with time (as we merge in bug fixes and other issues)
 you should do a "svn up" once in a while to get the latest changes.  We will try hard to avoid stepping on the code sections you
-are working with in order to minimize conflicts.<P>
+are working with in order to minimize conflicts.  Note that the cmake process checks for Open MP flags so presumably much of the
+machinery for setting up the environment is built in.<P>
 
 <h3>The three test cases</h3>
 <OL>
 	<LI><B>Linear Algebra [Directory 1: spline.sh].</B>
 	The program greenspline.c solves the 1-, 2-, or 3-D gridding problem
-	exactly using Green's functions that correspond to the various splines
+	exactly by using Green's functions that correspond to the various splines
 	of interest (e.g., minimum curvature, splines in tension, regularized splines)
 	and geometries (Cartesian, spherical surface).  This approach to gridding is
 	discussed in <a href="http://dx.doi.org/10.1016/j.cageo.2008.08.012" target="blank"> Wessel, 2009</a>
 	and references therein.
 	Regardless of spline, there are two key tasks that are computer-intensive:
 	<UL>
-		<LI>Solving the square <B>Ax</B> = <B>b</B> linear system with the weights for each Green's function
+		<LI>Solving the square <B>Ax</B> = <B>b</B> linear system for the weights for each Green's function.
 		<LI>Evaluate solution at all output nodes.
 	</UL>
 	The first task is either done using a Gauss-Jordan approach which yields an exact fit, or
@@ -46,25 +47,34 @@ are working with in order to minimize conflicts.<P>
 	first task may require more optimized solvers, e.g., BLAS/LaPack stuff. Because the slowness of
 	the solution, greenspline.c is presently not practical for larger data sets. Directory 1 contains
 	a demonstration script spline.sh which explores both exact and approximate fits to a test data set
-	and makes simple maps for comparison on one page (spline.pdf)<P>
+	and makes simple maps for comparison on one page (spline.pdf). Here is a link to the man page for
+	greenspline as it appears in the trunk:
+	<a href="http://gmt.soest.hawaii.edu/doc/latest/greenspline.html" target="blank">greenspline man page</a><P>
 	<LI><B>Simple Parallel [Directory 2; filt.sh].</B>
 	The program grdfilter.c performs filtering operations in the 2-D space domain. Users can choose
 	among convolution filters (e.g., Gaussian, boxcar) or geospatial operators (e.g., median, mode).
 	Regardless of filter, the solution is obtained by visiting all desired output nodes and for each
 	node compute the result using all data notes inside the selected filter radius.  Again, a simple
-	Open MP approach should work well for this case, and you can see preliminary attempts at doing this
-	in the source [OpenMP is currently not active during compilation]. Directory 2 contains
+	Open MP approach should work well for this case. Directory 2 contains
 	a demonstration script filt.sh which shows both a convolution and geospatial filter operation and
-	presents a single page plot with the two filtered solutions (filt.pdf.)<P>
+	presents a single page plot with the two filtered solutions (filt.pdf). Here is a link to the man page for
+	grdfilter as it appears in the trunk:
+	<a href="http://gmt.soest.hawaii.edu/doc/latest/grdfilter.html" target="blank">grdfilter man page</a><P>
 	<LI><B>Finite Difference Solver [Directory 3; surf.sh].</B>
 	The program surface.c solves the Cartesian 2-D gridding problem using a continuous surface spline,
 	optionally in tension.  It does this by solving a 4th order (biharmonic) equation using finite
 	differences with a multigrid strategy.  It can handle enormous data sets and output grids. It would
-	be nice if we were able to use more than one core to solve these equations but we dont know how.
+	be nice if we were able to use more than one core to solve these equations but we don't know how.
 	The details of this algorithm is discussed in <a href="http://dx.doi.org/10.1190/1.1442837" target="blank"> Smith and Wessel, 1990</a>.
 	Directory 3 contains a demonstration script surf.sh which grids the same data set twice: Once using
 	the default convergence parameters and once with tighter constraints and over-relaxation of 1.4.  The
-	two maps look fairly similar (surf.pdf).
+	two maps look fairly similar (surf.pdf) Here is a link to the man page for
+	surface as it appears in the trunk:
+	<a href="http://gmt.soest.hawaii.edu/doc/latest/surface.html" target="blank">surface man page</a>.
+	One odd thing to note about surface is that we wrote this back in the late 1980s when the GMT grid format
+	was Fortran-ish, i.e., a collection of columns.  Now, GMT uses scanline (C) orientation hence surface ends
+	its execution with a matrix transpose. While silly, this takes only a tiny fraction of the run-time
+	and would take us lots of time and testing to recode into scanline form directly.
 </OL>
 <h3>GMT and multiple cores</h3>
 GMT knows how many cores are available.  If you just type<P>

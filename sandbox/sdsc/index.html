@@ -85,10 +85,9 @@ GMT - The Generic Mapping Tools, Version 5.2.0_r13429 [64-bit] [24 cores]<P>
 	From scripts one can obtain the number of cores via the --with-cores option, i.e.<P>
 	n_cores=`gmt --with-cores`
 <P>
-The variable API->n_cores is available throughout the modules.
-There is also be a command-line option  <B>-x</B><I>n_cores</I>>) that can be used by the user to tell a
+There is also be a command-line option  (<B>-x</B><I>n_cores</I>>) that can be used by the user to tell a
 parallelized GMT module how many cores to use (or use all).  You will see grdfilter.c has this option.
-So when OpenMP stuff has been implemented you can run the grdfilter examples by adding -xa (for all cores).<P>
+So when Open MP stuff has been implemented you can run the grdfilter examples by adding <B>-xa</B> (for all cores).<P>
 <B>Questions:</B> Send them to <A HREF="mailto:pwessel@hawaii.edu?Subject=SDSC+GMT">Paul Wessel</A>
 <P>
 <HR><P>

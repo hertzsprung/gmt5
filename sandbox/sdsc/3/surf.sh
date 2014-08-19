@@ -34,4 +34,4 @@ gmt ps2raster -Tf -P $ps
 rm -f topo_surf_1_int.nc topo_surf_2_int.nc t.cpt gmt.conf gmt.history $ps
 rm -f topo_surf_1.nc topo_surf_2.nc
 echo "surf.sh: Finished, see surf.pdf"
-open surf.pdf
+# open surf.pdf

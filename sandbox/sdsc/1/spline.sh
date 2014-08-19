@@ -34,4 +34,4 @@ gmt ps2raster -Tf -P $ps
 rm -f topo_spline_gj_int.nc topo_spline_svd_int.nc t.cpt gmt.conf gmt.history $ps
 rm -f topo_spline_gj.nc topo_spline_svd.nc
 echo "spline.sh: Finished, see spline.pdf"
-open spline.pdf
+# open spline.pdf

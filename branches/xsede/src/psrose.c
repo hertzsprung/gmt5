@@ -352,7 +352,7 @@ int GMT_psrose (void *V_API, int mode, void *args)
 	double x1, x2, y1, y2, total = 0.0, total_arc, off, max_radius, az_offset, start_angle;
 	double asize, lsize, this_az, half_bin_width, diameter, wesn[4], mean_vector, mean_resultant;
 	double *xx = NULL, *yy = NULL, *in = NULL, *sum = NULL, *azimuth = NULL;
-	double *length = NULL, *mode_direction = NULL, *mode_length = NULL, dim[7];
+	double *length = NULL, *mode_direction = NULL, *mode_length = NULL, dim[PSL_MAX_DIMS];
 
 	struct PSROSE_CTRL *Ctrl = NULL;
 	struct GMT_DATASET *Cin = NULL;
@@ -383,6 +383,7 @@ int GMT_psrose (void *V_API, int mode, void *args)
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
 	asize = GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH];
 	lsize = GMT->current.setting.font_annot[0].size * GMT->session.u2u[GMT_PT][GMT_INCH];
+	GMT_memset (dim, PSL_MAX_DIMS, double);
 
 	max_radius = GMT->common.R.wesn[XHI];
 	if (doubleAlmostEqual (GMT->common.R.wesn[YLO], -90.0))
@@ -710,6 +711,7 @@ int GMT_psrose (void *V_API, int mode, void *args)
 		dim[2] = Ctrl->M.S.v.v_width, dim[3] = Ctrl->M.S.v.h_length, dim[4] = Ctrl->M.S.v.h_width;
 		dim[5] = GMT->current.setting.map_vector_shape;
 		dim[6] = (double)Ctrl->M.S.v.status;
+		dim[7] = (double)Ctrl->M.S.v.v_kind[0];	dim[8] = (double)Ctrl->M.S.v.v_kind[1];
 		if (Ctrl->M.S.v.status & GMT_VEC_OUTLINE2) GMT_setpen (GMT, &Ctrl->W.pen[1]);
 		if (Ctrl->M.S.v.status & GMT_VEC_FILL2) GMT_setfill (GMT, &Ctrl->M.S.v.fill, true);       /* Use fill structure */
 		for (this_mode = 0; this_mode < n_modes; this_mode++) {

@@ -2120,17 +2120,13 @@ void gmt_map_annotate (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, dou
 					else
 						trim = remove[GMT_Y];
 				}
-<<<<<<< .working
 				if (label_c && label_c[i] && label_c[i][0])
 					strncpy (label, label_c[i], GMT_LEN256);
 				else
 					GMT_get_annot_label (GMT, tval[i], label, do_minutes, do_seconds, !trim, lonlat, is_world_save);
 				gmt_label_trim (label, trim);
-				gmt_map_symbol_ew (GMT, PSL, val[i], label, w, e, annot, k, form);
-=======
 				shift = gmt_shift_gridline (GMT, val[i], GMT_Y);
 				gmt_map_symbol_ew (GMT, PSL, val[i]+shift, label, w, e, annot, k, form);
->>>>>>> .merge-right.r13472
 			}
 			if (ny) GMT_free (GMT, val);
 			if (label_c) {
@@ -3070,7 +3066,7 @@ void gmt_draw_dir_rose (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struct GMT_M
 	}
 	else {			/* Plain North arrow w/circle */
 		sincosd (angle, &s, &c);
-		GMT_memset (x, PSL_MAX_DIMS, double);
+		GMT_memset (x, 8, double);
 		x[0] = x[1] = x[4] = 0.0, x[2] = -0.25 * mr->size, x[3] = -x[2];
 		y[0] = -0.5 * mr->size, y[1] = -y[0], y[2] = y[3] = 0.0; y[4] = y[1] + GMT->current.setting.map_annot_offset[0];
 		GMT_rotate2D (GMT, x, y, 5, mr->x0, mr->y0, angle, xp, yp);	/* Coordinate transformation and placement of the 4 labels */

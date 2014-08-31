@@ -558,7 +558,8 @@ int GMT_pspolar (void *V_API, int mode, void *args)
 			GMT_setpen (GMT, &Ctrl->W.pen);
 			sincosd (azS, &si, &co);
 			if (Ctrl->S2.vector) {
-				double dim[7];
+				double dim[PSL_MAX_DIMS];
+				GMT_memset (dim, PSL_MAX_DIMS, double);
 				dim[0] = plot_x + Ctrl->S2.size*si; dim[1] = plot_y + Ctrl->S2.size*co;
 				dim[2] = Ctrl->S2.width; dim[3] = Ctrl->S2.length; dim[4] = Ctrl->S2.head;
 				dim[5] = GMT->current.setting.map_vector_shape; dim[6] = GMT_VEC_END | GMT_VEC_FILL;

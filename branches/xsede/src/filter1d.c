@@ -44,7 +44,7 @@
 
 #include "gmt_dev.h"
 
-#define GMT_PROG_OPTIONS "->Vabdfghio" GMT_OPT("HMm")
+#define GMT_PROG_OPTIONS "-:>Vabdfghio" GMT_OPT("HMm")
 
 /* Control structure for filter1d */
 
@@ -177,8 +177,8 @@ int GMT_filter1d_usage (struct GMTAPI_CTRL *API, int level)
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: filter1d [<table>] -F<type><width>[<mode>] [-D<increment>] [-E] [-I<ignore_val>]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-L<lack_width>] [-N<t_col>] [-Q<q_factor>] [-S<symmetry>] [-T<t_min>/<t_max>/<t_inc>[+]]\n");
-	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s]\n\t[%s] [%s]\n\t[%s]\n\n",
-		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT);
+	GMT_Message (API, GMT_TIME_NONE, "\t[%s] [%s] [%s] [%s]\n\t[%s]\n\t[%s] [%s]\n\t[%s] [%s]\n\n",
+		GMT_V_OPT, GMT_b_OPT, GMT_d_OPT, GMT_f_OPT, GMT_g_OPT, GMT_h_OPT, GMT_i_OPT, GMT_o_OPT, GMT_colon_OPT);
 
 	if (level == GMT_SYNOPSIS) return (EXIT_FAILURE);
 
@@ -221,7 +221,7 @@ int GMT_filter1d_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   then no output will be given at this point [Default does not check Symmetry].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-T Make evenly spaced output timesteps from <t_min> to <t_max> by <t_inc> [Default uses input times].\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append + to <t_inc> to indicate number of t-values to produce instead.\n");
-	GMT_Option (API, "V,bi,bo,d,f,g,h,i,o,.");
+	GMT_Option (API, "V,bi,bo,d,f,g,h,i,o,:,.");
 	
 	return (EXIT_FAILURE);
 }
@@ -261,7 +261,6 @@ int GMT_filter1d_parse (struct GMT_CTRL *GMT, struct FILTER1D_CTRL *Ctrl, struct
 				if (opt->arg[0] && strchr ("BbCcGgMmPpLlUuFf", opt->arg[0])) {	/* OK filter code */
 					Ctrl->F.filter = opt->arg[0];
 					Ctrl->F.width = atof (&opt->arg[1]);
-					n_errors += GMT_check_condition (GMT, Ctrl->F.width <= 0.0, "Syntax error -F option: Filterwidth must be positive\n");
 					switch (Ctrl->F.filter) {	/* Get some futher info from some filters */
 						case 'P':
 						case 'p':
@@ -280,6 +279,7 @@ int GMT_filter1d_parse (struct GMT_CTRL *GMT, struct FILTER1D_CTRL *Ctrl, struct
 							}
 							break;
 					}
+					n_errors += GMT_check_condition (GMT, Ctrl->F.file == NULL && Ctrl->F.width <= 0.0, "Syntax error -F option: Filterwidth must be positive\n");
 				}
 				else {
 					GMT_Report (API, GMT_MSG_NORMAL, "Syntax error -F option: Correct syntax: -FX<width>, X one of BbCcGgMmPpFflLuU\n");
@@ -399,10 +399,6 @@ int set_up_filter (struct GMT_CTRL *GMT, struct FILTER1D_INFO *F)
 
 	if (F->filter_type == FILTER1D_CUSTOM) {	/* Use coefficients we read from file */
 		F->n_f_wts = F->Fin->n_records;
-		while (F->n_f_wts <= F->n_work_alloc) {	/* Need more memory */
-			F->n_work_alloc <<= 1;
-			allocate_more_work_space (GMT, F);
-		}
 		F->f_wt = GMT_memory (GMT, F->f_wt, F->n_f_wts, double);
 		GMT_memcpy (F->f_wt, F->Fin->table[0]->segment[0]->coord[GMT_X], F->n_f_wts, double);
 		for (i = 0, w_sum = 0.0; i < F->n_f_wts; ++i) w_sum += F->f_wt[i];
@@ -816,6 +812,7 @@ int GMT_filter1d (void *V_API, int mode, void *args)
 {
 	uint64_t col, tbl, row, seg;
 	int error;
+	unsigned int save_col;
 
 	double last_time, new_time, in;
 	
@@ -908,9 +905,12 @@ int GMT_filter1d (void *V_API, int mode, void *args)
 		case 'f':
 			F.filter_type = FILTER1D_CUSTOM;
 			if ((error = GMT_set_cols (GMT, GMT_IN, 1))) Return (error, "Error in GMT_set_cols");
+			save_col = GMT->current.io.col_type[GMT_IN][GMT_X];	/* Save col type in case it is a time column */
+			GMT->current.io.col_type[GMT_IN][GMT_X] = GMT_IS_FLOAT;	/* Always read the weights as floats */
 			if ((F.Fin = GMT_Read_Data (API, GMT_IS_DATASET, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, Ctrl->F.file, NULL)) == NULL) {
 				Return (API->error, "Error Reading input\n");
 			}
+			GMT->current.io.col_type[GMT_IN][GMT_X] = save_col;	/* Reset this col type to whatever it actually is */
 			GMT_Report (API, GMT_MSG_VERBOSE, "Read %" PRIu64 " filter weights from file %s.\n", F.Fin->n_records, Ctrl->F.file);
 			break;
 	}

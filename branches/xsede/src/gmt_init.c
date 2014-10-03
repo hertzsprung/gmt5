@@ -69,7 +69,7 @@
 
 #define GMT_more_than_once(GMT,active) (GMT_check_condition (GMT, active, "Warning: Option -%c given more than once\n", option))
 
-#define GMT_COMPAT_INFO "Please see " GMT_TRAC_WIKI "doc/5.1.0/GMT_Docs.html#new-features-in-gmt-5 for more information.\n"
+#define GMT_COMPAT_INFO "Please see " GMT_TRAC_WIKI "doc/" GMT_PACKAGE_VERSION "/GMT_Docs.html#new-features-in-gmt-5 for more information.\n"
 
 #define GMT_COMPAT_WARN GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: parameter %s is deprecated.\n" GMT_COMPAT_INFO, GMT_keywords[case_val])
 #define GMT_COMPAT_CHANGE(new_P) GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: parameter %s is deprecated. Use %s instead.\n" GMT_COMPAT_INFO, GMT_keywords[case_val], new_P)
@@ -971,19 +971,22 @@ void GMT_dist_syntax (struct GMT_CTRL *GMT, char option, char *string)
 void GMT_vector_syntax (struct GMT_CTRL *GMT, unsigned int mode)
 {	/* Use mode to control which options are displayed */
 	GMT_message (GMT, "\t   Append length of vector head, with optional modifiers:\n");
+	GMT_message (GMT, "\t   [Left and right are defined by looking from start to end of vector]\n");
 	GMT_message (GMT, "\t     +a<angle> to set angle of the vector head apex [30]\n");
 	GMT_message (GMT, "\t     +b to place a vector head at the beginning of the vector [none].\n");
 	GMT_message (GMT, "\t       Append t for terminal, c for circle, or a for arrow [Default].\n");
+	GMT_message (GMT, "\t       For arrow, append l|r to only draw left or right side of this head [both sides].\n");
 	GMT_message (GMT, "\t     +e to place a vector head at the end of the vector [none].\n");
 	GMT_message (GMT, "\t       Append t for terminal, c for circle, or a for arrow [Default].\n");
+	GMT_message (GMT, "\t       For arrow, append l|r to only draw left or right side of this head [both sides].\n");
 	if (mode & 8) GMT_message (GMT, "\t     +g<fill> to set head fill or use - to turn off fill [default fill].\n");
 	if (mode & 1) GMT_message (GMT, "\t     +j<just> to justify vector at (b)eginning [default], (e)nd, or (c)enter.\n");
-	GMT_message (GMT, "\t     +l to only draw left side of vector head [both].\n");
+	GMT_message (GMT, "\t     +l to only draw left side of all specified vector heads [both sides].\n");
 	GMT_message (GMT, "\t     +n<norm> to shrink attributes if vector length < <norm> [none].\n");
 	GMT_message (GMT, "\t     +o[<plon/plat>] sets pole [north pole] for great or small circles; only give length via input.\n");
 	if (mode & 4) GMT_message (GMT, "\t     +p[-][<pen>] to set pen attributes, prepend - to turn off head outlines [default pen and outline].\n");
 	GMT_message (GMT, "\t     +q if start and stop opening angle is given instead of (azimuth,length) on input.\n");
-	GMT_message (GMT, "\t     +r to only draw right side of vector head [both].\n");
+	GMT_message (GMT, "\t     +r to only draw right side of all specified vector heads [both sides].\n");
 	if (mode & 2) GMT_message (GMT, "\t     +s if (x,y) coordinates of tip is given instead of (azimuth,length) on input.\n");
 }
 
@@ -1644,7 +1647,7 @@ int gmt_parse_R_option (struct GMT_CTRL *GMT, char *item) {
 			GMT->common.R.wesn[XLO] = 0.0, GMT->common.R.wesn[XHI] = 360.0;
 			GMT->current.io.geo.range = GMT_IS_0_TO_P360_RANGE;
 		}
-		else {			/* -Rd is shorthand for -R-180/+180/-90/90 */
+		else {			/* -Rd is shorthand for -R-180/180/-90/90 */
 			GMT->common.R.wesn[XLO] = -180.0, GMT->common.R.wesn[XHI] = 180.0;
 			GMT->current.io.geo.range = GMT_IS_M180_TO_P180_RANGE;
 		}
@@ -1671,6 +1674,8 @@ int gmt_parse_R_option (struct GMT_CTRL *GMT, char *item) {
 		}
 		if (!inv_project) {	/* Got grid with degrees */
 			GMT_memcpy (GMT->common.R.wesn, GMT->current.io.grd_info.grd.wesn, 4, double);
+#if 0
+			/* Next bit removed because of issue #592. Should not change the boundaries of the grid */
 			if (GMT->current.io.grd_info.grd.registration == GMT_GRID_NODE_REG && doubleAlmostEqualZero (GMT->common.R.wesn[XHI] - GMT->common.R.wesn[XLO] + GMT->current.io.grd_info.grd.inc[GMT_X], 360.0)) {
 				/* Geographic grid with gridline registration that does not contain the repeating column, but is still 360 range */
 				GMT_Report (GMT->parent, GMT_MSG_DEBUG,
@@ -1680,6 +1685,7 @@ int gmt_parse_R_option (struct GMT_CTRL *GMT, char *item) {
 				else
 					GMT->common.R.wesn[XLO] = GMT->common.R.wesn[XHI] - 360.0;
 			}
+#endif
 			GMT->common.R.wesn[ZLO] = GMT->current.io.grd_info.grd.z_min;	GMT->common.R.wesn[ZHI] = GMT->current.io.grd_info.grd.z_max;
 			GMT->current.io.grd_info.active = true;
 			return (GMT_NOERROR);
@@ -2964,7 +2970,7 @@ int GMT_loaddefaults (struct GMT_CTRL *GMT, char *file)
 	fclose (fp);
 	gmt_verify_encodings (GMT);
 
-	if (error) GMT_message (GMT, "Warning: %d conversion errors in file %s!\n", error, file);
+	if (error) GMT_message (GMT, "Warning: %d GMT Defaults conversion errors in file %s!\n", error, file);
 
 	return (GMT_NOERROR);
 }
@@ -2989,13 +2995,14 @@ unsigned int GMT_setdefaults (struct GMT_CTRL *GMT, struct GMT_OPTION *options)
 			param = opt->arg;
 		else {					/* This must be value */
 			n_errors += gmt_setparameter (GMT, param, opt->arg);
-			param = NULL;
+			param = NULL;	/* Get ready for next parameter */
 		}
 	}
 
-	n_errors += (param != NULL);	/* param should be NULL */
+	if (param != NULL)	/* param should be NULL unless no value were added */
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Last GMT Defaults parameter from command options had no value\n");
 
-	if (n_errors) GMT_Report (GMT->parent, GMT_MSG_NORMAL, " %d conversion errors\n", n_errors);
+	if (n_errors) GMT_Report (GMT->parent, GMT_MSG_NORMAL, " %d GMT Defaults conversion errors from command options\n", n_errors);
 	return (n_errors);
 }
 
@@ -4646,28 +4653,6 @@ unsigned int gmt_setparameter (struct GMT_CTRL *GMT, char *keyword, char *value)
 				GMT->session.GSHHGDIR = strdup (value);
 			}
 			break;
-		case GMTCASE_DIR_TMP:
-			if (*value) {
-				/* Replace the session temp dir from the environment, if any */
-				if (GMT->session.TMPDIR) {
-					if ((strcmp (GMT->session.TMPDIR, value) == 0))
-						break; /* stop here if string in place is equal */
-					free (GMT->session.TMPDIR);
-				}
-				GMT->session.TMPDIR = strdup (value);
-			}
-			break;
-		case GMTCASE_DIR_USER:
-			if (*value) {
-				/* Replace the session user dir from the environment, if any */
-				if (GMT->session.USERDIR) {
-					if ((strcmp (GMT->session.USERDIR, value) == 0))
-						break; /* stop here if string in place is equal */
-					free (GMT->session.USERDIR);
-				}
-				GMT->session.USERDIR = strdup (value);
-			}
-			break;
 
 		/* TIME GROUP */
 
@@ -4757,6 +4742,8 @@ unsigned int gmt_setparameter (struct GMT_CTRL *GMT, char *keyword, char *value)
 		case GMTCASE_Y_AXIS_LENGTH:
 			/* Setting ignored: x- and/or y scale are required inputs on -J option */
 		case GMTCASE_COLOR_IMAGE:
+		case GMTCASE_DIR_TMP:
+		case GMTCASE_DIR_USER:
 			GMT_COMPAT_WARN;
 			/* Setting ignored, now always adobe image */
 			if (!GMT_compat_check (GMT, 4))	error = gmt_badvalreport (GMT, keyword);
@@ -5689,12 +5676,6 @@ char *GMT_putparameter (struct GMT_CTRL *GMT, char *keyword)
 			GMT_shore_adjust_res (GMT, 'c');
 			strncpy (value, (GMT->session.GSHHGDIR) ? GMT->session.GSHHGDIR : "", GMT_LEN256);
 			break;
-		case GMTCASE_DIR_TMP:
-			strncpy (value, (GMT->session.TMPDIR) ? GMT->session.TMPDIR : "", GMT_LEN256);
-			break;
-		case GMTCASE_DIR_USER:
-			strncpy (value, (GMT->session.USERDIR) ? GMT->session.USERDIR : "", GMT_LEN256);
-			break;
 
 		/* TIME GROUP */
 
@@ -5830,7 +5811,7 @@ int GMT_savedefaults (struct GMT_CTRL *GMT, char *file)
 	fclose (fpi);
 	if (fpo != GMT->session.std[GMT_OUT]) fclose (fpo);
 
-	if (error) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: %d conversion errors while writing gmt.conf\n", error);
+	if (error) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: %d GMT Defaults conversion errors while writing gmt.conf\n", error);
 
 	return (0);
 }
@@ -6728,6 +6709,12 @@ void GMT_end_module (struct GMT_CTRL *GMT, struct GMT_CTRL *Ccopy)
 	GMT->current.setting.verbose = V_level;	/* Pass the currently selected level back up */
 
 	/* Now fix things that were allocated separately */
+	if (Ccopy->session.n_user_media) {
+		GMT->session.n_user_media = Ccopy->session.n_user_media;
+		GMT->session.user_media = GMT_memory (GMT, NULL, Ccopy->session.n_user_media, struct GMT_MEDIA);
+		GMT->session.user_media_name = GMT_memory (GMT, NULL, Ccopy->session.n_user_media, char *);
+		for (i = 0; i < Ccopy->session.n_user_media; i++) GMT->session.user_media_name[i] = strdup (Ccopy->session.user_media_name[i]);
+	}
 
 	gmt_free_user_media (Ccopy);		/* Free user-specified media formats */
 
@@ -7484,7 +7471,7 @@ int gmt4_parse_B_option (struct GMT_CTRL *GMT, char *in) {
 
 		if (out3[0] == '\0') continue;	/* No intervals */
 		GMT->current.map.frame.set = true;	/* Got here so we are setting intervals */
-		
+
 		/* Parse the annotation/tick info string */
 		if (out3[0] == 'c')
 			error += gmt_decode_tinfo (GMT, i, 'c', out3, &GMT->current.map.frame.axis[i]);
@@ -7778,7 +7765,7 @@ int gmt5_parse_B_option (struct GMT_CTRL *GMT, char *in) {
 
 		if (orig_string[0] == '\0') continue;	/* Got nothing */
 		GMT->current.map.frame.set = true;	/* Got here so we are setting intervals */
-		
+
 		GMT_memset (string, GMT_BUFSIZ, char);
 		strcpy (string, orig_string);	/* Make a copy of string as it gets messed with below */
 		if (string[0] == 'c')		/* Special custom annotation information given via file */
@@ -8299,7 +8286,7 @@ bool gmt_parse_J_option (struct GMT_CTRL *GMT, char *args)
 		case GMT_LAMB_AZ_EQ:	/* Lambert Azimuthal Equal-Area */
 		case GMT_GNOMONIC:	/* Gnomonic */
 			/* -Ja|A or e|e or g|G <lon0>/<lat0>[/<horizon>]/<scale>|<width> */
-	   
+
 			if (project == GMT_AZ_EQDIST)	/* Initialize default horizons */
 				strcpy (txt_c, "180");
 			else if (project == GMT_GNOMONIC)
@@ -8701,22 +8688,34 @@ int GMT_parse_vector (struct GMT_CTRL *GMT, char symbol, char *text, struct GMT_
 			case 'b':	/* Vector head at beginning point */
 				S->v.status |= GMT_VEC_BEGIN;
 				switch (p[1]) {
+					case 'a': S->v.v_kind[0] = GMT_VEC_ARROW;	/* Explicitly selected arrow head, must check for other modifiers */
+		  	  			if (p[2] == 'l') S->v.status |= GMT_VEC_BEGIN_L;	/* Only left  half of head requested */
+		  	  			else if (p[2] == 'r') S->v.status |= GMT_VEC_BEGIN_R;	/* Only right half of head requested */
+						break;
 					case 'c': S->v.v_kind[0] = GMT_VEC_CIRCLE;	break;
 					case 't': S->v.v_kind[0] = GMT_VEC_TERMINAL;	break;
-					default: S->v.v_kind[0] = GMT_VEC_ARROW;	break;
+			  	 	case 'l': S->v.v_kind[0] = GMT_VEC_ARROW;	S->v.status |= GMT_VEC_BEGIN_L;	break;	/* Only left  half of head requested */
+			  	  	case 'r': S->v.v_kind[0] = GMT_VEC_ARROW;	S->v.status |= GMT_VEC_BEGIN_R;	break;	/* Only right half of head requested */
+					default:  S->v.v_kind[0] = GMT_VEC_ARROW;	break;
 				}
 				break;
 			case 'e':	/* Vector head at end point */
 				S->v.status |= GMT_VEC_END;
 				switch (p[1]) {
+					case 'a': S->v.v_kind[1] = GMT_VEC_ARROW;	/* Explicitly selected arrow head, must check for other modifiers */
+		  	  			if (p[2] == 'l') S->v.status |= GMT_VEC_END_L;		/* Only left  half of head requested */
+		  	  			else if (p[2] == 'r') S->v.status |= GMT_VEC_END_R;	/* Only right half of head requested */
+						break;
 					case 'c': S->v.v_kind[1] = GMT_VEC_CIRCLE;	break;
 					case 't': S->v.v_kind[1] = GMT_VEC_TERMINAL;	break;
-					default: S->v.v_kind[1] = GMT_VEC_ARROW;	break;
+			  	 	case 'l': S->v.v_kind[1] = GMT_VEC_ARROW;	S->v.status |= GMT_VEC_END_L;	break;	/* Only left  half of head requested */
+			  	  	case 'r': S->v.v_kind[1] = GMT_VEC_ARROW;	S->v.status |= GMT_VEC_END_R;	break;	/* Only right half of head requested */
+					default:  S->v.v_kind[1] = GMT_VEC_ARROW;	break;
 				}
 				break;
-			case 'l': S->v.status |= GMT_VEC_LEFT;		break;	/* Vector head on left half only */
+			case 'l': S->v.status |= (GMT_VEC_BEGIN_L + GMT_VEC_END_L);	break;	/* Obsolete modifier for left halfs at active heads */
 			case 'q': S->v.status |= GMT_VEC_ANGLES;	break;	/* Expect start,stop angle rather than length in input */
-			case 'r': S->v.status |= GMT_VEC_RIGHT;		break;	/* Vector head on right half only */
+			case 'r': S->v.status |= (GMT_VEC_BEGIN_R + GMT_VEC_END_R);	break;	/* Obsolete modifier for right halfs at active heads */
 			case 's': S->v.status |= GMT_VEC_JUST_S;	break;	/* Input (angle,length) are vector end point (x,y) instead */
 			case 'j':	/* Vector justification */
 				if (symbol == 'm') {
@@ -9553,6 +9552,9 @@ int GMT_parse_symbol_option (struct GMT_CTRL *GMT, char *text, struct GMT_SYMBOL
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error -S option: Unrecognized symbol type %c\n", symbol_type);
 			break;
 	}
+	if (p->n_nondim > GMT_MAX_SYMBOL_COLS) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Internal Error.  Must change GMT_MAX_SYMBOL_COLS\n");
+	}
 	if (p->given_size_x == 0.0 && check) {
 		p->read_size = true;
 		p->n_required++;
@@ -9567,8 +9569,6 @@ int GMT_parse_symbol_option (struct GMT_CTRL *GMT, char *text, struct GMT_SYMBOL
 		p->base = (GMT->current.proj.xyz_projection[GMT_Y] == GMT_LOG10) ? 1.0 : 0.0;
 	else if (p->symbol == GMT_SYMBOL_COLUMN)
 		p->base = (GMT->current.proj.xyz_projection[GMT_Z] == GMT_LOG10) ? 1.0 : 0.0;
-
-	// if (p->convert_size) s[0] = '+';	/* Restore what we temporarily removed */
 
 	return (decode_error);
 }

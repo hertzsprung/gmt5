@@ -101,31 +101,37 @@ struct GMT_FRONTLINE {		/* A sub-symbol for symbols along a front */
 /* Vector symbols */
 
 /* Note: If changes are made to GMT_enum_vecattr you must also change pslib.h: PSL_enum_vecattr */
+
 enum GMT_enum_vecattr {
 	GMT_VEC_ARROW		= 0,		/* Default head symbol is arrow */
 	GMT_VEC_TERMINAL	= 1,		/* Cross-bar normal to vector */
 	GMT_VEC_CIRCLE		= 2,		/* Circle as vector head */
-	GMT_VEC_LEFT		= 1,		/* Only draw left half of vector head */
-	GMT_VEC_RIGHT		= 2,		/* Only draw right half of vector head */
-	GMT_VEC_BEGIN		= 4,		/* Place vector head at beginning of vector */
-	GMT_VEC_END		= 8,		/* Place vector head at end of vector */
-	GMT_VEC_HEADS		= 12,		/* Mask for either head end */
+	GMT_VEC_BEGIN		= 1,		/* Place vector head at beginning of vector. Add GMT_VEC_BEGIN_L for left only, GMT_VEC_BEGIN_R for right only */
+	GMT_VEC_END		= 2,		/* Place vector head at end of vector.  Add GMT_VEC_END_L for left only, and GMT_VEC_END_R for right only */
+	GMT_VEC_HEADS		= 3,		/* Mask for either head end */
+	GMT_VEC_BEGIN_L		= 4,		/* Left-half head at beginning */
+	GMT_VEC_BEGIN_R		= 8,		/* Right-half head at beginning */
+	GMT_VEC_END_L		= 16,		/* Left-half head at end */
+	GMT_VEC_END_R		= 32,		/* Right-half head at end */
 	GMT_VEC_JUST_B		= 0,		/* Align vector beginning at (x,y) */
-	GMT_VEC_JUST_C		= 16,		/* Align vector center at (x,y) */
-	GMT_VEC_JUST_E		= 32,		/* Align vector end at (x,y) */
-	GMT_VEC_JUST_S		= 64,		/* Align vector center at (x,y) */
-	GMT_VEC_ANGLES		= 128,		/* Got start/stop angles instead of az, length */
-	GMT_VEC_POLE		= 256,		/* Got pole of small/great circle */
-	GMT_VEC_OUTLINE		= 512,		/* Draw vector head outline using default pen */
-	GMT_VEC_OUTLINE2	= 1024,		/* Draw vector head outline using supplied v_pen */
-	GMT_VEC_FILL		= 2048,		/* Fill vector head using default fill */
-	GMT_VEC_FILL2		= 4096,		/* Fill vector head using supplied v_fill) */
-	GMT_VEC_MARC90		= 8192,		/* Matharc only: if angles subtend 90, draw straight angle symbol */
-	GMT_VEC_SCALE		= 32768};	/* Not needed in pslib: If not set we determine the required inch-to-degree scale */
+	GMT_VEC_JUST_C		= 64,		/* Align vector center at (x,y) */
+	GMT_VEC_JUST_E		= 128,		/* Align vector end at (x,y) */
+	GMT_VEC_JUST_S		= 256,		/* Align vector center at (x,y) */
+	GMT_VEC_ANGLES		= 512,		/* Got start/stop angles instead of az, length */
+	GMT_VEC_POLE		= 1024,		/* Got pole of small/great circle */
+	GMT_VEC_OUTLINE		= 2048,		/* Draw vector head outline using default pen */
+	GMT_VEC_OUTLINE2	= 4096,		/* Draw vector head outline using supplied v_pen */
+	GMT_VEC_FILL		= 8192,		/* Fill vector head using default fill */
+	GMT_VEC_FILL2		= 16384,	/* Fill vector head using supplied v_fill) */
+	GMT_VEC_MARC90		= 32768,	/* Matharc only: if angles subtend 90, draw straight angle symbol */
+	GMT_VEC_SCALE		= 65536};	/* Not needed in pslib: If not set we determine the required inch-to-degree scale */
 
-#define GMT_vec_justify(status) ((status>>4)&3)			/* Return justification as 0-3 */
-#define GMT_vec_head(status) ((status>>2)&3)			/* Return head selection as 0-3 */
-#define GMT_vec_side(status) ((status&3) ? 2*(status&3)-3 : 0)	/* Return side selection as 0,-1,+1 */
+/* Make sure the next three macros are in sync with any changes to GMT_enum_vecattr above! */
+
+#define GMT_vec_justify(status) ((status>>6)&3)			/* Return justification as 0-3 */
+#define GMT_vec_head(status) ((status)&3)			/* Return head selection as 0-3 */
+#define GMT_vec_side(status,head) (((status>>(2+2*head))&3) ? 2*((status>>(2+2*head))&3)-3 : 0)	/* Return side selection for this head as 0,-1,+1 */
+
 #define GMT_vec_outline(status) ((status&GMT_VEC_OUTLINE) || (status&GMT_VEC_OUTLINE2))	/* Return true if outline is currently selected */
 #define GMT_vec_fill(status) ((status&GMT_VEC_FILL) || (status&GMT_VEC_FILL2))		/* Return true if fill is currently selected */
 
@@ -145,6 +151,8 @@ struct GMT_VECT_ATTR {
 	struct GMT_PEN pen;	/* Pen for outline of head */
 	struct GMT_FILL fill;	/* Fill for head [USED IN PSROSE] */
 };
+
+#define GMT_MAX_SYMBOL_COLS	6	/* Maximum number of columns required for the most complicated symbol input */
 
 struct GMT_SYMBOL {
 	/* Voodoo: If next line is not the first member in this struct, psxy -Sl<size>/Text will have corrupt 'Text'
@@ -168,7 +176,7 @@ struct GMT_SYMBOL {
 	struct GMT_FONT font;	/* Font to use for the -Sl symbol */
 	unsigned int convert_angles;	/* If 2, convert azimuth to angle on map, 1 special case for -JX, 0 plain case */
 	unsigned int n_nondim;	/* Number of columns that has angles or km (and not dimensions with units) */
-	unsigned int nondim_col[6];	/* Which columns has angles or km for this symbol */
+	unsigned int nondim_col[GMT_MAX_SYMBOL_COLS];	/* Which columns has angles or km for this symbol */
 
 	/* These apply to bar|column symbols */
 

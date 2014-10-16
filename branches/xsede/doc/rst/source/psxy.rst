@@ -20,7 +20,8 @@ Synopsis
 [ **-C**\ *cptfile* ] [ **-D**\ *dx*/*dy* ]
 [ **-E**\ [**x**\ [**+**]\ \|\ **y**\ [**+**]\ \|\ **X**\ \|\ **Y**][**n**][*cap*][/[\ **-**\ \|\ **+**]\ *pen*] ] 
 [ **-G**\ *fill* ] [ **-I**\ *intens* ] 
-[ **-Jz**\ \|\ **Z**\ *parameters* ] [ **-K** ] [ **-L**\ [**+xl**\ \|\ **r**\ \|\ *x0*][**+yl**\ \|\ **r**\ \|\ *y0*][**+p**\ *pen*] ] 
+[ **-Jz**\ \|\ **Z**\ *parameters* ] [ **-K** ]
+[ **-L**\ [**+b**\ \|\ *d**\ \|\ **D**][**+xl**\ \|\ **r**\ \|\ *x0*][**+yl**\ \|\ **r**\ \|\ *y0*][**+p**\ *pen*] ] 
 [ **-N**\ [**c**\ \|\ **r**] ] 
 [ **-O** ] [ **-P** ] 
 [ **-S**\ [*symbol*][\ *size*\ [**u**] ]
@@ -135,7 +136,7 @@ Optional Arguments
 
 .. include:: PSXY_OPTs_EX.rst_
 
-**-L**\ [**+xl**\ \|\ **r**\ \|\ *x0*][**+yl**\ \|\ **r**\ \|\ *y0*][**+p**\ *pen*] |loc_OPT-L|
+**-L**\ [**+b**\ \|\ *d**\ \|\ **D**][**+xl**\ \|\ **r**\ \|\ *x0*][**+yl**\ \|\ **r**\ \|\ *y0*][**+p**\ *pen*] |loc_OPT-L|
     With no arguments we force closed polygons: connect the endpoints of the line-segment(s) and
     draw polygons. Also, in concert with **-C** and any **-Z** settings in
     the headers will use the implied color for polygon fill [Default is
@@ -253,6 +254,20 @@ linear map, use
    ::
 
     gmt psxy misc.d -R0/100/-50/100 -JX6i -S -Ccpt -B20 > map.ps
+
+If you need to place vectors on a plot you can choose among
+straight Cartesian vectors, math circular vectors, or geo-vectors (these
+form small or great circles on the Earth).  These can have optional heads at either
+end, and heads may be the traditional arrow, a circle, or a terminal cross-line.
+To place a few vectors with
+a circle at the start location and an arrow head at the end, try
+
+   ::
+
+    gmt psxy -R0/50/-50/50 -JX6i -Sv0.15i+bc+ea -Gyellow -W0.5p -Baf << EOF > map.ps
+    10 10 45 2i
+    30 -20 0 1.5i
+    EOF
 
 Segment Header Parsing
 ----------------------

@@ -100,6 +100,7 @@ int GMT_grdcut_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Option (API, "R");
 	GMT_Message (API, GMT_TIME_NONE, "\t   The WESN you specify must be within the WESN of the input grid.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   If in doubt, run grdinfo first and check range of old file.\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Alternatively, see -N below.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\n\tOPTIONS:\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Allow grid to be extended if new -R exceeds existing boundaries.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Append value to initialize nodes outside current region [Default is NaN].\n");
@@ -474,9 +475,9 @@ int GMT_grdcut (void *V_API, int mode, void *args)
 		if (!outside[side]) continue;
 		extend++;
 		if (Ctrl->N.active)
-			GMT_Report (API, GMT_MSG_NORMAL, "Requested subset exceeds data domain on the %s side - nodes in the extra area will be initialized to %g\n", name[type][side], Ctrl->N.value);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Requested subset exceeds data domain on the %s side - nodes in the extra area will be initialized to %g\n", name[type][side], Ctrl->N.value);
 		else
-			GMT_Report (API, GMT_MSG_NORMAL, "Warning: Requested subset exceeds data domain on the %s side - truncated to match grid bounds\n", name[type][side]);
+			GMT_Report (API, GMT_MSG_VERBOSE, "Warning: Requested subset exceeds data domain on the %s side - truncated to match grid bounds\n", name[type][side]);
 	}
 
 	/* Make sure output grid is kosher */

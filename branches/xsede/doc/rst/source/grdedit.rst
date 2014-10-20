@@ -15,7 +15,8 @@ Synopsis
 
 **grdedit** *grid* [ **-A** ]
 [ **-D**\ *xname*/*yname*/*zname*/*scale*/*offset*/*invalid*/*title*/*remark* ]
-[ **-E** ]
+[ **-E**\ [**a**\ \|\ **h**\ \|\ **l**\ \|\ **r**\ \|\ **t**\ \|\ **v**] ]
+[ **-G**\ *outgrid* ]
 [ **-J**\ *parameters* ]
 [ **-N**\ *table* ]
 [ |SYN_OPT-R| ]
@@ -38,8 +39,8 @@ any]. As an option, global, geographical grids (with 360 degrees
 longitude range) can be rotated in the east-west direction, and
 individual nodal values can be replaced from a table of *x*, *y*, *z*
 values. **grdedit** only operates on files containing a grdheader. Note:
-If it is important to retain the original data you should work on a copy
-of that file. 
+If it is important to retain the original data you should use **-G**
+to save the modified grid to a new file. 
 
 Required Arguments
 ------------------
@@ -59,9 +60,20 @@ Optional Arguments
 
 .. include:: explain_-D_cap.rst_
 
-**-E**
-    Transpose the grid and exchange the *x* and *y* information.
-    Incompatible with the other options.
+**-E**\ [**a**\ \|\ **h**\ \|\ **l**\ \|\ **r**\ \|\ **t**\ \|\ **v**]
+    Transform the grid in one of six ways and (for **l**\ \|\ **r**\ \|\ **t**)
+    interchange the *x* and *y* information:
+    (1) **-Ea** will rotate the grid around 180 degrees,
+    (2) **-Eh** will flip the grid horizontally (left-to-right),
+    (3) **-El** will rotate the grid 90 degrees counter-clockwise (left),
+    (4) **-Er** will rotate the grid 90 degrees clockwise (right),
+    (5) **-Et** will transpose the grid [Default],
+    (6) **-Ev** will flip the grid vertically (to-to-bottom),
+    Incompatible with the other options (except **-G**).
+
+**-G**\ *outgrid*
+    Normally, grdedit will overwrite the existing grid with the modified grid.
+    Use **-G** to write the modified grid to the file *outgrid* instead.
 
 .. |Add_-J| replace:: Use the **-J** syntax to save the georeferencing info as CF-1 compliant
     metadata in netCDF grids. This metadata will be reconized by GDAL.
@@ -142,6 +154,13 @@ this information, run
    ::
 
     gmt grdedit junk.nc -fg
+
+To rotate the grid oblique.nc 90 degrees counter-clockwise and write out
+the rotated grid to a new file, run
+
+   ::
+
+    gmt grdedit oblique.nc -El -Goblique_rot.nc
 
 See Also
 --------

@@ -15,8 +15,9 @@ Synopsis
 
 **grdflexure** *topogrd* **-D**\ *rm*/*rl*\ [/*ri*]\ /*rw* **-E**\ *Te*\ [**u**] **-G**\ *outgrid*
 [ **-Cp**\ *poisson* ] [ **-Cy**\ *Young* ] [ **-F**\ *nu_a*\ [/*h_a*/*nu_m*] ]
+[ **-L**\ *list* ]
 **-N**\ [**f**\ \|\ **q**\ \|\ **s**\ \|\ *nx*/*ny*][**+a**\ \|\ **d**\ \|\ **h**\ \|\ **l**][**+e**\ \|\ **n**\ \|\ **m**][**+t**\ *width*][**+w**\ [*suffix*]][\ **+z**\ [**p**]]
-[ **-S**\ *beta* ] [ **-T**\ *t0*\ [/*t1*/*dt*\ \|\ *n*]\ [**+l**] ]
+[ **-S**\ *beta* ] [ **-T**\ *t0*\ [**u**]\ [/*t1*\ [**u**]/*dt*\ [**u**]\ \|\ *n*]\ [**+l**] ]
 [ |SYN_OPT-V| ]
 [ **-W**\ *wd*] [ **-Z**\ *zm*]
 [ **-fg** ]
@@ -74,17 +75,25 @@ Optional Arguments
 
 .. include:: ../../explain_fft.rst_
 
+**-L**\ *list*
+    Write the names of all grids that were created to the text file *list*.
+    Requires **-T**.
+
+**-M**\ *tm*
+    Set the Maxwell time *tm* for the viscoelastic model.
+
 **-S**\ *beta*
     Specify a starved moat fraction in the 0-1 range, where 1 means the moat is fully
     filled with material of density *ri* while 0 means it is only filled with
     material of density *rw* (i.e., just water) [1].
 
-**-T**\ *t0*\ [/*t1*/*dt*\ \|\ *n*]\ [**+l**]
-    Specify *start*, *stop*, and time increment (*dt*) for sequence of calculations
+**-T**\ *t0*\ [**u**]\ [/*t1*\ [**u**]/*dt*\ [**u**]\ \|\ *n*]\ [**+l**]
+    Specify *t0*, *t1*, and time increment (*dt*) for sequence of calculations
     [Default is one step, with no time dependency].  For a single specific time, just
-    give *start* time. The unit is years; append **k** for kyr and **M** for Myr.
+    give start time *t0*. The unit is years; append **k** for kyr and **M** for Myr.
     For a logarithmic time scale, append **+l** and specify *n* steps instead of *dt*.
-    Alternatively, give a file with the desired times in the first column.
+    Alternatively, give a file with the desired times in the first column (these times
+    may have individual units appended, otherwise we assume year).
     We then write a separate grid file for each time step.
 
 **-W**\ *wd*

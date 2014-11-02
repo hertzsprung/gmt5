@@ -18,8 +18,8 @@ Synopsis
 |SYN_OPT-R|
 [ **-A**\ [*out*/*in*\ ] ] [ **-Cc**\|\ **d**\ \|\ **g**\ \|\ **p** ] [ **-D**\ [*unit*\ ] ]
 [ **-E** ] [ **-F**\ [*flattening*] ] [ **-G**\ *grdfile* ] [ **-L**\ [*cut*] ]
-[ **-N**\ *norm* ] [ **-Q**\ *bmode*/*qmode* ] [ **-S**\ *scale* ]
-[ **-T**\ [**l**]\ *t0*\ [/*t1*/*dt*] ] ] [ **-Z**\ *level* ]
+[ **-M**\ *list* ] [ **-N**\ *norm* ] [ **-Q**\ *bmode*/*qmode* ] [ **-S**\ *scale* ]
+[ **-T**\ *t0*\ [**u**]\ [/*t1*\ [**u**]/*dt*\ [**u**]\ \|\ *n*]\ [**+l**] ] [ **-Z**\ *level* ]
 [ |SYN_OPT-V| ]
 [ |SYN_OPT-bi| ]
 [ **-fg** ]
@@ -86,6 +86,10 @@ Optional Arguments
     List area, volume, and mean height for each seamount; NO grid is created.
     Optionally, append the noise-floor cutoff level below which we ignore area and volume [0].
 
+**-M**\ *list*
+    Write the names of all grids that were created to the text file *list*.
+    Requires **-T**.
+
 **-N**\ *norm*
     Normalize grid so maximum grid height equals *norm*.
 
@@ -99,12 +103,13 @@ Optional Arguments
 **-S**\ *scale*
     Sets optional scale factor for radii [1].
 
-**-T**\ [**l**]\ *start*/*stop*/*dt*
-    Specify *start*, *stop*, and time increment (*dt*) for sequence of calculations
+**-T**\ *t0*\ [**u**]\ [/*t1*\ [**u**]/*dt*\ [**u**]\ \|\ *n*]\ [**+l**]
+    Specify *t0*, *t1*, and time increment (*dt*) for sequence of calculations
     [Default is one step, with no time dependency].  For a single specific time, just
-    give *start*. The default unit is year; append **k** for kyr and **M** for Myr.
-    For a logarithmic time scale, use **-Tl** and specify *n* steps instead of *dt*.
-    We then write a separate grid file for each time step.
+    give start time *t0*. The unit is years; append **k** for kyr and **M** for Myr.
+    For a logarithmic time scale, append **+l** and specify *n* steps instead of *dt*.
+    Alternatively, give a file with the desired times in the first column (these times
+    may have individual units appended, otherwise we assume year).
 
 **-Z**\ *level*
     Set the background depth [0].

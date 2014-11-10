@@ -343,6 +343,17 @@ affect the current state of parameters such as line and fill attributes.
     GothicBBB-Medium-EUC-H, and 38 = GothicBBB-Medium-EUC-V. If *fontnr*
     is outside this range, it is reset to 0.
 
+**long PSL_setfontdims** (**struct PSL_CTRL** *\*P*, **double** *supsub*,
+**double** *scaps*, **double** *sup*, **double** *sdown*)
+
+    Changes the settings for a variety of relative font sizes and shifts
+    pertaining to sub-scripts, super-scripts, and small caps.  Default
+    settings are given in brackets.  Here, *supsub* sets the relative size
+    of sub- and super-scripts [0.58], *scaps* sets the relative size of
+    small caps [0.8], *sup* indicates the upward baseline shift for placement
+    of super-scripts [0.33], while *sdown* sets the downward baseline shift
+    for sub-scripts [0.33].
+
 **long PSL_setformat** (**struct PSL_CTRL** *\*P*, **long** *n_decimals*)
 
     Sets the number of decimals to be used when writing color or gray
@@ -452,7 +463,8 @@ set prior to calling these functions; see CHANGING SETTINGS above.
     be PSL_MOVE + PSL_STROKE (3). The line is
     drawn using the current pen attributes. Add PSL_CLOSE
     (8) to *type* to close the first and last point
-    by the PostScript operators.
+    by the PostScript operators; this is done automatically if the
+    first and last point are equal.
 
 **long PSL_plotpoint** (**struct PSL_CTRL** *\*P*, **double** *x*,
 **double** *y*, **long** *type*)

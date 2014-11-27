@@ -815,12 +815,12 @@ void GMT_label_syntax (struct GMT_CTRL *GMT, unsigned int indent, unsigned int k
 		GMT_message (GMT, "%s   N Use current file number / segment number (starting at 0/0).\n", pad);
 		GMT_message (GMT, "%s   x Like h, but us headers in file with crossing lines instead.\n", pad);
 	}
-	GMT_message (GMT, "%s +n<dx>[/<dy>] to nudge label along line (+N for along x/y axis).\n", pad);
+	GMT_message (GMT, "%s +n<dx>[/<dy>] to nudge label along line (+N for along x/y axis); ignored with +v.\n", pad);
 	GMT_message (GMT, "%s +o to use rounded rectangular text box [Default is rectangular].\n", pad);
 	GMT_message (GMT, "%s +p[<pen>] draw outline of textbox  [Default is no outline].\n", pad);
 	GMT_message (GMT, "%s   Optionally append a pen [Default is default pen].\n", pad);
 	GMT_message (GMT, "%s +r<rmin> skips labels where radius of curvature < <rmin> [0].\n", pad);
-	GMT_message (GMT, "%s +t[<file>] saves (x y label) to <file> [%s_labels.txt].\n", pad, type[kind]);
+	GMT_message (GMT, "%s +t[<file>] saves (x y label) to <file> [%s_labels.txt].\n", pad, type[kind%2]);
 	GMT_message (GMT, "%s   use +T to save (x y angle label) instead\n", pad);
 	GMT_message (GMT, "%s +u<unit> to append unit to all labels.\n", pad);
 	if (kind == 0) GMT_message (GMT, "%s  If z is appended we use the z-unit from the grdfile [no unit].\n", pad);
@@ -1667,7 +1667,7 @@ int gmt_parse_R_option (struct GMT_CTRL *GMT, char *item) {
 	for (i = 0; i < length; i++) if (item[i] == '/') n_slash++;
 
 	strncpy (GMT->common.R.string, item, GMT_LEN256);	/* Verbatim copy */
-	
+
 	if (strchr ("LCRlcr", item[0]) && strchr ("TMBtmb", item[1])) {	/* Extended -R option using coordinate codes and grid increments */
 		char X[2][GMT_LEN64] = {"", ""}, code[3] = {""};
 		double xdim, ydim, orig[2];
@@ -3394,30 +3394,56 @@ int gmt5_decode_wesnz (struct GMT_CTRL *GMT, const char *in, bool check) {
 	return (error);
 }
 
+void gmt_reset_colformats (struct GMT_CTRL *GMT)
+{
+	unsigned int i;
+	for (i = 0; i < GMT_MAX_COLUMNS; i++) if (GMT->current.io.o_format[i]) {
+		free (GMT->current.io.o_format[i]);
+		GMT->current.io.o_format[i] = NULL;
+	}
+}
+
 /*! . */
 void gmt_parse_format_float_out (struct GMT_CTRL *GMT, char *value) {
 
-	unsigned int pos = 0, col = 0, start = 0, stop = 0, k, error = 0;
-	char fmt[GMT_LEN64] = {""}, *p = NULL;
-	/* Look for multiple comma-separated format statements of type [<cols>:]<format> */
-	while ((GMT_strtok (value, ",", &pos, fmt))) {
-		if ((p = strchr (fmt, ':'))) {	/* Must decode which columns */
-			if (strchr (fmt, '-'))	/* Range of columns given. e.g., 7-9 */
-				sscanf (fmt, "%d-%d", &start, &stop);
-			else if (isdigit ((int)fmt[0]))	/* Just a single column, e.g., 3 */
-				start = stop = atoi (fmt);
-			else				/* Something bad */
-				error++;
-			p++;	/* Move to format */
-			for (k = start; k <= stop; k++, col++) {
-				if (GMT->current.io.o_format[k]) free (GMT->current.io.o_format[k]);
-				GMT->current.io.o_format[k] = strdup (p);
+	unsigned int pos = 0, col = 0, k;
+	char fmt[GMT_LEN64] = {""};
+	strncpy (GMT->current.setting.format_float_out_orig, value, GMT_LEN256);
+	if (strchr (value, ',')) {
+		unsigned int start = 0, stop = 0, error = 0;
+		char *p = NULL;
+		/* Look for multiple comma-separated format statements of type [<cols>:]<format>.
+		 * Last format also becomes the default for unspecified columns */
+		gmt_reset_colformats (GMT);	/* Wipe previous settings */
+		while ((GMT_strtok (value, ",", &pos, fmt))) {
+			if ((p = strchr (fmt, ':'))) {	/* Must decode which columns */
+				if (strchr (fmt, '-'))	/* Range of columns given. e.g., 7-9 */
+					sscanf (fmt, "%d-%d", &start, &stop);
+				else if (isdigit ((int)fmt[0]))	/* Just a single column, e.g., 3 */
+					start = stop = atoi (fmt);
+				else				/* Something bad */
+					error++;
+				p++;	/* Move to format */
+				for (k = start; k <= stop; k++)
+					GMT->current.io.o_format[k] = strdup (p);
+				if (stop > col) col = stop;	/* Retain last column set */
 			}
 		}
-		else {	/* No columns, set the default format */
-			/* Last format without cols also becomes the default for unspecified columns */
-			strncpy (GMT->current.setting.format_float_out, fmt, GMT_LEN64);
-		}
+		strncpy (GMT->current.setting.format_float_out, GMT->current.io.o_format[col], GMT_LEN64);
+	}
+	else if (strchr (value, ' ')) {
+		/* Look for N space-separated format statements of type <format1> <format2> <format3> ...
+		 * and let these apply to the first N output columns.
+		 * Last format also becomes the default for unspecified columns. */
+		gmt_reset_colformats (GMT);	/* Wipe previous settings */
+		k = 0;
+		while ((GMT_strtok (value, " ", &pos, fmt)))
+			GMT->current.io.o_format[k++] = strdup (fmt);
+		strncpy (GMT->current.setting.format_float_out, GMT->current.io.o_format[k-1], GMT_LEN64);
+	}
+	else {	/* No columns, set the default format */
+		gmt_reset_colformats (GMT);	/* Wipe previous settings */
+		strncpy (GMT->current.setting.format_float_out, value, GMT_LEN64);
 	}
 }
 
@@ -4955,7 +4981,7 @@ char *GMT_putparameter (struct GMT_CTRL *GMT, char *keyword)
 				GMT_COMPAT_WARN;
 			else { error = gmt_badvalreport (GMT, keyword); break; }	/* Not recognized so give error message */
 		case GMTCASE_FORMAT_FLOAT_OUT:
-			strncpy (value, GMT->current.setting.format_float_out, GMT_LEN256);
+			strncpy (value, GMT->current.setting.format_float_out_orig, GMT_LEN256);
 			break;
 		case GMTCASE_FORMAT_FLOAT_MAP:
 			strncpy (value, GMT->current.setting.format_float_map, GMT_LEN256);
@@ -5556,7 +5582,7 @@ char *GMT_putparameter (struct GMT_CTRL *GMT, char *keyword)
 			else
 				sprintf (value, "%" PRIu64, GMT->current.setting.n_bin_header_cols);
 			break;
-			
+
 		case GMTCASE_IO_SEGMENT_MARKER:
 			value[0] = '\0';
 			if (GMT->current.setting.io_seg_marker[GMT_OUT] != GMT->current.setting.io_seg_marker[GMT_IN]) {
@@ -6501,7 +6527,9 @@ int gmt_get_history (struct GMT_CTRL *GMT)
 
 	/* If current directory is writable, use it; else use the home directory */
 
-	getcwd (cwd, GMT_BUFSIZ);
+	if (getcwd (cwd, GMT_BUFSIZ) == NULL) {
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Warning: Unable to determine current working directory.\n");		
+	}
 	if (GMT->session.TMPDIR)			/* Isolation mode: Use GMT->session.TMPDIR/gmt.history */
 		sprintf (hfile, "%s/gmt.history", GMT->session.TMPDIR);
 	else if (!access (cwd, W_OK))		/* Current directory is writable */
@@ -6582,7 +6610,9 @@ int gmt_put_history (struct GMT_CTRL *GMT)
 
 	/* If current directory is writable, use it; else use the home directory */
 
-	getcwd (cwd, GMT_BUFSIZ);
+	if (getcwd (cwd, GMT_BUFSIZ) == NULL) {
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Warning: Unable to determine current working directory.\n");
+	}
 	if (GMT->session.TMPDIR)			/* Isolation mode: Use GMT->session.TMPDIR/gmt.history */
 		sprintf (hfile, "%s/gmt.history", GMT->session.TMPDIR);
 	else if (!access (cwd, W_OK))	/* Current directory is writable */
@@ -6660,10 +6690,7 @@ void GMT_end (struct GMT_CTRL *GMT)
 		free (GMT->init.history[i]);
 		GMT->init.history[i] = NULL;
 	}
-	for (i = 0; i < GMT_MAX_COLUMNS; i++) if (GMT->current.io.o_format[i]) {
-		free (GMT->current.io.o_format[i]);
-		GMT->current.io.o_format[i] = NULL;
-	}
+	gmt_reset_colformats (GMT);	/* Wipe settings */
 	for (i = 0; i < GMT->common.a.n_aspatial; i++) if (GMT->common.a.name[i]) {
 		free (GMT->common.a.name[i]);
 		GMT->common.a.name[i] = NULL;
@@ -6827,10 +6854,7 @@ void GMT_end_module (struct GMT_CTRL *GMT, struct GMT_CTRL *Ccopy) {
 
 	GMT_free_ogr (GMT, &(GMT->current.io.OGR), 1);	/* Free up the GMT/OGR structure, if used */
 	GMT_free_tmp_arrays (GMT);			/* Free emp memory for vector io or processing */
-	for (i = 0; i < GMT_MAX_COLUMNS; i++) if (GMT->current.io.o_format[i]) {
-		free (GMT->current.io.o_format[i]);
-		GMT->current.io.o_format[i] = NULL;
-	}
+	gmt_reset_colformats (GMT);			/* Wipe previous settings */
 
 	GMT_fft_cleanup (GMT); /* Clean FFT resources */
 
@@ -8707,7 +8731,7 @@ bool gmt_parse_J_option (struct GMT_CTRL *GMT, char *args) {
 				error += gmt_scale_or_width (GMT, args, &GMT->current.proj.pars[1]);
 			}
 			else {
-				n = sscanf (args, "%[^/]/%s", txt_a, txt_b); 
+				n = sscanf (args, "%[^/]/%s", txt_a, txt_b);
 				GMT->current.proj.pars[0] = atof (txt_a);
 				switch (args[0]) {
 					case '-':	/* Enforce Southern hemisphere convention for y */
@@ -10621,7 +10645,7 @@ struct GMT_CTRL *GMT_begin (struct GMTAPI_CTRL *API, char *session, unsigned int
 	/* 1. We read a multisegment header
 	   2. The -g option is set which will create gaps and thus multiple segments
 	 */
-		
+
 	/* Initialize the output and plot format machinery for ddd:mm:ss[.xxx] strings from the default format strings.
 	 * While this is also done in the default parameter loop it is possible that when a decimal plain format has been selected
 	 * the format_float_out string has not yet been processed.  We clear that up by processing again here. */

@@ -56,7 +56,7 @@ struct GRD2CPT_CTRL {
 		unsigned int mode;
 		double value;
 	} A;
-	struct C {	/* -C<cpt> */
+	struct C {	/* -C<cpt> or -C<color1>,<color2>[,<color3>,...] */
 		bool active;
 		char *file;
 	} C;
@@ -338,7 +338,7 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 	int signed_levels, error = 0;
 	size_t n_alloc = GMT_TINY_CHUNK;
 
-	char CPT_file[GMT_BUFSIZ] = {""}, format[GMT_BUFSIZ] = {""}, *file = NULL, *l = NULL, **grdfile = NULL;
+	char format[GMT_BUFSIZ] = {""}, *l = NULL, **grdfile = NULL;
 
 	double *z = NULL, wesn[4], mean, sd;
 
@@ -373,8 +373,6 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 
 	/*---------------------------- This is the grd2cpt main code ----------------------------*/
 
-	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid(s)\n");
-
 	if (Ctrl->C.active) {
 		if ((l = strstr (Ctrl->C.file, ".cpt"))) *l = 0;	/* Strip off .cpt if used */
 	}
@@ -383,18 +381,16 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 		Ctrl->C.file = strdup ("rainbow");
 	}
 
-	error += GMT_check_condition (GMT, !GMT_getsharepath (GMT, "cpt", Ctrl->C.file, ".cpt", CPT_file, R_OK), "Error: Cannot find colortable %s\n", Ctrl->C.file);
-	if (error) Return (GMT_RUNTIME_ERROR);	/* Bail on run-time errors */
-
 	if (!Ctrl->E.active) Ctrl->E.levels = (Ctrl->S.n_levels > 0) ? Ctrl->S.n_levels : GRD2CPT_N_LEVELS;	/* Default number of levels */
 	if (Ctrl->M.active) cpt_flags |= GMT_CPT_NO_BNF;		/* bit 0 controls if BFN is determined by parameters */
 	if (Ctrl->D.mode == 2) cpt_flags |= GMT_CPT_EXTEND_BNF;		/* bit 1 controls if BF will be set to equal bottom/top rgb value */
 
-	file = CPT_file;
-	if ((Pin = GMT_Read_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, file, NULL)) == NULL) {
+	if ((Pin = GMT_Read_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, cpt_flags, NULL, Ctrl->C.file, NULL)) == NULL) {
 		Return (API->error);
 	}
 	if (Ctrl->G.active) Pin = GMT_truncate_cpt (GMT, Pin, Ctrl->G.z_low, Ctrl->G.z_high);	/* Possibly truncate the CPT */
+
+	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input grid(s)\n");
 
 	GMT_memset (wesn, 4, double);
 	if (GMT->common.R.active) GMT_memcpy (wesn, GMT->common.R.wesn, 4, double);	/* Subset */
@@ -481,7 +477,8 @@ int GMT_grd2cpt (void *V_API, int mode, void *args)
 	sd /= ngood;
 	sd = sqrt (sd - mean * mean);
 	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
-		sprintf (format, "Mean and S.D. of data are %s %s\n", GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
+		sprintf (format, "Mean and S.D. of data are %s %s\n",
+		         GMT->current.setting.format_float_out, GMT->current.setting.format_float_out);
 		GMT_Report (API, GMT_MSG_VERBOSE, format, mean, sd);
 	}
 

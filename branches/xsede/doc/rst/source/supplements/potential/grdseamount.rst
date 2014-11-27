@@ -79,8 +79,10 @@ Optional Arguments
 **-G**\ *grdfile*
     Specify the name of the output grid file; see GRID FILE FORMATS below).
     If **-T** is set then *grdfile* must be a filename template that contains
-    a floating point format (C syntax) and we use the corresponding time
-    (in units specified in **-T**) to generate the individual file names.
+    a floating point format (C syntax).  If the filename template also contains
+    either %s (for unit name) or %c (for unit letter) then we use the corresponding time
+    (in units specified in **-T**) to generate the individual file names, otherwise
+    we use time in years with no unit.
 
 **-L**\ [*cut*]
     List area, volume, and mean height for each seamount; NO grid is created.
@@ -109,7 +111,9 @@ Optional Arguments
     give start time *t0*. The unit is years; append **k** for kyr and **M** for Myr.
     For a logarithmic time scale, append **+l** and specify *n* steps instead of *dt*.
     Alternatively, give a file with the desired times in the first column (these times
-    may have individual units appended, otherwise we assume year).
+    may have individual units appended, otherwise we assume year).  Note that the grid
+    for *t0* (if a range is given) is not written as it is zero and marks the start of
+    the building history.
 
 **-Z**\ *level*
     Set the background depth [0].
@@ -142,10 +146,22 @@ Optional Arguments
 Examples
 --------
 
-To be added.
+To compute the incremental loads from two elliptical, truncated Gaussian seamounts being constructed
+from 3 Ma to 2 Ma and 2.8 M to 1.9 Ma using a linear volumetric production rate,
+and output an incremental grid every 0.1 Myr from 3 Ma to 1.9 Ma, we can try:
+
+::
+
+    cat << EOF > t.txt
+    #lon lat azimuth, semi-major, semi-minor, height tstart tend
+    0	0	-20	120	60	5000	3.0M	2M
+    50	80	-40	110	50	4000	2.8M	21.9M
+    EOF
+    gmt grdseamount -Rk-1024/1022/-1122/924 -I2000 -Gsmt_%3.1f_%s.nc t.txt -T3M/1.9M/0.1M -Qi/l -Dk -E -F0.2 -Cg -Ml.lis
 
 See Also
 --------
 
 :doc:`gmt.conf </gmt.conf>`, :doc:`gmt </gmt>`,
-:doc:`grdmath </grdmath>`, :doc:`gravfft`
+:doc:`grdmath </grdmath>`, :doc:`gravfft </supplements/potential/gravfft>`,
+:doc:`gmtflexure </supplements/potential/gmtflexure>`

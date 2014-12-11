@@ -3,7 +3,7 @@
 #               $Id$
 #
 # Purpose:      Make DVD-res Quicktime movie of NY to Miami flight
-# GMT progs:    gmt gmtset, gmt gmtmath, gmt psbasemap, gmt pstext, gmt psxy, gmt ps2raster
+# GMT progs:    gmt gmtset, gmt gmtmath, gmt psbasemap, gmt pstext, gmt psxy, gmt psconvert
 # Unix progs:   awk, mkdir, rm, mv, echo, qt_export, cat
 # Note:         Run with any argument to build movie; otherwise 1st frame is plotted only.
 #
@@ -42,13 +42,14 @@ while read lon lat dist; do
 		gmt_cleanup .gmt
 		gmt_abort "${0}: First frame plotted to ${name}.ps"
 	fi
-	gmt ps2raster $$.ps -Tt -E${dpi}
+	gmt psconvert $$.ps -Tt -E${dpi}
 	mv $$.tif frames/${file}.tif
         echo "Frame ${file} completed"
 	frame=`gmt_set_framenext ${frame}`
 done < $$.path.d
 if [ $# -eq 0 ]; then
 	echo "anim_04.sh: Made ${frame} frames at 480x720 pixels placed in subdirectory frames"
+#	cat $$/anim_0_123456.tiff | ffmpeg -f image2pipe -c:v mjpeg -i - ${name}_movie.m4v
 #	qt_export $$/anim_0_123456.tiff --video=h263,24,100, ${name}_movie.m4v
 fi
 # 4. Clean up temporary files

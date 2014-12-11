@@ -104,14 +104,51 @@ if (OPENMP_FOUND AND NOT GMT_OPENMP)
 	message (STATUS "User variable GMT_OPENMP not set: disabling OpenMP.")
 endif (OPENMP_FOUND AND NOT GMT_OPENMP)
 
-find_package (Threads)
+if (WIN32)
+	# find pthreads-win32
+	find_path (PTHREADS_INCLUDE_DIR pthread.h
+		HINTS ${PTHREADS_WIN32_ROOT}
+		PATH_SUFFIXES include)
+	find_library(PTHREADS_WIN32_LIBRARY
+		NAMES pthreadVC2
+		HINTS ${PTHREADS_WIN32_ROOT}
+		PATH_SUFFIXES lib)
+	if (PTHREADS_INCLUDE_DIR AND PTHREADS_WIN32_LIBRARY)
+		set (Threads_FOUND TRUE)
+		set (CMAKE_THREAD_LIBS_INIT ${PTHREADS_WIN32_LIBRARY})
+		mark_as_advanced (
+			CMAKE_THREAD_LIBS_INIT
+			PTHREADS_INCLUDE_DIR
+			PTHREADS_WIN32_LIBRARY)
+		message (STATUS "Found pthreads-win32: ${PTHREADS_WIN32_LIBRARY}")
+	endif (PTHREADS_INCLUDE_DIR AND PTHREADS_WIN32_LIBRARY)
+else (WIN32)
+	# find pthreads
+  set (CMAKE_THREAD_PREFER_PTHREAD TRUE)
+  find_package (Threads)
+endif (WIN32)
 
-find_package(GLIB COMPONENTS gio gobject gthread)
-#if (GLIB_FOUND)
-	set (HAVE_GLIB TRUE CACHE INTERNAL "System has GLIB")
-	include_directories (${GLIB_INCLUDE_DIR})
-	list (APPEND GMT_OPTIONAL_LIBRARIES ${GLIB_LIBRARY})
-#endif (GLIB_FOUND)
+# build pthreads example
+if (Threads_FOUND)
+	set (HAVE_PTHREAD TRUE CACHE INTERNAL "System has pthread.h")
+	add_executable (pthreads_example pthreads_example.c)
+	include_directories(${PTHREADS_INCLUDE_DIR})
+	target_link_libraries(pthreads_example ${CMAKE_THREAD_LIBS_INIT})
+endif (Threads_FOUND)
+
+find_package(GLIB COMPONENTS gthread)
+if (GLIB_FOUND AND GMT_USE_THREADS)
+	set (HAVE_GLIB_GTHREAD TRUE CACHE INTERNAL "System has GLIB component gthread")
+	include_directories (${GLIB_INCLUDE_DIRS})
+	list (APPEND GMT_OPTIONAL_LIBRARIES ${GLIB_LIBRARIES})
+endif (GLIB_FOUND AND GMT_USE_THREADS)
+if (GLIB_FOUND AND NOT GMT_USE_THREADS)
+	set (HAVE_GLIB_GTHREAD FALSE CACHE INTERNAL "User disabled threads")
+	message (STATUS "User variable GMT_USE_THREADS not set: disabling GThread.")
+endif (GLIB_FOUND AND NOT GMT_USE_THREADS)
+if (GMT_USE_THREADS AND NOT GLIB_FOUND)
+	message (FATAL_ERROR "User variable GMT_USE_THREADS set but GLIB component gthread not found.")
+endif (GMT_USE_THREADS AND NOT GLIB_FOUND)
 
 # check for math and POSIX functions
 include(ConfigureChecks)
@@ -153,9 +190,9 @@ set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
 	gmtspatial.c gmtconnect.c gmtvector.c gmtwhich.c grd2cpt.c grd2rgb.c
 	grd2xyz.c grdblend.c grdclip.c grdcut.c grdedit.c grdfft.c grdfilter.c
 	grdgradient.c grdhisteq.c grdinfo.c grdlandmask.c grdmask.c grdmath.c
-	grdpaste.c grdproject.c grdraster.c grdsample.c grdreformat.c grdtrack.c
+	grdpaste.c grdproject.c grdraster.c grdsample.c grdconvert.c grdtrack.c
 	grdtrend.c grdvolume.c greenspline.c kml2gmt.c makecpt.c mapproject.c
-	gmtinfo.c nearneighbor.c project.c ps2raster.c sample1d.c spectrum1d.c
+	gmtinfo.c nearneighbor.c project.c psconvert.c sample1d.c spectrum1d.c
 	sph2grd.c sphdistance.c sphinterpolate.c sphtriangulate.c splitxyz.c
 	surface.c trend1d.c trend2d.c triangulate.c xyz2grd.c gmtdefaults.c gmtget.c
 	gmtset.c grdcontour.c grdimage.c grdvector.c grdview.c psbasemap.c psclip.c
@@ -164,7 +201,7 @@ set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
 
 # Legacy modules for which to install compatibility links via
 # install_module_symlink
-set (GMT_COMPAT_MODULES minmax gmtstitch gmtdp)
+set (GMT_COMPAT_MODULES minmax gmt2rgb gmtstitch gmtdp grdreformat ps2raster)
 
 # libpslib
 set (GMT_PSL_SRCS pslib.c common_string.c common_string.h common_runpath.c
@@ -324,7 +361,6 @@ set_target_properties (pslib
 	IMPORT_PREFIX "${LIB_PREFIX}"
 	VERSION ${GMT_LIB_VERSION}
 	SOVERSION ${GMT_LIB_SOVERSION}
-	INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
 	DEFINE_SYMBOL "LIBRARY_EXPORTS")
 
 # If a renaming of the psl dll has been set in ConfigUser.cmake
@@ -431,7 +467,6 @@ add_dependencies (gmtlib pslib) # make gmtlib after pslib
 target_link_libraries (gmtlib
 	${NETCDF_LIBRARIES}
 	${GMT_OPTIONAL_LIBRARIES}
-	${CMAKE_THREAD_LIBS_INIT}
 	pslib)
 
 if (HAVE_M_LIBRARY)
@@ -447,7 +482,6 @@ set_target_properties (gmtlib
 	IMPORT_PREFIX "${LIB_PREFIX}"
 	VERSION ${GMT_LIB_VERSION}
 	SOVERSION ${GMT_LIB_SOVERSION}
-	INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
 	LINK_FLAGS "${USER_GMTLIB_LINK_FLAGS}"
 	DEFINE_SYMBOL "LIBRARY_EXPORTS")
 

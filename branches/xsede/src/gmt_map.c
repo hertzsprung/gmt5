@@ -268,6 +268,13 @@ void gmt_cyl_validate_clon (struct GMT_CTRL *GMT, unsigned int mode) {
 			GMT->current.proj.pars[0] = new_lon;
 		}
 	}
+	else if (!GMT->current.map.is_world) {	/* For reginal areas we cannot have clon > 180 away from either boundary */
+		if (fabs (GMT->current.proj.pars[0] - GMT->common.R.wesn[XLO]) > 180.0 || fabs (GMT->current.proj.pars[0] - GMT->common.R.wesn[XHI]) > 180.0) {
+			double new_lon = 0.5 * (GMT->common.R.wesn[XLO] + GMT->common.R.wesn[XHI]);
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Central meridian for cylindrical projection had to be reset from %g to %g\n", GMT->current.proj.pars[0], new_lon);
+			GMT->current.proj.pars[0] = new_lon;
+		}
+	}
 }
 
 /*! . */
@@ -6474,7 +6481,7 @@ uint64_t GMT_geo_to_xy_line (struct GMT_CTRL *GMT, double *lon, double *lat, uin
 	/* Traces the lon/lat array and returns x,y plus appropriate pen moves
 	 * Pen moves are caused by breakthroughs of the map boundary or when
 	 * a point has lon = NaN or lat = NaN (this means "pick up pen") */
-	uint64_t j, np;
+	uint64_t j, k, np, n_sections;
  	bool inside;
 	unsigned int sides[4];
 	unsigned int nx;
@@ -6529,6 +6536,31 @@ uint64_t GMT_geo_to_xy_line (struct GMT_CTRL *GMT, double *lon, double *lat, uin
 		last_x = this_x;	last_y = this_y;
 	}
 	if (np) GMT->current.plot.pen[0] = PSL_MOVE;	/* Sanity override: Gotta start off with new start point */
+	
+	/* When a line that starts and ends inside the domain exits and reenters, we end up with two pieces.
+	 * When these are plotted separately the sections are not joined properly and ugly gaps can appear, especially if
+	 * the pen width is large.  Here we try to fix this case since it happens fairly frequently */
+	
+	for (j = n_sections = k = 0; j < np; j++) if (GMT->current.plot.pen[j] == PSL_MOVE) {
+		n_sections++;
+		if (n_sections == 2) k = j;	/* Start of 2nd section */
+	}
+	if (n_sections == 2 && doubleAlmostEqualZero (GMT->current.plot.x[0], GMT->current.plot.x[np-1]) && doubleAlmostEqualZero (GMT->current.plot.y[0], GMT->current.plot.y[np-1])) {
+		double *tmp = GMT_memory (GMT, NULL, np, double);
+		/* Shuffle x-array safely */
+		GMT_memcpy (tmp, &GMT->current.plot.x[k], np-k, double);
+		GMT_memcpy (&tmp[np-k], GMT->current.plot.x, k, double);
+		GMT_memcpy (GMT->current.plot.x, tmp, np, double);
+		/* Shuffle y-array safely */
+		GMT_memcpy (tmp, &GMT->current.plot.y[k], np-k, double);
+		GMT_memcpy (&tmp[np-k], GMT->current.plot.y, k, double);
+		GMT_memcpy (GMT->current.plot.y, tmp, np, double);
+		/* Change PSL_MOVE to PSL_DRAW at start of 2nd section */
+		GMT->current.plot.pen[k] = PSL_DRAW;
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "GMT_geo_to_xy_line: Clipping in two separate abutting lines that were joined into a single line\n");
+		GMT_free (GMT, tmp);
+	}
+	
 	return (np);
 }
 

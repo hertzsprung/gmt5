@@ -49,6 +49,8 @@
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`grdcontour`     | Contouring of 2-D gridded data sets                                 |
 +-----------------------+---------------------------------------------------------------------+
+| :doc:`grdconvert`     | Converts grid files into other grid formats                         |
++-----------------------+---------------------------------------------------------------------+
 | :doc:`grdcut`         | Cut a sub-region from a grid file                                   |
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`grdedit`        | Modify header information in a 2-D grid file                        |
@@ -75,8 +77,6 @@
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`grdproject`     | Project gridded data sets onto a new coordinate system              |
 +-----------------------+---------------------------------------------------------------------+
-| :doc:`grdreformat`    | Converts grid files into other grid formats                         |
-+-----------------------+---------------------------------------------------------------------+
 | :doc:`grdsample`      | Resample a 2-D gridded data set onto a new grid                     |
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`grdtrack`       | Sampling of 2-D gridded data set(s) along 1-D track                 |
@@ -101,8 +101,6 @@
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`project`        | Project table data onto lines or great circles                      |
 +-----------------------+---------------------------------------------------------------------+
-| :doc:`ps2raster`      | Crop and convert PostScript files to raster images, EPS, and PDF    |
-+-----------------------+---------------------------------------------------------------------+
 | :doc:`psbasemap`      | Create a basemap plot                                               |
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`psclip`         | Use polygon files to define clipping paths                          |
@@ -110,6 +108,8 @@
 | :doc:`pscoast`        | Plot (and fill) coastlines, borders, and rivers on maps             |
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`pscontour`      | Contour or image raw table data by triangulation                    |
++-----------------------+---------------------------------------------------------------------+
+| :doc:`psconvert`      | Crop and convert PostScript files to raster images, EPS, and PDF    |
 +-----------------------+---------------------------------------------------------------------+
 | :doc:`pshistogram`    | Plot a histogram                                                    |
 +-----------------------+---------------------------------------------------------------------+

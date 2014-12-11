@@ -41,7 +41,7 @@
 
 /* Extern functions */
 
-EXTERN_MSC bool GMT_check_filearg (struct GMT_CTRL *GMT, char option, char *file, unsigned int direction);
+EXTERN_MSC bool GMT_check_filearg (struct GMT_CTRL *GMT, char option, char *file, unsigned int direction, unsigned int family);
 EXTERN_MSC int GMT_parse_dash_option (struct GMT_CTRL *GMT, char *text);
 EXTERN_MSC struct GMT_CTRL * GMT_begin (struct GMTAPI_CTRL *API, char *session, unsigned int pad);
 EXTERN_MSC void GMT_end (struct GMT_CTRL *GMT);
@@ -100,6 +100,7 @@ EXTERN_MSC int GMT_parse_symbol_option (struct GMT_CTRL *GMT, char *text, struct
 EXTERN_MSC int GMT_message (struct GMT_CTRL *GMT, char *format, ...);
 EXTERN_MSC int GMT_report_func (struct GMT_CTRL *GMT, unsigned int level, const char *source_line, const char *format, ...);
 EXTERN_MSC int GMT_rectR_to_geoR (struct GMT_CTRL *GMT, char unit, double rect[], double out_wesn[], bool get_R);
+EXTERN_MSC int GMT_get_num_processors();
 
 #ifdef WIN32
 EXTERN_MSC void GMT_setmode (struct GMT_CTRL *GMT, int direction);

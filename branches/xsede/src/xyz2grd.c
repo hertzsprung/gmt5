@@ -174,7 +174,7 @@ int GMT_xyz2grd_parse (struct GMT_CTRL *GMT, struct XYZ2GRD_CTRL *Ctrl, struct G
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -203,7 +203,7 @@ int GMT_xyz2grd_parse (struct GMT_CTRL *GMT, struct XYZ2GRD_CTRL *Ctrl, struct G
 				break;
 			case 'E':
 				if (GMT_compat_check (GMT, 4)) {
-					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -E is deprecated; use grdreformat instead.\n");
+					GMT_Report (API, GMT_MSG_COMPAT, "Warning: Option -E is deprecated; use grdconvert instead.\n");
 					Ctrl->E.active = true;
 					if (opt->arg[0]) {
 						Ctrl->E.nodata = atof (opt->arg);
@@ -214,7 +214,7 @@ int GMT_xyz2grd_parse (struct GMT_CTRL *GMT, struct XYZ2GRD_CTRL *Ctrl, struct G
 					n_errors += GMT_default_error (GMT, opt->option);
 				break;
 			case 'G':
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -419,7 +419,7 @@ int GMT_xyz2grd (void *V_API, int mode, void *args)
 
 	GMT_Report (API, GMT_MSG_VERBOSE, "Processing input table data\n");
 
-	/* PW: This is now done in grdreformat since ESRI Arc Interchange is a recognized format */
+	/* PW: This is now done in grdconvert since ESRI Arc Interchange is a recognized format */
 	if (Ctrl->E.active && GMT_compat_check (GMT, 4)) {	/* Read an ESRI Arc Interchange grid format in ASCII.  This must be a single physical file. */
 		uint64_t n_left;
 		double value;
@@ -588,6 +588,7 @@ int GMT_xyz2grd (void *V_API, int mode, void *args)
 		if (Ctrl->Z.active) {	/* Read separately because of all the possible formats */
 			if (ij == io.n_expected) {
 				GMT_Report (API, GMT_MSG_NORMAL, "More than %" PRIu64 " records, only %" PRIu64 " was expected (aborting)!\n", ij, io.n_expected);
+				GMT_Report (API, GMT_MSG_NORMAL, "(You are probably misterpreting xyz2grd with an interpolator; see 'surface' man page)\n");
 				Return (EXIT_FAILURE);
 			}
 			gmt_ij = io.get_gmt_ij (&io, Grid, ij);	/* Convert input order to output node (with padding) as per -Z */
@@ -658,6 +659,7 @@ int GMT_xyz2grd (void *V_API, int mode, void *args)
 		GMT->common.b.active[GMT_IN] = previous_bin_i;	/* Reset binary */
 		if (ij != io.n_expected) {	/* Input amount does not match expectations */
 			GMT_Report (API, GMT_MSG_NORMAL, "Found %" PRIu64 " records, but %" PRIu64 " was expected (aborting)!\n", ij, io.n_expected);
+				GMT_Report (API, GMT_MSG_NORMAL, "(You are probably misterpreting xyz2grd with an interpolator; see 'surface' man page)\n");
 			Return (EXIT_FAILURE);
 		}
 		GMT_check_z_io (GMT, &io, Grid);	/* This fills in missing periodic row or column */

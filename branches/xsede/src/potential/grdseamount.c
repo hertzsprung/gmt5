@@ -202,7 +202,7 @@ int GMT_grdseamount_parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, 
 		switch (opt->option) {
 
 			case '<':	/* Input file(s) */
-				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)) n_errors++;
+				if (!GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_DATASET)) n_errors++;
 				break;
 
 			/* Processes program-specific parameters */
@@ -246,7 +246,7 @@ int GMT_grdseamount_parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, 
 				}
 				break;
 			case 'G':	/* Output file name or name template */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -429,8 +429,8 @@ int parse_the_record (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, char 
 	char txt_x[GMT_LEN64], txt_y[GMT_LEN64], T[5][GMT_LEN64], s_unit;
 	
 	n_conv = sscanf (record, "%s %s %lg %lg %s %s %s %s %s", txt_x, txt_y, &in[2], &in[3], T[0], T[1], T[2], T[3], T[4]);
-	if (n_conv != n_expected) {
-		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Error parsing record %s\n", record);
+	if (n_conv < n_expected) {
+		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Error parsing record %s [Found %d expected %d columns]\n", record, n_conv, n_expected);
 		return 1;
 	}
 	ix = (GMT->current.setting.io_lonlat_toggle[GMT_IN]);	iy = 1 - ix;

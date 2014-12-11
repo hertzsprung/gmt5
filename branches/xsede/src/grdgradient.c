@@ -179,7 +179,7 @@ int GMT_grdgradient_parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, 
 		switch (opt->option) {
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -254,7 +254,7 @@ int GMT_grdgradient_parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, 
 				}
 				break;
 			case 'G':	/* Output grid */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -265,7 +265,7 @@ int GMT_grdgradient_parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, 
 					strncpy (GMT->common.n.BC, opt->arg, 4U);
 					/* We turn on geographic coordinates if -Lg is given by faking -fg */
 					/* But since GMT_parse_f_option is private to gmt_init and all it does */
-					/* in this case are 2 lines bellow we code it here */
+					/* in this case are 2 lines below we code it here */
 					if (!strcmp (GMT->common.n.BC, "g")) {
 						GMT_set_geographic (GMT, GMT_IN);
 						GMT_set_geographic (GMT, GMT_OUT);
@@ -299,7 +299,7 @@ int GMT_grdgradient_parse (struct GMT_CTRL *GMT, struct GRDGRADIENT_CTRL *Ctrl, 
 				}
 				break;
 			case 'S':	/* Slope grid */
-				if ((Ctrl->S.active = GMT_check_filearg (GMT, 'S', opt->arg, GMT_OUT)))
+				if ((Ctrl->S.active = GMT_check_filearg (GMT, 'S', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->S.file = strdup (opt->arg);
 				else
 					n_errors++;

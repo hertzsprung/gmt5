@@ -109,7 +109,7 @@ int GMT_grdsample_parse (struct GMT_CTRL *GMT, struct GRDSAMPLE_CTRL *Ctrl, stru
 
 			case '<':	/* Input files */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -118,7 +118,7 @@ int GMT_grdsample_parse (struct GMT_CTRL *GMT, struct GRDSAMPLE_CTRL *Ctrl, stru
 			/* Processes program-specific parameters */
 
 			case 'G':	/* Output file */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -136,7 +136,7 @@ int GMT_grdsample_parse (struct GMT_CTRL *GMT, struct GRDSAMPLE_CTRL *Ctrl, stru
 					strncpy (GMT->common.n.BC, opt->arg, 4U);
 					/* We turn on geographic coordinates if -Lg is given by faking -fg */
 					/* But since GMT_parse_f_option is private to gmt_init and all it does */
-					/* in this case are 2 lines bellow we code it here */
+					/* in this case are 2 lines below we code it here */
 					if (!strcmp (GMT->common.n.BC, "g")) {
 						GMT_set_geographic (GMT, GMT_IN);
 						GMT_set_geographic (GMT, GMT_OUT);

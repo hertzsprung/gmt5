@@ -237,46 +237,6 @@ enum GMT_enum_iomode {
  *==================================================================================================
  */
 
-/* Also assess number of computing cores */
-#if defined _WIN32
-#include <windows.h>
-#elif defined __APPLE__
-#include <sys/param.h>
-#include <sys/sysctl.h>
-#else
-#include <unistd.h>
-#endif
-
-/* We like to know the number of CPUs (cores) available for a
- * computer. This may be needed to be passed to a -z[<cores>]
- * option to select the number of threads for a particular job
- * Based on ideas posted on
- * http://stackoverflow.com/questions/150355/programmatically-
- * find-the-number-of-cores-on-a-machine
- */
-
-/*! . */
-uint32_t gmt_count_cores (void) {
-	uint32_t count = 0;
-#ifdef WIN32
-	SYSTEM_INFO sysinfo;
-	GetSystemInfo (&sysinfo);
-	count = (uint32_t)sysinfo.dwNumberOfProcessors;
-#elif MACOS
-	int nm[2] = {CTL_HW, HW_AVAILCPU};
-	size_t len = 4;
-	sysctl (nm, 2, &count, &len, NULL, 0);
-	if (count < 1) {
-		nm[1] = HW_NCPU;
-		sysctl (nm, 2, &count, &len, NULL, 0);
-		if (count < 1) count = 1;
-	}
-#else
-	count = (uint32_t)sysconf (_SC_NPROCESSORS_ONLN);
-#endif
-	return count;
-}
-
 /*! . */
 int gmt_print_func (FILE *fp, const char *message) {
 	/* Just print this message to fp.  It is being used indirectly via
@@ -3488,7 +3448,7 @@ void *GMT_Create_Session (char *session, unsigned int pad, unsigned int mode, in
 	}
 	GMT_Report (API, GMT_MSG_DEBUG, "GMT_Create_Session initialized GMT structure\n");
 
-	API->n_cores = gmt_count_cores ();	/* Get number of available cores */
+	API->n_cores = GMT_get_num_processors();	/* Get number of available CPU cores */
 
 	/* Allocate memory to keep track of registered data resources */
 
@@ -3735,6 +3695,7 @@ int GMT_Register_IO (void *V_API, unsigned int family, unsigned int method, unsi
 			/* No, so presumably it is a regular file name */
 			if (direction == GMT_IN) {	/* For input we can check if the file exists and can be read. */
 				char *p, *file = strdup (resource);
+				bool not_url = true;
 				if ((family == GMT_IS_GRID || family == GMT_IS_IMAGE) && (p = strchr (file, '='))) *p = '\0';	/* Chop off any =<stuff> for grids and images so access can work */
 				else if (family == GMT_IS_IMAGE && (p = strchr (file, '+'))) {
 					char *c = strchr (file, '.');	/* The period before an extension */
@@ -3744,11 +3705,13 @@ int GMT_Register_IO (void *V_API, unsigned int family, unsigned int method, unsi
 						*p = '\0';	/* Chop off any +b<band> for images at end of extension so access can work */
 					}
 				}
-				if (GMT_access (API->GMT, file, F_OK) && !GMT_check_url_name (file)) {	/* For input we can check if the file exists (except if via Web) */
+				if (family == GMT_IS_GRID || family == GMT_IS_IMAGE)	/* Only grid and images can be URLs so far */
+					not_url = !GMT_check_url_name (file);
+				if (GMT_access (API->GMT, file, F_OK) && not_url) {	/* For input we can check if the file exists (except if via Web) */
 					GMT_Report (API, GMT_MSG_NORMAL, "File %s not found\n", file);
 					return_value (API, GMT_FILE_NOT_FOUND, GMT_NOTSET);
 				}
-				if (GMT_access (API->GMT, file, R_OK) && !GMT_check_url_name (file)) {	/* Found it but we cannot read. */
+				if (GMT_access (API->GMT, file, R_OK) && not_url) {	/* Found it but we cannot read. */
 					GMT_Report (API, GMT_MSG_NORMAL, "Not permitted to read file %s\n", file);
 					return_value (API, GMT_BAD_PERMISSION, GMT_NOTSET);
 				}
@@ -5978,14 +5941,14 @@ int GMT_Call_Module (void *V_API, const char *module, int mode, void *args)
 
 	if (module == NULL) {	/* Did not specify any specific module, so list purpose of all modules in all shared libs */
 		char gmt_module[GMT_LEN256] = {""};	/* To form gmt_<lib>_module_show_all */
-		int (*l_func)(void*);       /* function pointer to gmt_<lib>_module_show_all which takes one arg (the API) */
+		void (*l_func)(void*);       /* function pointer to gmt_<lib>_module_show_all which takes one arg (the API) */
 
 		/* Here we list purpose of all the available modules in each shared library */
 		for (lib = 0; lib < API->n_shared_libs; lib++) {
 			sprintf (gmt_module, "gmt_%s_module_show_all", API->lib[lib].name);
 			*(void **) (&l_func) = gmt_get_module_func (API, gmt_module, lib);
 			if (l_func == NULL) continue;	/* Not found in this shared library */
-			status = (*l_func) (V_API);	/* Run this function */
+			(*l_func) (V_API);	/* Run this function */
 		}
 		return (status);
 	}

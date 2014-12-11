@@ -186,7 +186,9 @@ void Free_grdfilter_Ctrl (struct GMT_CTRL *GMT, struct GRDFILTER_CTRL *C) {	/* D
 	if (C->In.file) free (C->In.file);	
 	if (C->F.file) free (C->F.file);	
 	if (C->G.file) free (C->G.file);	
+#ifdef DEBUG
 	if (C->A.file) free (C->A.file);	
+#endif
 	GMT_free (GMT, C);	
 }
 
@@ -566,7 +568,7 @@ int GMT_grdfilter_parse (struct GMT_CTRL *GMT, struct GRDFILTER_CTRL *Ctrl, stru
 		switch (opt->option) {
 			case '<':	/* Input file (only one is accepted) */
 				if (n_files++ > 0) break;
-				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN)))
+				if ((Ctrl->In.active = GMT_check_filearg (GMT, '<', opt->arg, GMT_IN, GMT_IS_GRID)))
 					Ctrl->In.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -610,7 +612,7 @@ int GMT_grdfilter_parse (struct GMT_CTRL *GMT, struct GRDFILTER_CTRL *Ctrl, stru
 						}
 					}
 					if (Ctrl->F.filter == 'f' || Ctrl->F.filter == 'o') {
-						if (GMT_check_filearg (GMT, 'F', &opt->arg[1], GMT_IN))
+						if (GMT_check_filearg (GMT, 'F', &opt->arg[1], GMT_IN, GMT_IS_GRID))
 							Ctrl->F.file = strdup (&opt->arg[1]);
 						else {
 								GMT_Report (API, GMT_MSG_NORMAL, "ERROR -F%c: Cannot access filter weight grid %s\n", Ctrl->F.filter, &opt->arg[1]);
@@ -668,7 +670,7 @@ int GMT_grdfilter_parse (struct GMT_CTRL *GMT, struct GRDFILTER_CTRL *Ctrl, stru
 				}
 				break;
 			case 'G':	/* Output file */
-				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT)))
+				if ((Ctrl->G.active = GMT_check_filearg (GMT, 'G', opt->arg, GMT_OUT, GMT_IS_GRID)))
 					Ctrl->G.file = strdup (opt->arg);
 				else
 					n_errors++;
@@ -743,7 +745,7 @@ int GMT_grdfilter (void *V_API, int mode, void *args)
 	bool spherical = false, full_360, visit_check = false, go_on, get_weight_sum = true;
 	unsigned int n_in_median, n_nan = 0, col_out, row_out, effort_level, n_span;
 	unsigned int filter_type, one_or_zero = 1, GMT_n_multiples = 0;
-	int tid = 0, col_in, row_in, ii, jj, *col_origin = NULL, row_origin, nx_wrap = 0, error = 0;
+	int col_in, row_in, ii, jj, *col_origin = NULL, row_origin, nx_wrap = 0, error = 0;
 #ifdef DEBUG
 	unsigned int n_conv = 0;
 #endif
@@ -1027,7 +1029,7 @@ int GMT_grdfilter (void *V_API, int mode, void *args)
 		Ctrl->A.COL = GMT_grd_x_to_col (GMT, Ctrl->A.x, Gout->header);
 		Ctrl->A.ROW = GMT_grd_y_to_row (GMT, Ctrl->A.y, Gout->header);
 		if (Ctrl->A.mode == 'r') F.debug = true;	/* In order to return radii instead of weights */
-		if (tid == 0) GMT_Report (API, GMT_MSG_LONG_VERBOSE, "ROW = %d COL = %d\n", Ctrl->A.ROW, Ctrl->A.COL);
+		GMT_Report (API, GMT_MSG_LONG_VERBOSE, "ROW = %d COL = %d\n", Ctrl->A.ROW, Ctrl->A.COL);
 	}
 #endif
 	/* Compute nearest xoutput i-indices and shifts once */

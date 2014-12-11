@@ -40,6 +40,7 @@ Core modules
    grdblend
    grdclip
    grdcontour
+   grdconvert
    grdcut
    grdedit
    grdfft
@@ -54,7 +55,6 @@ Core modules
    grdpaste
    grdproject
    grdraster
-   grdreformat
    grdsample
    grdtrack
    grdtrend
@@ -68,11 +68,11 @@ Core modules
    mapproject
    nearneighbor
    project
-   ps2raster
    psbasemap
    psclip
    pscoast
    pscontour
+   psconvert
    pshistogram
    psimage
    pslegend

@@ -92,8 +92,6 @@ int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTR
 			nn = atoi(prhs->B.bands);
 		whichBands = GMT_memory (GMT, NULL, nn, int);
 		nReqBands = gdal_decode_columns (GMT, prhs->B.bands, whichBands, nn);
-		free(prhs->B.bands);	/* This is actualy the contents of header->pocket allocated by strdup */
-		prhs->B.bands = NULL;
 	}
 	else if (prhs->f_ptr.active) {
 		/* Here we are going to read to a grid so if no band info was provided, default to read only the
@@ -345,7 +343,7 @@ int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTR
 	}
 
 	/* ------ compute two vectors indices that will be used inside loops below --------- */
-	/* In the "Preview" mode those guys bellow are different and what we need is the BufSize */
+	/* In the "Preview" mode those guys below are different and what we need is the BufSize */
 	if (jump)
 		nX = nBufXSize,	nY = nBufYSize;
 	else
@@ -384,7 +382,7 @@ int GMT_gdalread (struct GMT_CTRL *GMT, char *gdal_filename, struct GDALREAD_CTR
 		/* If we didn't computed it yet, its time to do it now */
 		if (got_R) ComputeRasterMinMax(GMT, tmp, hBand, adfMinMax, nXSize, nYSize, z_min, z_max);
 
-		/* In the "Preview" mode those guys bellow are different and what we need is the BufSize */
+		/* In the "Preview" mode those guys below are different and what we need is the BufSize */
 		if (jump) {
 			nXSize = nBufXSize;
 			nYSize = nBufYSize;

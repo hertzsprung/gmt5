@@ -73,8 +73,8 @@
 
 #define GMT_COMPAT_INFO "Please see " GMT_TRAC_WIKI "doc/" GMT_PACKAGE_VERSION "/GMT_Docs.html#new-features-in-gmt-5 for more information.\n"
 
-#define GMT_COMPAT_WARN GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: parameter %s is deprecated.\n" GMT_COMPAT_INFO, GMT_keywords[case_val])
-#define GMT_COMPAT_CHANGE(new_P) GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: parameter %s is deprecated. Use %s instead.\n" GMT_COMPAT_INFO, GMT_keywords[case_val], new_P)
+#define GMT_COMPAT_WARN GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Parameter %s is deprecated.\n" GMT_COMPAT_INFO, GMT_keywords[case_val])
+#define GMT_COMPAT_CHANGE(new_P) GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Parameter %s is deprecated. Use %s instead.\n" GMT_COMPAT_INFO, GMT_keywords[case_val], new_P)
 #define GMT_COMPAT_OPT(new_P) if (strchr (list, option)) { GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Option -%c is deprecated. Use -%c instead.\n" GMT_COMPAT_INFO, option, new_P); option = new_P; }
 
 extern int gmt_geo_C_format (struct GMT_CTRL *GMT);
@@ -873,6 +873,10 @@ void GMT_cont_syntax (struct GMT_CTRL *GMT, unsigned int indent, unsigned int ki
 	GMT_message (GMT, "%s   N+1 places a single label at the end of the %s.\n", pad, type[kind]);
 	GMT_message (GMT, "%s   Append /<min_dist> to enforce a minimum spacing between\n", pad);
 	GMT_message (GMT, "%s   consecutive labels [0]\n", pad);
+	if (kind == 1) {
+		GMT_message (GMT, "%ss|S<n_label> sets number of equidistant labels per segmentized %s.\n", pad, type[kind]);
+		GMT_message (GMT, "%s   Same as n|N but splits input lines to series of 2-point segments first.\n", pad);
+	}
 	GMT_message (GMT, "%sx|X<xfile.d> reads the multi-segment file <xfile.d> and places\n", pad);
 	GMT_message (GMT, "%s   labels at intersections between %ss and lines in\n", pad, type[kind]);
 	GMT_message (GMT, "%s   <xfile.d>.  Use X to resample the lines first.\n", pad);
@@ -4871,11 +4875,14 @@ unsigned int gmt_setparameter (struct GMT_CTRL *GMT, char *keyword, char *value)
 		case GMTCASE_Y_AXIS_LENGTH:
 			/* Setting ignored: x- and/or y scale are required inputs on -J option */
 		case GMTCASE_COLOR_IMAGE:
-		case GMTCASE_DIR_TMP:
-		case GMTCASE_DIR_USER:
 			GMT_COMPAT_WARN;
 			/* Setting ignored, now always adobe image */
 			if (!GMT_compat_check (GMT, 4))	error = gmt_badvalreport (GMT, keyword);
+			break;
+		case GMTCASE_DIR_TMP:
+		case GMTCASE_DIR_USER:
+			/* Setting ignored, were active previously in GMT5 but no longer */
+			GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Warning: Parameter %s (previously introduced in GMT5) is deprecated.\n" GMT_COMPAT_INFO, GMT_keywords[case_val]);
 			break;
 
 		default:
@@ -6528,7 +6535,7 @@ int gmt_get_history (struct GMT_CTRL *GMT)
 	/* If current directory is writable, use it; else use the home directory */
 
 	if (getcwd (cwd, GMT_BUFSIZ) == NULL) {
-		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Warning: Unable to determine current working directory.\n");		
+		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Warning: Unable to determine current working directory.\n");
 	}
 	if (GMT->session.TMPDIR)			/* Isolation mode: Use GMT->session.TMPDIR/gmt.history */
 		sprintf (hfile, "%s/gmt.history", GMT->session.TMPDIR);
@@ -8185,9 +8192,9 @@ bool gmt_parse_J_option (struct GMT_CTRL *GMT, char *args) {
 
 	GMT->current.proj.unit = GMT_units[GMT_INCH];	/* No of meters in an inch */
 	n = 0;	/* Initialize with no fields found */
-
 	switch (project) {
 		case GMT_LINEAR:	/* Linear x/y scaling */
+			GMT_set_cartesian (GMT, GMT_IN);	/* This will be overridden below if -Jx or -Jp, for instance */
 			GMT->current.proj.compute_scale[GMT_X] = GMT->current.proj.compute_scale[GMT_Y] = width_given;
 
 			/* Default is not involving geographical coordinates */
@@ -10668,10 +10675,11 @@ struct GMT_CTRL *GMT_begin (struct GMTAPI_CTRL *API, char *session, unsigned int
 }
 
 /*! . */
-bool GMT_check_filearg (struct GMT_CTRL *GMT, char option, char *file, unsigned int direction)
+bool GMT_check_filearg (struct GMT_CTRL *GMT, char option, char *file, unsigned int direction, unsigned int family)
 {	/* Return true if a file arg was given and, if direction is GMT_IN, check that the file
 	 * exists and is readable. Otherwise we return false. */
 	unsigned int k = 0;
+	bool not_url = true;
 	char message[GMT_LEN16] = {""};
 	if (option == GMT_OPT_INFILE)
 		sprintf (message, "for input file");
@@ -10686,11 +10694,13 @@ bool GMT_check_filearg (struct GMT_CTRL *GMT, char option, char *file, unsigned 
 	}
 	if (direction == GMT_OUT) return true;		/* Cannot check any further */
 	if (file[0] == '=') k = 1;	/* Gave a list of files with =<filelist> mechanism in x2sys */
-	if (GMT_access (GMT, &file[k], F_OK)) {	/* Cannot find the file anywhere GMT looks */
+	if (family == GMT_IS_GRID || family == GMT_IS_IMAGE)	/* Only grid and images can be URLs so far */
+		not_url = !GMT_check_url_name (&file[k]);
+	if (GMT_access (GMT, &file[k], F_OK) && not_url) {	/* Cannot find the file anywhere GMT looks */
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error %s: No such file (%s)\n", message, &file[k]);
 		return false;	/* Could not find this file */
 	}
-	if (GMT_access (GMT, &file[k], R_OK)) {	/* Cannot read this file (permissions?) */
+	if (GMT_access (GMT, &file[k], R_OK) && not_url) {	/* Cannot read this file (permissions?) */
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error %s: Cannot read file (%s) - check permissions\n", message, &file[k]);
 		return false;	/* Could not find this file */
 	}
@@ -10760,4 +10770,34 @@ int GMT_report_func (struct GMT_CTRL *GMT, unsigned int level, const char *sourc
 	va_end (args);
 	GMT->parent->print_func (GMT->session.std[GMT_ERR], message);
 	return 1;
+}
+
+/*! Return the number of CPU cores */
+int GMT_get_num_processors() {
+	static int n_cpu = 0;
+
+	if (n_cpu > 0)
+		/* we already know the answer. do not query again. */
+		return n_cpu;
+
+#if defined WIN32
+	{
+		SYSTEM_INFO sysinfo;
+		GetSystemInfo ( &sysinfo );
+		n_cpu = sysinfo.dwNumberOfProcessors;
+	}
+#elif defined HAVE_SC_NPROCESSORS_ONLN
+	n_cpu = (int)sysconf (_SC_NPROCESSORS_ONLN);
+#elif defined HAVE_SC_NPROC_ONLN
+	n_cpu = (int)sysconf (_SC_NPROC_ONLN);
+#elif defined HAVE_SYSCTL_HW_NCPU
+	{
+		size_t size = sizeof(n_cpu);
+		int mib[] = { CTL_HW, HW_NCPU };
+		sysctl(mib, 2, &n_cpu, &size, NULL, 0);
+	}
+#endif
+	if (n_cpu < 1)
+		n_cpu = 1; /* fallback */
+	return n_cpu;
 }

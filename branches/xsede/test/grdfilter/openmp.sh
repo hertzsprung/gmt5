@@ -4,7 +4,7 @@
 
 ps=openmp.ps
 
-if [ -z "$HAVE_OPENMP" ]; then
+if ! [[ ${HAVE_OPENMP} =~ TRUE|ON ]]; then
   echo "[N/A]"
   exit 0
 fi

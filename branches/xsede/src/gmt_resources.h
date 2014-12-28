@@ -1,8 +1,7 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2014
- *	P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 2012-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -292,8 +291,8 @@ struct GMT_GRID_HEADER {
 	unsigned int grdtype;            /* 0 for Cartesian, > 0 for geographic and depends on 360 periodicity [see GMT_enum_grdtype above] */
 	char name[GMT_GRID_NAME_LEN256]; /* Actual name of the file after any ?<varname> and =<stuff> has been removed */
 	char varname[GMT_GRID_VARNAME_LEN80];/* NetCDF: variable name */
-	const char  *ProjRefPROJ4;       /* To store a referencing system string in PROJ.4 format */
-	const char  *ProjRefWKT;         /* To store a referencing system string in WKT format */
+	char  *ProjRefPROJ4;             /* To store a referencing system string in PROJ.4 format */
+	char  *ProjRefWKT;               /* To store a referencing system string in WKT format */
 	int row_order;                   /* NetCDF: k_nc_start_south if S->N, k_nc_start_north if N->S */
 	int z_id;                        /* NetCDF: id of z field */
 	int ncid;                        /* NetCDF: file ID */

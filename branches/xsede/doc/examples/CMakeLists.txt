@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
+# Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis, and F. Wobbe
 # See LICENSE.TXT file for copying and redistribution conditions.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -108,6 +108,25 @@ endforeach (_script ${_examples})
 add_custom_target (_docs_examples_fig DEPENDS ${_examples_pdf} ${_examples_png})
 add_custom_target (_docs_examples_verbatim DEPENDS ${_examples_txt})
 add_depend_to_target (docs_depends _docs_examples_fig _docs_examples_verbatim)
+
+# Animation
+if (UNIX)
+	foreach (_num 01 02 03 04)
+		add_custom_command (
+			OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/anim${_num}/anim_${_num}.gif
+			COMMAND ${BASH} gmtest anim${_num}/anim_${_num}.sh 1
+			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+			DEPENDS gmt_for_img_convert ${CMAKE_CURRENT_SOURCE_DIR}/anim${_num}/anim_${_num}.sh)
+		add_custom_command (
+			OUTPUT ${RST_BINARY_DIR}/_images/anim_${_num}.gif
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${CMAKE_CURRENT_BINARY_DIR}/anim${_num}/anim_${_num}.gif
+			${RST_BINARY_DIR}/_images/anim_${_num}.gif
+			DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/anim${_num}/anim_${_num}.gif)
+		list (APPEND _animations ${RST_BINARY_DIR}/_images/anim_${_num}.gif)
+	endforeach ()
+	add_custom_target (animation DEPENDS ${_animations})
+endif (UNIX)
 
 # run examples (test)
 if (DO_EXAMPLES) # AND UNIX)

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -2537,8 +2537,6 @@ int gmt_parse_x_option (struct GMT_CTRL *GMT, char *arg) {
 		GMT->common.x.n_threads = 1;
 	else if (GMT->common.x.n_threads < 0)
 		GMT->common.x.n_threads = MAX (GMT->parent->n_cores - GMT->common.x.n_threads, 1);	/* Max -n but at least one */
-	else
-		GMT->common.x.n_threads = MIN (GMT->parent->n_cores, GMT->common.x.n_threads);		/* No more than maximum available */
 
 	return (GMT_NOERROR);
 }

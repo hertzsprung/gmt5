@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 1991-2014 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
+ *	Copyright (c) 1991-2015 by P. Wessel, W. H. F. Smith, R. Scharroo, J. Luis and F. Wobbe
  *	See LICENSE.TXT file for copying and redistribution conditions.
  *
  *	This program is free software; you can redistribute it and/or modify
@@ -168,7 +168,7 @@ no_such:
 		fprintf (stderr, "  --show-bindir     Show directory of executables and exit.\n\n");
 		fprintf (stderr, "if <module options> is \'=\' we call exit (0) if module exist and non-zero otherwise.\n\n");
 		if (modulename_arg_n == 1) {
-			fprintf (stderr, "ERROR: No module named %s was found,  This could mean:\n", module);
+			fprintf (stderr, "ERROR: No module named %s was found.  This could mean:\n", module);
 			fprintf (stderr, "  1. There actually is no such module; check your spelling.\n");
 			if (strlen (GMT_SUPPL_LIB_NAME))
 				fprintf (stderr, "  2. Module exists in the GMT supplemental library, but the library could not be found.\n");

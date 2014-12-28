@@ -14,14 +14,20 @@ Synopsis
 .. include:: ../../common_SYN_OPTs.rst_
 
 **grdgravmag3d** *grdfile_top* [*grdfile_bot*] [ **-C**\ *density* ]
-[ **-D** ] [ **-F**\ *xy_file* ]
+[ **-D** ]
+[ **-E**\ *thick* ]
+[ **-F**\ *xy_file* ]
 [ **-G**\ *outgrid* ]
-|SYN_OPT-I|
+[ **-H**\ *<...>* ]
+[ |SYN_OPT-I| ]
 [ **-L**\ *z_obs* ]
 [ **-Q**\ [\ **n**\ *n_pad*]\ \|\ [*pad_dist*]\ \|\ [<w/e/s/n>] ]
+[ |SYN_OPT-R| ]
+[ **-S**\ *radius* ]
 [ |SYN_OPT-V| ]
 [ **-Z**\ *level* ]
 [ **-fg** ]
+[ **-x**\ *+a|n|-n* ]
 
 |No-spaces|
 
@@ -41,24 +47,50 @@ Required Arguments
    provided then the gravity/magnetic efect of the volume between them is computed. 
 
 **-C**\ *density*
-    Sets body density in SI. This option is mutually exclusive with
-    **-H**.
-**-F**\ *xy\_file*
+    Sets body density in SI. This option is mutually exclusive with **-H**
+
+**-F**\ *xy_file*
     Provide locations where the anomaly will be computed. Note this
     option is mutually exlusive with **-G**.
+
 **-G**\ *outgrid*
     Output the gravity anomaly at nodes of this grid file.
-
-.. include:: ../../explain_-I.rst_
-
-.. |Add_-R| unicode:: 0x20 .. just an invisible code
-.. include:: ../../explain_-R.rst_
 
 Optional Arguments
 ------------------
 
+**-E**\ *thickness*
+    To provide the layer thickness in m [Default = 500 m].
+
+**-H**\ *f_dec/f_dip/m_int/m_dec/m_dip* **-H**\ *+m<magfile>*  **-H**\ *x|y|z|h|t* **-H**\ *+i|+g|+r|+f|+n*  
+    Sets parameters for computation of magnetic anomaly (Can be used multiple times).
+
+      f_dec/f_dip -> geomagnetic declination/inclination
+
+      m_int/m_dec/m_dip -> body magnetic intensity/declination/inclination
+
+    OR for a grid mode
+
+      +m<magfile> where 'magfile' is the name of the magnetic intensity file. 
+
+    To compute a component, specify any of:
+
+      x|X|e|E  to compute the E-W component.
+
+      y|Y|n|N  to compute the N-S component.
+
+      z|Z      to compute the Vertical component.
+
+      h|H      to compute the Horizontal component.
+
+      t|T|f|F  to compute the total field.
+
+      For a variable inclination and declination use IGRF. Set any of **-H**\ *+i|+g|+r|+f|+n* to do that 
+
+.. include:: ../../explain_-I.rst_
+
 **-L**\ *z_obs* 
-    sets level of observation [Default = 0]. That is the height (z) at
+    Sets level of observation [Default = 0]. That is the height (z) at
     which anomalies are computed.
 
 **-Q**\ [\ **n**\ *n_pad*]\ \|\ [\ *pad_dist*]\ \|\ [<w/e/s/n>]
@@ -69,6 +101,14 @@ Optional Arguments
       **-Q**\ *pad_dist* extend the region by west-pad, east+pad, etc.
 
       **-Q**\ *region* Same sintax as **-R**.
+
+.. |Add_-R| replace:: Note: this overrides the source grid region (Default: use same region as input)
+.. include:: ../../explain_-R.rst_
+
+**-S**\ *radius*
+    Set search radius in km (valid only in the two grids mode OR when **-E**) [Default = 30 km].
+    This option serves to speed up the computation by not computing the effect of prisms that
+    are further away than *radius* from the current node.
 
 .. |Add_-V| unicode:: 0x20 .. just an invisible code
 .. include:: ../../explain_-V.rst_
@@ -82,6 +122,15 @@ Optional Arguments
 **-fg**
    Geographic grids (dimensions of longitude, latitude) will be converted to
    meters via a "Flat Earth" approximation using the current ellipsoid parameters.
+
+**-x**\ *+a|n|-n*
+   Choose the number of processors used in multi-threading (Only available with multi-threading builds).
+
+     *+a* Use all available processors.
+
+     *n*  Use n processors (not more than max available off course).
+
+     *-n* Use (all - n) processors.
 
 .. include:: ../../explain_help.rst_
 
@@ -97,10 +146,17 @@ Examples
 Suppose you want to compute the gravity effect of the phantom "Sandy
 Island" together with its not phantom seamount
 
-
    ::
 
     gmt grdgravmag3d sandy_bat.grd -C1700 -Z-4300 -M -I1m -Gsandy_okb.grd -V
+
+To compute the vertical component due to a magnetization stored in *mag.grd* over a zone defined by
+the surface *bat.grd*, using variable declination and inclination provided the the IGRF and using 4
+processors, do:
+
+   ::
+
+    gmt grdgravmag3d bat.grd -E10000 -Gcomp_Z.grd -Hz -H+n -H+mmag.grd -x4 -V -S50 
 
 See Also
 --------

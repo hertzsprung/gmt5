@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------
  *	$Id$
  *
- *	Copyright (c) 2009-2014 by P. Wessel and R. Scharroo
+ *	Copyright (c) 2009-2015 by P. Wessel and R. Scharroo
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU Lesser General Public License as published by
@@ -287,7 +287,6 @@ struct PSL_CTRL {
 		int line_join;		/* 0, 1, or 2 for miter, arc, or bevel [miter]	*/
 		int miter_limit;		/* Acute angle threshold 0-180; 0 means PS default [0] */
 		int ix, iy;		/* Absolute coordinates of last point		*/
-		int length;		/* Image row output byte counter		*/
 		int n_userimages;		/* Number of specified custom patterns		*/
 		int x0, y0;		/* x,y PS offsets				*/
 		FILE *fp;			/* PS output file pointer. NULL = stdout	*/

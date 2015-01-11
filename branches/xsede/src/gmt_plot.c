@@ -1734,12 +1734,17 @@ void gmt_map_symbol_ew (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double lat, 
 
 void gmt_map_symbol_ns (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double lon, char *label, double south, double north, bool annot, unsigned int level, unsigned int form)
 {
-	unsigned int i, nc;
+	unsigned int i, k, nc;
 	struct GMT_XINGS *xings = NULL;
-
+	bool flip = (GMT->current.io.col_type[GMT_IN][GMT_X] == GMT_IS_LON && GMT->current.io.col_type[GMT_IN][GMT_Y] != GMT_IS_LAT && GMT->current.proj.scale[GMT_Y] < 0.0);
+	/* flip deals with the problem when x is lon and geographic annotation machinery is used but y is Cartesian and upside down */
 	nc = GMT_map_loncross (GMT, lon, south, north, &xings);
-	for (i = 0; i < nc; i++)
+	for (i = 0; i < nc; i++) {
+		if (flip) for (k = 0; k < xings[i].nx; k++) {	/* Must turn sides 0 and 2 into sides 2 and 0 */
+			if ((xings[i].sides[k] % 2) == 0) xings[i].sides[k] = 2 - xings[i].sides[k];	/* Flip up and down sides */
+		}
 		gmt_map_symbol (GMT, PSL, xings[i].xx, xings[i].yy, xings[i].sides, xings[i].angle, label, xings[i].nx, 0, annot, level, form);
+	}
 	if (nc) GMT_free (GMT, xings);
 }
 
@@ -3168,6 +3173,45 @@ void GMT_draw_map_rose (struct GMT_CTRL *GMT, struct GMT_MAP_ROSE *mr)
 	PSL_setmiterlimit (PSL, tmp_limit);
 }
 
+void GMT_draw_map_panel (struct GMT_CTRL *GMT, double x, double y, unsigned int mode, struct GMT_MAP_PANEL *P)
+{	/* Draw a recrangular backpanel behind things like logos, scales, legends, images.
+	 * Here, (x,y) is the center-point of the panel.
+	 * mode is a bit flag that can be 1,2, or 3:
+	 * mode = 1.  Lay down fills for background (if any fills) but no outlines
+	 * mode = 2.  Just draw any outlines requested
+	 * mode = 3.  Do both at the same time. */
+	double dim[3];
+	int outline = ((P->mode & GMT_PANEL_OUTLINE) == GMT_PANEL_OUTLINE);	/* Does the panel have an outline? */
+	struct GMT_FILL *fill = NULL;	/* Default is no fill */
+	
+	GMT_Report (GMT->parent, GMT_MSG_LONG_VERBOSE, "Place rectangular back panel\n");
+	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Offsets: %g/%g/%g/%g\n", P->off[XLO], P->off[XLO], P->off[YLO], P->off[YHI]);
+	dim[GMT_X] = P->width  + P->off[XLO] + P->off[XHI];	/* Rectangle width */
+	dim[GMT_Y] = P->height + P->off[YLO] + P->off[YHI];	/* Rectangle height */
+	dim[GMT_Z] = P->radius;	/* Corner radius, or zero */
+	/* In case clearances are not symmetric we need to shift the symbol center accordingly */
+	x += 0.5 * (P->off[XHI] - P->off[XLO]);
+	y += 0.5 * (P->off[YHI] - P->off[YLO]);
+	if (mode == 1) outline = 0;	/* Do not draw outlines (if requested) at this time */
+	if ((mode & 1) && (P->mode & GMT_PANEL_SHADOW)) {	/* Draw offset background shadow first */
+		GMT_setfill (GMT, &P->sfill, false);	/* The shadow has no outline */
+		PSL_plotsymbol (GMT->PSL, x + P->dx, y + P->dy, dim, (P->mode & GMT_PANEL_ROUNDED) ? PSL_RNDRECT : PSL_RECT);
+	}
+	if ((mode & 2) && outline) GMT_setpen (GMT, &P->pen1);	/* Set frame outline pen */
+	if (mode & 1) fill = &P->fill;		/* Select fill (which may be NULL) unless we are just doing outlines */
+	GMT_setfill (GMT, fill, outline);	/* Activate frame fill, with optional outline */
+	if (!(mode == 2 && !outline)) PSL_plotsymbol (GMT->PSL, x, y, dim, (P->mode & GMT_PANEL_ROUNDED) ? PSL_RNDRECT : PSL_RECT);
+	if ((mode & 2) && (P->mode & GMT_PANEL_INNER)) {	/* Also draw secondary frame on the inside */
+		dim[GMT_X] -= 2.0 * P->gap;	/* Shrink dimension of panel by the uniform gap on all sides */
+		dim[GMT_Y] -= 2.0 * P->gap;
+		GMT_setpen (GMT, &P->pen2);	/* Set inner border pen */
+		GMT_setfill (GMT, NULL, true);	/* Never fill for inner frame */
+		PSL_plotsymbol (GMT->PSL, x, y, dim, (P->mode & GMT_PANEL_ROUNDED) ? PSL_RNDRECT : PSL_RECT);
+	}
+	/* Reset color */
+	PSL_setcolor (GMT->PSL, GMT->current.setting.map_frame_pen.rgb, PSL_IS_STROKE);
+}
+
 void GMT_setpen (struct GMT_CTRL *GMT, struct GMT_PEN *pen)
 {
 	/* GMT_setpen issues PostScript code to set the specified pen. */
@@ -4276,7 +4320,7 @@ void GMT_plotend (struct GMT_CTRL *GMT) {
 		GMT->current.ps.clip_level += GMT->current.ps.nclip;
 
 	if (GMT->current.ps.nclip != PSL->current.nclip)
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Module was expected to change clip level by %d, but clip level changed by %d\n", GMT->current.ps.nclip, PSL->current.nclip);
+		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Module was expected to change clip level by %d, but clip level changed by %d\n", GMT->current.ps.nclip, PSL->current.nclip);
 
 	if (!GMT->common.K.active) {
 		if (GMT->current.ps.clip_level > 0) GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: %d external clip operations were not terminated!\n", GMT->current.ps.clip_level);

@@ -103,7 +103,7 @@ The EOS articles on GMT are
    data, *EOS Trans. AGU*, 72(41), 445--446, 1991. `doi:10.1029/90EO00319 <http://dx.doi.org/10.1029/90EO00319>`_.
 
 
-Some GMT programs are based on algorithms we have developed and
+Some GMT modules are based on algorithms we have developed and
 published separately, such as
 
 -  Kim, S.-S., and P. Wessel, Directional median filtering for
@@ -204,12 +204,221 @@ Paul Wessel on the 20th anniversary of GMT; a link is available on the
 GMT website.
 
 The success of GMT is to a large degree due to the input of the user
-community. In fact, most of the capabilities and options in
-GMT programs originated as user requests. We would like to hear from
+community. In fact, most of the capabilities and options in the
+GMT modules originated as user requests. We would like to hear from
 you should you have any suggestions for future enhancements and
 modification. Please send your comments to the GMT help list or create
 an issue in the bug tracker
 (see `<http://gmt.soest.hawaii.edu/projects/gmt/issues/>`_).
+
+New Features in GMT 5.2
+=======================
+
+While the GMT 5.1-series has seen bug-fixes since its release, new features were
+only added to the 5.2-series.  Here is a summary of these changes in six key areas:
+
+New modules
+------------
+
+There are two new modules in the core system:
+
+:doc:`gmtlogo` is modeled after the shell script with the same
+name but is now a regular C module that can be used to add the 
+GMT logo to maps and posters.
+
+:doc:`gmtregress` determines linear regressions for data sets using
+a variety of misfit norms and regression modes.
+
+Two new modules have also been added to the *potential* supplement:
+
+:doc:`gmtflexure <supplements/potential/gmtflexure>`:
+	Compute the elastic flexural response to a 2-D (line) load.
+
+:doc:`grdflexure <supplements/potential/grdflexure>`:
+	Compute the flexural response to a 3-D (grid) load, using a variety
+	or rheological models (elastic, viscoelastic, firmoviscous).
+
+In addition, here are two established modules that have been given more suitable names:
+
+:doc:`grdconvert`
+    Converts between different grid formats.
+    Previously known as grdreformat (this name is recognized
+    when GMT is running in compatibility mode).
+
+:doc:`psconvert`
+    Converts from PostScript to PDF, SVG, or various raster image formats.
+    Previously known as ps2raster (this name is recognized
+    when GMT is running in compatibility mode).
+
+New common options
+------------------
+
+We have added one new lower-case GMT common option:
+
+*  Programs that need to specify which values should represent "no data"
+   can now use **-d**\ [**i**\ \|\ **o**]\ *nodata*. For instance, this
+   option replaces the old **-N** in :doc:`grd2xyz` and :doc:`xyz2grd`
+   (but are backwards compatible).
+
+New default parameters
+----------------------
+
+There have been a few changes to the GMT Defaults parameters.  All changes
+are backwards compatible:
+
+*  **FORMAT_FLOAT_MAP** now allows the use %'g to get comma-separated groupings
+   when integer values are plotted.
+
+*  **FORMAT_FLOAT_OUT** can now accept a space-separated list of formats
+   as shorthand for first few columns.  On output it will show the formats
+   in effect for multiple columns.
+
+*  **GMT_LANGUAGE** has replaced the old parameter **TIME_LANGUAGE**.
+   Related to this, the files share/time/\*.d have been moved and renamed to
+   share/localization/\*.txt and now include a new section
+   or cardinal points letter codes.
+
+*  **IO_SEGMENT_BINARY** is a new parameter that controls how binary records
+   with just NaNs should or should not be interpreted as segment headers.
+
+*  **PROJ_GEODESIC** was added to control which geodesic calculation should be
+   used.  Choose among Vincenty [Default], Andoyer (fast approximate geodesics),
+   and Rudoe (from GMT4).
+
+*  **TIME_REPORT** now has defaults for absolute or elapsed time stamps.
+
+Updated common options
+----------------------
+
+Two of the established GMT common options have seen minor improvements:
+
+*  Implemented modifier **-B+n** to *not* draw the frame at all.
+
+*  Added a forth way to specify the region for a new grid via the new
+   **-R**\ [**L**\ \|\ **C**\ \|\ **R**][**T**\ \|\ **M**\ \|\ **B**]\ *x0*/*y0*/*nx*/*ny*
+   syntax where you specify an anchor point and number of points in the two
+   dimensions (requires **-I** to use the increments).  The optional justification
+   keys specify how the anchor point relate to the grid region.
+
+General improvements
+--------------------
+
+A few changes have affects across GMT; these are:
+
+*  Add optional multi-threading capabilities to grdfilter and the potential/grdgravmag3d
+
+*  Allow comma-separated colors instead of CPT files in options that are
+   used to pass a CPT file (typically this means **-C**).
+
+*  Faster netCDF reading for COARDS table data (i.e., not grids).
+
+*  Tools using GSHHG can now access information for both Antarctica data
+   set (ice-front and grounding line).
+
+*  Tools that specify pens may now explicitly choose "solid" as an attribute,
+   and we added "dashed" and "dotted" as alternatives to "-" and ".".
+
+*  Added two alternative vector head choices (terminal and circle) in addition
+   to the default "arrow" style.
+
+Program-specific improvements
+-----------------------------
+
+Finally, here is a list of some enhancements to individual modules.  Any
+changes to syntax will be backwards compatible:
+
+*  :doc:`gmt` now has a --show-cores option that reports the available cores.
+
+*  :doc:`gmtconvert` adds a **-C** option that can be used to eliminate
+   segments on output based on the number of of records it contains.
+
+*  :doc:`grdblend` relaxes the **-W** restriction on only one output grid
+   and adds the new mode **-Wz** to write the weight*zsum grid.
+
+*  :doc:`grdedit` enhances the **-E** option to allow for 90-degree rotations
+   or flips of grid, as well as a new **-G** to enable writing of the result
+   to a new output file [Default updates the existing file].
+
+*  :doc:`grdfilter` now includes histogram mode filtering to complement mode
+   (LMS) filtering.
+
+*  :doc:`grdgradient` adds **-Da** to compute the aspect (down-slope) direction [up-slope].
+
+*  :doc:`grdmath` adds several new operators, such as **ARC** and **WRAP** for
+   angular operators, **LDISTG** (for distances to GSHHG), **CDIST2** and **SDIST2**
+   (to complement **LDIST2** and **PDIST2**), while **LDIST1** has been renamed
+   to **LDISTC**.
+
+*  :doc:`grdtrack` add modifier **-G+l**\ *list* modifier to provide a list of grids.
+
+*  :doc:`grdview` implements the Waterfall plot mode via **-Qmx**\ \|\ **y**.
+
+*  :doc:`kml2gmt` acquires an **-F** option to control which geometry to output.
+
+*  :doc:`makecpt` takes **-E** to determine range from input data table.
+
+*  :doc:`mapproject` can be used in conjunction with the 3-D projection options to
+   compute 3-D projected coordinates.
+
+*  :doc:`psbasemap` now takes **-A** to save plot domain polygon in geographical coordinates.
+
+*  :doc:`pscoast` can accept multiple **-F** settings to color features independently.
+   We also have **-A** modifiers **+AS** to *only* plot Antarctica, **+ag** to use
+   shelf ice grounding line for Antarctica coastline, and **+ai** to use ice/water
+   front for Antarctica coastline [Default].
+
+*  :doc:`psconvert` (apart from the name change) has several new features, such as
+   reporting dimensions of the plot when **-A** and **-V** are used,
+   scaling the output plots via **-A+s**\ *width*\ [**u**][/\ *height*\ [**u**]],
+   and **-Z** for removing the PostScript file on exit.  In addition, we have
+   added SVG as a new output vector graphics format and now handle transparency even if
+   non-PDF output formats are requested.
+
+*  :doc:`pscontour` adds a **-Q**\ *cut* option like :doc:`grdcontour` and moved the
+   old **-T**, **-Q** options for an index file to a new **-E** option.
+
+*  :doc:`pshistogram` added modifiers **-W**\ *width*\ [**+l**\ \|\ **h**\ \|\ **b**]
+   to allow for more control on what happens to points in the tails.
+
+*  :doc:`psimage` new uniform **-D** option to specify location of image and new uniform
+   **-F** option to specify background panel and its many settings.
+
+*  :doc:`pslegend` has many enhancements for specifying varying cell widths and color, as
+   well as a new uniform **-D** option to specify location of legend and new uniform
+   **-F** option to specify background panel and its many settings.
+
+*  :doc:`psscale` new uniform **-D** option to specify location of the scale. We have
+   retired the **-T** option in favor of the new uniform
+   **-F** option to specify background panel and its many settings.
+
+*  :doc:`psxy` has seen considerable enhancements. We added two new quoted
+   line (**-Sq**) modifiers: **S**\ \|\ **s** for treating input as consecutive
+   two-point line segments that should be individually quoted,
+   and **+x**\ [*first*\ ,\ *last*] for automating cross-section labeling.
+   We expanded **-N** to handle periodic, repeating symbols near the boundary,
+   added a new modifier **+** to **-E** for asymmetrical error bars, and provided the
+   shorthand **-SE-**\ *diameter* for degenerated ellipses (i.e., circles).
+   The **-L** option has been enhanced to create envelope polygons around y(x),
+   say for confidence envelopes (modifiers **+b**\ \|\ **d**\ \|\ **D**), and to complete a closed
+   polygon by adding selected corners (modifiers **+xl**\ \|\ **r**\ \|\ *x0* or **+yb**\ \|\ **t**\ \|\ *y0*).
+   Finally, custom symbols definition tests can now compare two input variables.
+
+*  :doc:`psxyz` also has the new **-SE-**\ *diameter* shorthand as well as the **-N**
+   modifiers for handling periodic plot symbols.  Likewise,
+   the **-L** option has been enhanced to create envelope polygons around y(x),
+   say for confidence envelopes (modifiers **+b**\ \|\ **d**\ \|\ **D**), and to complete a closed
+   polygon by adding selected corners (modifiers **+xl**\ \|\ **r**\ \|\ *x0* or **+yb**\ \|\ **t**\ \|\ *y0*).
+   Finally, to match :doc:`psxy` we have added the option **-T** for specifying no data input.
+
+A few supplement modules have new features as well:
+
+*  :doc:`mgd77track <supplements/mgd77/mgd77track>` adds the **-Gn**\ *gap* option to
+   decimate the trackline coordinates by only plotting every *gap* point.
+
+*  :doc:`gravfft <supplements/potential/gravfft>` adds **-W**\ *wd* to change
+   observation level.
+
+*  :doc:`grdgravmag3d <supplements/potential/grdgravmag3d>` adds **-H** to compute magnetic anomaly.
 
 New Features in GMT 5
 =====================
@@ -1837,9 +2046,8 @@ Command line arguments
 ----------------------
 
 Each program requires certain arguments specific to its operation. These
-are explained in the manual pages and in the usage messages. Most
-programs are "case-sensitive"; almost all options must start with an
-upper-case letter. We have tried to choose letters of the alphabet which
+are explained in the manual pages and in the usage messages.
+We have tried to choose letters of the alphabet which
 stand for the argument so that they will be easy to remember. Each
 argument specification begins with a hyphen (except input file names;
 see below), followed by a letter, and sometimes a number or character
@@ -1853,19 +2061,19 @@ letter, and number or string. *Do* space between options. Example:
 Standardized command line options
 ---------------------------------
 
-Most of the programs take many of the same arguments like those related
+Most of the programs take many of the same arguments such as those related
 to setting the data region, the map projection, etc. The 25 switches in
 Table :ref:`switches <tbl-switches>` have the same meaning in all the programs (although
 some programs may not use all of them). These options will be described
 here as well as in the manual pages, as is vital that you understand how
 to use these options. We will present these options in order of
-importance (some are use a lot more than others).
+importance (some are used a lot more than others).
 
 .. _tbl-switches:
 
 +----------+--------------------------------------------------------------------+
 +==========+====================================================================+
-| **-B**   | Define tickmarks, annotations, and labels for basemaps and axes    |
+| **-B**   | Define tick marks, annotations, and labels for basemaps and axes   |
 +----------+--------------------------------------------------------------------+
 | **-J**   | Select a map projection or coordinate transformation               |
 +----------+--------------------------------------------------------------------+
@@ -1946,7 +2154,7 @@ may be specified in one of four ways, two of which are shown in Figure
    indicates which point on a rectangular grid region the *x0*/*y0* coordinates
    refer to, and the grid dimensions *nx* and *ny* are used with grid spacings given
    via **-I** to create the corresponding region.
-   
+
 .. _gmt_region:
 
 .. figure:: /_images/GMT_-R.*

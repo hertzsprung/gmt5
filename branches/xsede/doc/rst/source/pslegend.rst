@@ -13,11 +13,11 @@ Synopsis
 
 .. include:: common_SYN_OPTs.rst_
 
-**pslegend** [ *textfile* ]
+**pslegend** [ *specfile* ]
 **-D**\ [**n**\ \|\ **g**\ \|\ **x**]\ *anchor*/*width*\ [/*height*]\ [/*justify*]\ [/*dx*/*dy*]
 [ **-B**\ [**p**\ \|\ **s**]\ *parameters* ] [ **-C**\ *dx*/*dy* ] [
-**-F**\ [\ **+g**\ *fill*][**+i**\ [[*gap*/]*pen*]][\ **+p**\ [*pen*]][\ **+r**\ [*radius*\ ]][\ **+s**\ [[*dx*/*dy*/][*shade*\ ]]] ] [
-**-J**\ *parameters* ] [ **-K** ] [ **-L**\ *spacing* ] [ **-O** ] [
+[ **-F**\ [\ **+c**\ *clearances*][\ **+g**\ *fill*][**+i**\ [[*gap*/]*pen*]][\ **+p**\ [*pen*]][\ **+r**\ [*radius*\ ]][\ **+s**\ [[*dx*/*dy*/][*shade*\ ]]] ]
+[ **-J**\ *parameters* ] [ **-K** ] [ **-L**\ *spacing* ] [ **-O** ] [
 **-P** ] [ **-R**\ *west*/*east*/*south*/*north*\ [**r**\ ] ] [
 **-U**\ [*just*/*dx*/*dy*/][**c**\ \|\ *label*] ] [ **-V**\ [*level*\ ]
 ] [
@@ -64,11 +64,14 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
 **-C**\ *dx*/*dy*
     Sets the clearance between the legend frame and the internal items
     [4\ **p**/4\ **p**].
-**-F**\ [\ **+g**\ *fill*][**+i**\ [[*gap*/]\ *pen*]][\ **+p**\ [*pen*]][\ **+r**\ [*radius*\ ]][\ **+s**\ [[*dx*/*dy*/][*shade*\ ]]]
+**-F**\ [\ **+c**\ *clearances*][\ **+g**\ *fill*][**+i**\ [[*gap*/]\ *pen*]][\ **+p**\ [*pen*]][\ **+r**\ [*radius*\ ]][\ **+s**\ [[*dx*/*dy*/][*shade*\ ]]]
     Without further options, draws a rectangular border around the legend using
     **MAP\_FRAME\_PEN**; specify a different pen with **+p**\ *pen*.
-    Add **+g**\ *fill* to fill the legend box [no fill]
-    Append **+i** to draw a secondary, inner border as well. We use a
+    Add **+g**\ *fill* to fill the legend box [no fill].
+    Append **+c**\ *clearance* where *clearance* is either *gap*, *xgap*\ /\ *ygap*,
+    or *lgap*\ /\ *rgap*\ /\ *bgap*\ /\ *tgap* where these items are uniform, separate in
+    x- and y-direction, or individual side spacings between scale and border. 
+    Append **+i** to draw a secondary, inner border as well. We use a uniform
     *gap* between borders of 2\ **p** and the **MAP\_DEFAULTS\_PEN**
     unless other values are specified. Append **+r** to draw rounded
     rectangular borders instead, with a 6\ **p** corner radius. You can
@@ -111,8 +114,8 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
 `Pslegend Codes <#toc6>`_
 -------------------------
 
-*textfile*
-    This file contains instruction for the layout of items in the
+*specfile*
+    This ASCII file contains instructions for the layout of items in the
     legend. Each legend item is described by a unique record. All
     records begin with a unique character that is common to all records
     of the same kind. The order of the legend items is implied by the
@@ -228,7 +231,7 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
     The **V** record draws a vertical line between columns (if more than
     one) using the selected *pen*.  Here, *offset* is analogous to the offset
     for the **D** records but in the vertical direction [0].  The first time
-    **V* is used we remember the vertical position of the last **D** line,
+    **V** is used we remember the vertical position of the last **D** line,
     and the second time **V** is set we draw from that past location to the
     most recent location of the **D** line.  Thus, **D** must be used to
     mark the start and stop of a vertical line (so **V** must follow **D**).
@@ -262,39 +265,41 @@ Examples
 To add an example of a legend to a Mercator plot (map.ps) with the given
 specifications, use
 
-    gmt pslegend -R-10/10/-10/10 -JM6i -F+gazure1 -Dx0.5i/0.5i/5i/3.3i/BL \
-    -C0.1i/0.1i -L1.2 -B5f1 << EOF >> map.ps
-    # Legend test for pslegend
-    # G is vertical gap, V is vertical line, N sets # of columns, D draws horizontal line.
-    # H is header, L is label, S is symbol, T is paragraph text, M is map scale.
-    #
-    G -0.1i
-    H 24 Times-Roman My Map Legend
-    D 0.2i 1p
-    N 2
-    V 0 1p
-    S 0.1i c 0.15i p300/12 0.25p 0.3i This circle is hachured
-    S 0.1i e 0.15i yellow 0.25p 0.3i This ellipse is yellow
-    S 0.1i w 0.15i green 0.25p 0.3i This wedge is green
-    S 0.1i f0.1i+l+t 0.25i blue 0.25p 0.3i This is a fault
-    S 0.1i - 0.15i - 0.25p,- 0.3i A dashed contour
-    S 0.1i v0.1i+a40+e 0.25i magenta 0.25p 0.3i This is a vector
-    S 0.1i i 0.15i cyan 0.25p 0.3i This triangle is boring
-    V 0 1p
-    D 0.2i 1p
-    N 1
-    M 5 5 600+u f
-    G 0.05i
-    I SOEST_logo.ras 3i CT
-    G 0.05i
-    B colors.cpt 0.2i 0.2i
-    G 0.05i L 9 4 R Smith et al., @%5%J. Geophys. Res., 99@%%, 2000
-    G 0.1i
-    P
-    T Let us just try some simple text that can go on a few lines.
-    T There is no easy way to predetermine how many lines will be required,
-    T so we may have to adjust the box height to get the right size box.
-    EOF
+::
+
+     gmt pslegend -R-10/10/-10/10 -JM6i -F+gazure1 -Dx0.5i/0.5i/5i/3.3i/BL \
+     -C0.1i/0.1i -L1.2 -B5f1 << EOF >> map.ps
+     # Legend test for pslegend
+     # G is vertical gap, V is vertical line, N sets # of columns, D draws horizontal line.
+     # H is header, L is label, S is symbol, T is paragraph text, M is map scale.
+     #
+     G -0.1i
+     H 24 Times-Roman My Map Legend
+     D 0.2i 1p
+     N 2
+     V 0 1p
+     S 0.1i c 0.15i p300/12 0.25p 0.3i This circle is hachured
+     S 0.1i e 0.15i yellow 0.25p 0.3i This ellipse is yellow
+     S 0.1i w 0.15i green 0.25p 0.3i This wedge is green
+     S 0.1i f0.1i+l+t 0.25i blue 0.25p 0.3i This is a fault
+     S 0.1i - 0.15i - 0.25p,- 0.3i A dashed contour
+     S 0.1i v0.1i+a40+e 0.25i magenta 0.25p 0.3i This is a vector
+     S 0.1i i 0.15i cyan 0.25p 0.3i This triangle is boring
+     V 0 1p
+     D 0.2i 1p
+     N 1
+     M 5 5 600+u f
+     G 0.05i
+     I SOEST_logo.ras 3i CT
+     G 0.05i
+     B colors.cpt 0.2i 0.2i
+     G 0.05i L 9 4 R Smith et al., @%5%J. Geophys. Res., 99@%%, 2000
+     G 0.1i
+     P
+     T Let us just try some simple text that can go on a few lines.
+     T There is no easy way to predetermine how many lines will be required,
+     T so we may have to adjust the box height to get the right size box.
+     EOF
 
 Note On Legend Height
 ---------------------
@@ -322,6 +327,6 @@ See Also
 --------
 
 :doc:`gmt`, :doc:`gmt.conf`,
-:doc:`gmtcolors`,
+:doc:`gmtcolors`,:doc:`gmtlogo`
 :doc:`psbasemap`, :doc:`pstext`,
 :doc:`psxy`

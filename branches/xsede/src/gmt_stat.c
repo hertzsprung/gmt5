@@ -1382,7 +1382,8 @@ double GMT_Fcrit (struct GMT_CTRL *GMT, double alpha, double nu1, double nu2)
 }
 
 static inline uint64_t mix64 (uint64_t a, uint64_t b, uint64_t c) {
-	/* mix 3 64-bit values */
+	/* Mix 3 64-bit values, from lookup8.c by Bob Jenkins
+	 * (http://burtleburtle.net/bob/index.html) */
 	a -= b; a -= c; a ^= (c>>43);
 	b -= c; b -= a; b ^= (a<<9);
 	c -= a; c -= b; c ^= (b>>8);
@@ -1405,7 +1406,8 @@ double GMT_rand (struct GMT_CTRL *GMT) {
 	double random_val;
 
 	while (seed == 0) { /* repeat in case of unsigned overflow */
-		/* initialize random seed */
+		/* Initialize random seed, idea from Jonathan
+		 * Wright (http://stackoverflow.com/q/322938) */
 		seed = (unsigned) mix64 (clock(), time(NULL), getpid());
 		srand (seed);
 	}
@@ -1603,6 +1605,21 @@ int compare_observation (const void *a, const void *b)
 	if (obs_1->value > obs_2->value)
 		return 1;
 	return 0;
+}
+
+double GMT_mean_weighted (struct GMT_CTRL *GMT, double *x, double *w, uint64_t n)
+{
+	/* Return the weighted mean of x given weights w */
+	uint64_t k;
+	double sum_xw = 0.0, sum_w = 0.0;
+	
+	if (n == 0) return (GMT->session.d_NaN);	/* No data, so no defined mean */
+	for (k = 0; k < n; k++) {
+		sum_w  += w[k];
+		sum_xw += x[k] * w[k];
+	}
+	if (sum_w == 0.0) return (GMT->session.d_NaN);	/* No weights, so no defined mean */
+	return (sum_xw / sum_w);
 }
 
 double GMT_median_weighted (struct GMT_CTRL *GMT, struct OBSERVATION *data, uint64_t n, double quantile)

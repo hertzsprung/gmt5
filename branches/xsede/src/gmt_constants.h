@@ -67,8 +67,9 @@
 #define M_EULER		0.577215664901532860606512	/* Euler's constant (gamma) */
 #endif
 
-#define GMT_CONV8_LIMIT	1.0e-8		/* Fairly tight convergence limit or "close to zero" limit */
-#define GMT_CONV4_LIMIT	1.0e-4		/* Less tight convergence limit or "close to zero" limit */
+#define GMT_CONV15_LIMIT 1.0e-15	/* Very tight convergence limit or "close to zero" limit */
+#define GMT_CONV8_LIMIT	 1.0e-8		/* Fairly tight convergence limit or "close to zero" limit */
+#define GMT_CONV4_LIMIT	 1.0e-4		/* Less tight convergence limit or "close to zero" limit */
 
 /*! Various allocation-length parameters */
 enum GMT_enum_length {
@@ -133,8 +134,9 @@ enum GMT_swap_direction {
 #define GMT_YR2SEC_F	(365.2425 * 86400.0)
 #define GMT_MON2SEC_F	(365.2425 * 86400.0 / 12.0)
 
-#define GMT_DEC_SIZE	0.54	/* Size of a decimal number compared to point size */
-#define GMT_PER_SIZE	0.30	/* Size of a decimal point compared to point size */
+#define GMT_LET_SIZE	0.78	/* Width of an "N" compared to point size */
+#define GMT_DEC_SIZE	0.54	/* Width of a decimal number compared to point size */
+#define GMT_PER_SIZE	0.30	/* Width of a decimal point compared to point size */
 
 #define GMT_PEN_LEN	128
 #define GMT_PENWIDTH	0.25	/* Default pen width in points */

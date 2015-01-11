@@ -106,6 +106,7 @@ EXTERN_MSC void GMT_textpath_init (struct GMT_CTRL *GMT, struct GMT_PEN *BP, dou
 EXTERN_MSC void GMT_draw_map_rose (struct GMT_CTRL *GMT, struct GMT_MAP_ROSE *mr);
 EXTERN_MSC int GMT_draw_map_scale (struct GMT_CTRL *GMT, struct GMT_MAP_SCALE *ms);
 EXTERN_MSC void GMT_draw_map_insert (struct GMT_CTRL *GMT, struct GMT_MAP_INSERT *B);
+EXTERN_MSC void GMT_draw_map_panel (struct GMT_CTRL *GMT, double x, double y, unsigned int mode, struct GMT_MAP_PANEL *P);
 EXTERN_MSC void GMT_geo_line (struct GMT_CTRL *GMT, double *lon, double *lat, uint64_t n);
 EXTERN_MSC void GMT_geo_polygons (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S);
 EXTERN_MSC void GMT_geo_ellipse (struct GMT_CTRL *GMT, double lon, double lat, double major, double minor, double azimuth);
@@ -392,6 +393,7 @@ EXTERN_MSC bool GMT_getrgb (struct GMT_CTRL *GMT, char *line, double *rgb);
 EXTERN_MSC int GMT_getrose (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_ROSE *mr);
 EXTERN_MSC int GMT_getscale (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_SCALE *ms);
 EXTERN_MSC int GMT_getinsert (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_INSERT *B);
+EXTERN_MSC int GMT_getpanel (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_PANEL *P);
 EXTERN_MSC char * GMT_putfont (struct GMT_CTRL *GMT, struct GMT_FONT F);
 EXTERN_MSC char * GMT_putpen (struct GMT_CTRL *GMT, struct GMT_PEN pen);
 EXTERN_MSC unsigned int GMT_inonout (struct GMT_CTRL *GMT, double x, double y, const struct GMT_DATASEGMENT *S);

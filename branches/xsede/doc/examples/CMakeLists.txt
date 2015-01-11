@@ -94,14 +94,11 @@ foreach (_script ${_examples})
 	list (APPEND _examples_txt ${RST_BINARY_DIR}/_verbatim/${_txt})
 
 	add_custom_command (OUTPUT ${RST_BINARY_DIR}/_verbatim/${_txt}
-		COMMAND ${CMAKE_COMMAND}
-		-D script=${CMAKE_CURRENT_SOURCE_DIR}/${_script}
-		-D txt=${RST_BINARY_DIR}/_verbatim/${_txt}
-		-D no_strip=TRUE
-		-D CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-		-P ${CMAKE_MODULE_PATH}/ScriptToVerbatim.cmake
+		COMMAND ${GMT_BINARY_DIR}/src/script2verbatim
+		${CMAKE_CURRENT_SOURCE_DIR}/${_script}
+		${RST_BINARY_DIR}/_verbatim/${_txt}
 		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-		DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${_script})
+		DEPENDS script2verbatim _docs_rst_mkdir_verbatim ${CMAKE_CURRENT_SOURCE_DIR}/${_script})
 endforeach (_script ${_examples})
 
 # Add build target
@@ -109,12 +106,14 @@ add_custom_target (_docs_examples_fig DEPENDS ${_examples_pdf} ${_examples_png})
 add_custom_target (_docs_examples_verbatim DEPENDS ${_examples_txt})
 add_depend_to_target (docs_depends _docs_examples_fig _docs_examples_verbatim)
 
-# Animation
+# Animations
 if (UNIX)
+	configure_file (animate.in animate @ONLY)
+
 	foreach (_num 01 02 03 04)
 		add_custom_command (
 			OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/anim${_num}/anim_${_num}.gif
-			COMMAND ${BASH} gmtest anim${_num}/anim_${_num}.sh 1
+			COMMAND ${BASH} animate anim${_num}/anim_${_num}.sh
 			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 			DEPENDS gmt_for_img_convert ${CMAKE_CURRENT_SOURCE_DIR}/anim${_num}/anim_${_num}.sh)
 		add_custom_command (
@@ -125,7 +124,37 @@ if (UNIX)
 			DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/anim${_num}/anim_${_num}.gif)
 		list (APPEND _animations ${RST_BINARY_DIR}/_images/anim_${_num}.gif)
 	endforeach ()
+
+	# copy video files from anim 04
+	add_custom_command (
+		OUTPUT
+		${RST_BINARY_DIR}/_images/anim_04.mp4
+		${RST_BINARY_DIR}/_images/anim_04.webm
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${CMAKE_CURRENT_BINARY_DIR}/anim04/anim_04.mp4
+		${RST_BINARY_DIR}/_static/anim_04.mp4
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${CMAKE_CURRENT_BINARY_DIR}/anim04/anim_04.webm
+		${RST_BINARY_DIR}/_static/anim_04.webm
+		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/anim04/anim_04.gif)
+	list (APPEND _animations
+		${RST_BINARY_DIR}/_images/anim_04.mp4
+		${RST_BINARY_DIR}/_images/anim_04.webm)
 	add_custom_target (animation DEPENDS ${_animations})
+
+	# clean target
+	add_custom_target (_anim_clean
+		COMMAND ${CMAKE_COMMAND} -E remove_directory
+		${CMAKE_CURRENT_BINARY_DIR}/anim01
+		COMMAND ${CMAKE_COMMAND} -E remove_directory
+		${CMAKE_CURRENT_BINARY_DIR}/anim02
+		COMMAND ${CMAKE_COMMAND} -E remove_directory
+		${CMAKE_CURRENT_BINARY_DIR}/anim03
+		COMMAND ${CMAKE_COMMAND} -E remove_directory
+		${CMAKE_CURRENT_BINARY_DIR}/anim04
+		COMMENT "Removing animations")
+	# register with spotless target
+	add_depend_to_target (spotless _anim_clean)
 endif (UNIX)
 
 # run examples (test)

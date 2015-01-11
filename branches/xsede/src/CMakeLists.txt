@@ -187,7 +187,7 @@ endif (NOT LICENSE_RESTRICTED)
 
 set (GMT_PROGS_SRCS blockmean.c blockmedian.c blockmode.c filter1d.c
 	fitcircle.c gmt2kml.c gmtconvert.c gmtlogo.c gmtmath.c gmtselect.c gmtsimplify.c
-	gmtspatial.c gmtconnect.c gmtvector.c gmtwhich.c grd2cpt.c grd2rgb.c
+	gmtspatial.c gmtconnect.c gmtregress.c gmtvector.c gmtwhich.c grd2cpt.c grd2rgb.c
 	grd2xyz.c grdblend.c grdclip.c grdcut.c grdedit.c grdfft.c grdfilter.c
 	grdgradient.c grdhisteq.c grdinfo.c grdlandmask.c grdmask.c grdmath.c
 	grdpaste.c grdproject.c grdraster.c grdsample.c grdconvert.c grdtrack.c
@@ -529,6 +529,9 @@ add_executable (gshhg_version gshhg_version.h gshhg_version.c)
 set_target_properties (gshhg_version
 	PROPERTIES COMPILE_DEFINITIONS "STANDALONE")
 target_link_libraries (gshhg_version ${NETCDF_LIBRARIES})
+
+# script2verbatim for removing svn keywords, comments etc. from example scripts
+add_executable (script2verbatim script2verbatim.c)
 
 if (BUILD_SUPPLEMENTS)
 	# Tests depend on GMT progs and supplements:

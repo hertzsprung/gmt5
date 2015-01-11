@@ -128,7 +128,7 @@ html_theme_path = ["_themes"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['_source/_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -177,6 +177,11 @@ html_show_sourcelink = True
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'GMT_Docs'
 
+# Redefine supported_image_types for the HTML builder
+from sphinx.builders.html import StandaloneHTMLBuilder
+StandaloneHTMLBuilder.supported_image_types = [
+  'image/gif', 'image/jpeg', 'image/png', 'image/svg+xml'
+]
 
 # -- Options for LaTeX output --------------------------------------------------
 
@@ -244,6 +249,7 @@ man_pages = [
 ('gmtlogo', 'gmtlogo', 'Adding a GMT graphics logo overlay to an illustration', '', 1),
 ('gmtinfo', 'gmtinfo', 'Return information about data tables', '', 1),
 ('gmtmath', 'gmtmath', 'Reverse Polish Notation (RPN) calculator for data tables', '', 1),
+('gmtregress', 'gmtregress', 'Linear regression of 1-D data sets', '', 1),
 ('gmtselect', 'gmtselect', 'Select data table subsets based on multiple spatial criteria', '', 1),
 ('gmtset', 'gmtset', 'Change individual GMT default parameters', '', 1),
 ('gmtsimplify', 'gmtsimplify', 'Line reduction using the Douglas-Peucker algorithm', '', 1),

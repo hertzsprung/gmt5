@@ -996,9 +996,10 @@ void GMT_mapscale_syntax (struct GMT_CTRL *GMT, char option, char *string)
 	GMT_message (GMT, "\t   Use -%cx to specify Cartesian coordinates instead.  Scale is calculated at latitude <slat>;\n", option);
 	GMT_message (GMT, "\t   optionally give longitude <slon> [Default is central longitude].  Give scale <length> and\n");
 	GMT_message (GMT, "\t   append unit from %s [km].  Use -%cf to draw a \"fancy\" scale [Default is plain].\n", GMT_LEN_UNITS2_DISPLAY, option);
-	GMT_message (GMT, "\t   By default, the label equals the distance unit and is placed on top [+jt].  Use the +l<label>\n");
-	GMT_message (GMT, "\t   and +j<just> mechanisms to specify another label and placement (t,b,l,r).  +u sets the label as a unit.\n");
-	GMT_message (GMT, "\t   Append +p<pen> and/or +g<fill> to draw/paint a rectangle behind the scale [no rectangle].\n");
+	GMT_message (GMT, "\t   By default, the label equals the distance unit name and is placed on top [+jt].  Use the +l<label>\n");
+	GMT_message (GMT, "\t   and +j<just> mechanisms to specify another label and placement (t,b,l,r).  +u appends units to annotations.\n");
+	GMT_message (GMT, "\t   and +j<just> mechanisms to specify another label and placement (t,b,l,r).  For the fancy scale,\n");
+	GMT_message (GMT, "\t   +u appends units to annotations while for plain scale it uses unit abbreviation instead of name as label.\n");
 }
 
 /*! .
@@ -1034,7 +1035,7 @@ void GMT_mappanel_syntax (struct GMT_CTRL *GMT, char option, char *string, unsig
 	GMT_message (GMT, "\t-%c %s\n", option, string);
 	GMT_message (GMT, "\t   Without further options: draw border around the %s panel (using MAP_FRAME_PEN)\n", type[kind]);
 	GMT_message (GMT, "\t      [Default is no border].\n");
-	GMT_message (GMT, "\t   Append +c<clearance> where <clearance> is <gap>, <xgap/ygap>, or <lgap/rgap/bgap/tgap> [0].\n");
+	GMT_message (GMT, "\t   Append +c<clearance> where <clearance> is <gap>, <xgap/ygap>, or <lgap/rgap/bgap/tgap> [%gp].\n", GMT_FRAME_CLEARANCE);
 #ifdef DEBUG
 	GMT_message (GMT, "\t   Append +d to draw guide lines for debugging.\n");
 #endif
@@ -1929,7 +1930,7 @@ int gmt_parse_XY_option (struct GMT_CTRL *GMT, int axis, char *text)
 int gmt_parse_a_option (struct GMT_CTRL *GMT, char *arg)
 {	/* -a<col>=<name>[:<type>][,<col>...][+g|G<geometry>] */
 	unsigned int pos = 0;
-	int col;
+	int col, a_col = GMT_Z;
 	char p[GMT_BUFSIZ] = {""}, name[GMT_BUFSIZ] = {""}, A[64] = {""}, *s = NULL, *c = NULL;
 	if (!arg || !arg[0]) return (GMT_PARSE_ERROR);	/* -a requires an argument */
 	if ((s = strstr (arg, "+g")) || (s = strstr (arg, "+G"))) {	/* Also got +g|G<geometry> */
@@ -1957,7 +1958,13 @@ int gmt_parse_a_option (struct GMT_CTRL *GMT, char *arg)
 		}
 		else
 			GMT->common.a.type[GMT->common.a.n_aspatial] = GMT_DOUBLE;
-		if (sscanf (p, "%[^=]=%s", A, name) != 2) return (GMT_PARSE_ERROR);	/* Did not get two items */
+		if (strchr (p, '=')) {	/* Got col=name */
+			if (sscanf (p, "%[^=]=%s", A, name) != 2) return (GMT_PARSE_ERROR);	/* Did not get two items */
+		}
+		else {	/* Auto-fill col as the next col starting at GMT_Z */
+			sprintf (A, "%d", a_col++);
+			strcpy (name, p);
+		}
 		switch (A[0]) {	/* Watch for different multisegment header cases */
 			case 'D': col = GMT_IS_D; break;	/* Distance flag */
 			case 'G': col = GMT_IS_G; break;	/* Color flag */
@@ -1968,6 +1975,8 @@ int gmt_parse_a_option (struct GMT_CTRL *GMT, char *arg)
 			case 'Z': col = GMT_IS_Z; break;	/* Value flag */
 			default:
 				col = atoi (A);
+				if (col < GMT_Z)
+					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -a: Columns 0 and 1 are reserved for lon and lat.\n");
 				if (col < GMT_Z || col >= GMT_MAX_COLUMNS) return (GMT_PARSE_ERROR);		/* Col value out of whack */
 				break;
 		}
@@ -3000,17 +3009,26 @@ bool gmt_parse_s_option (struct GMT_CTRL *GMT, char *item) {
 }
 
 /*! . */
-int gmt_parse_V_option (struct GMT_CTRL *GMT, char arg) {
+int GMT_get_V (char arg) {
+	int mode = GMT_MSG_QUIET;
 	switch (arg) {
-		case 'q': case '0': GMT->current.setting.verbose = GMT_MSG_QUIET;   break;
-		case 'n':           GMT->current.setting.verbose = GMT_MSG_NORMAL;  break;
-		case 't':           GMT->current.setting.verbose = GMT_MSG_TICTOC;  break;
-		case 'c': case '1': GMT->current.setting.verbose = GMT_MSG_COMPAT;  break;
-		case 'v': case '2': GMT->current.setting.verbose = GMT_MSG_VERBOSE; break;
-		case 'l': case '3': GMT->current.setting.verbose = GMT_MSG_LONG_VERBOSE; break;
-		case 'd': case '4': GMT->current.setting.verbose = GMT_MSG_DEBUG;   break;
-		default: return true;
+		case 'q': case '0': mode = GMT_MSG_QUIET;   break;
+		case 'n':           mode = GMT_MSG_NORMAL;  break;
+		case 't':           mode = GMT_MSG_TICTOC;  break;
+		case 'c': case '1': mode = GMT_MSG_COMPAT;  break;
+		case 'v': case '2': case '\0': mode = GMT_MSG_VERBOSE; break;
+		case 'l': case '3': mode = GMT_MSG_LONG_VERBOSE; break;
+		case 'd': case '4': mode = GMT_MSG_DEBUG;   break;
+		default: mode = -1;
 	}
+	return mode;
+}
+
+/*! . */
+int gmt_parse_V_option (struct GMT_CTRL *GMT, char arg) {
+	int mode = GMT_get_V (arg);
+	if (mode < 0) return true;	/* Error in parsing */
+	GMT->current.setting.verbose = (unsigned int)mode;
 	return false;
 }
 

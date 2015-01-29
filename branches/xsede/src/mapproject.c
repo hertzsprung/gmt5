@@ -664,7 +664,6 @@ int GMT_mapproject (void *V_API, int mode, void *args)
 	if (GMT_Init_IO (API, GMT_IS_DATASET, GMT_IS_POINT, GMT_OUT, GMT_ADD_DEFAULT, 0, options) != GMT_OK) {	/* Establishes data output */
 		Return (API->error);
 	}
-	rmode = (GMT_is_ascii_record (GMT) && GMT_get_cols (GMT, GMT_IN) > 2) ? GMT_READ_MIXED : GMT_READ_DOUBLE;
 
 	x_in_min = y_in_min = x_out_min = y_out_min = DBL_MAX;
 	x_in_max = y_in_max = x_out_max = y_out_max = -DBL_MAX;
@@ -693,6 +692,7 @@ int GMT_mapproject (void *V_API, int mode, void *args)
 	if (GMT_Begin_IO (API, GMT_IS_DATASET, GMT_OUT, GMT_HEADER_ON) != GMT_OK) {	/* Enables data output and sets access mode */
 		Return (API->error);
 	}
+	rmode = (GMT_is_ascii_record (GMT) && GMT_get_cols (GMT, GMT_IN) > 2) ? GMT_READ_MIXED : GMT_READ_DOUBLE;
 
 	n = n_read_in_seg = 0;
 	do {	/* Keep returning records until we reach EOF */
@@ -789,12 +789,12 @@ int GMT_mapproject (void *V_API, int mode, void *args)
 				strncpy (line, GMT->current.io.current_record, GMT_BUFSIZ);
 				GMT_chop (line);	/* Chop of line feed */
 				pos = record[0] = 0;	/* Start with blank record */
-				GMT_strtok (line, " \t,", &pos, p);	/* Returns xstring (ignored) and update pos */
-				GMT_strtok (line, " \t,", &pos, p);	/* Returns ystring (ignored) and update pos */
+				GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);	/* Returns xstring (ignored) and update pos */
+				GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);	/* Returns ystring (ignored) and update pos */
 				GMT_add_to_record (GMT, record, out[x], GMT_X, 2);	/* Format our output x value */
 				GMT_add_to_record (GMT, record, out[y], GMT_Y, 2);	/* Format our output y value */
 				if (Ctrl->E.active) {
-					GMT_strtok (line, " \t,", &pos, p);		/* Returns zstring (ignore) and update pos */
+					GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);		/* Returns zstring (ignore) and update pos */
 					GMT_add_to_record (GMT, record, out[GMT_Z], GMT_Z, 2);	/* Format our output z value */
 				}
 				if (line[pos]) strcat (record, &line[pos]);	/* Append the remainder of the user text */
@@ -913,8 +913,8 @@ int GMT_mapproject (void *V_API, int mode, void *args)
 					strncpy (line, GMT->current.io.current_record, GMT_BUFSIZ);
 					GMT_chop (line);
 					pos = record[0] = 0;	/* Start with blank record */
-					GMT_strtok (line, " \t,", &pos, p);	/* Returns xstring (ignored) and update pos */
-					GMT_strtok (line, " \t,", &pos, p);	/* Returns ystring (ignored) and update pos */
+					GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);	/* Returns xstring (ignored) and update pos */
+					GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);	/* Returns ystring (ignored) and update pos */
 					GMT_add_to_record (GMT, record, in[x], GMT_X, 2);	/* Format our output x value */
 					GMT_add_to_record (GMT, record, in[y], GMT_Y, 2);	/* Format our output y value */
 					if (line[pos]) {	/* Append user text */
@@ -960,12 +960,12 @@ int GMT_mapproject (void *V_API, int mode, void *args)
 					strncpy (line, GMT->current.io.current_record, GMT_BUFSIZ);
 					GMT_chop (line);
 					pos = record[0] = 0;	/* Start with blank record */
-					GMT_strtok (line, " \t,", &pos, p);	/* Returns xstring and update pos */
-					GMT_strtok (line, " \t,", &pos, p);	/* Returns ystring and update pos */
+					GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);	/* Returns xstring and update pos */
+					GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);	/* Returns ystring and update pos */
 					GMT_add_to_record (GMT, record, out[x], o_type[GMT_X], 2);	/* Format our output x value */
 					GMT_add_to_record (GMT, record, out[y], o_type[GMT_Y], 2);	/* Format our output y value */
 					if (Ctrl->E.active || (Ctrl->T.active && GMT->current.proj.datum.h_given)) {
-						GMT_strtok (line, " \t,", &pos, p);		/* Returns zstring (ignored) and update pos */
+						GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p);		/* Returns zstring (ignored) and update pos */
 						GMT_add_to_record (GMT, record, out[GMT_Z], GMT_Z, 2);	/* Format our output z value */
 					}
 					strcat (record, &line[pos]);

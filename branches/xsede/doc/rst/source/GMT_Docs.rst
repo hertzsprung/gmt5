@@ -361,11 +361,16 @@ changes to syntax will be backwards compatible:
    compute 3-D projected coordinates.
 
 *  :doc:`psbasemap` now takes **-A** to save plot domain polygon in geographical coordinates.
+   The **-L** option for map scale has been revised (backwards compatible) and a
+   new uniform **-F** option to specify background panel and its many settings was added.
 
-*  :doc:`pscoast` can accept multiple **-F** settings to color features independently.
+*  :doc:`pscoast` can accept multiple **-E** settings to color features independently.
    We also have **-A** modifiers **+AS** to *only* plot Antarctica, **+ag** to use
    shelf ice grounding line for Antarctica coastline, and **+ai** to use ice/water
-   front for Antarctica coastline [Default].
+   front for Antarctica coastline [Default].  As above, the **-L** option for map scale
+   has been revised (backwards compatible) and a new uniform **-F** option to specify
+   background panel and its many settings was added.
+   
 
 *  :doc:`psconvert` (apart from the name change) has several new features, such as
    reporting dimensions of the plot when **-A** and **-V** are used,
@@ -875,7 +880,7 @@ Finally, here is a list of numerous enhancements to individual programs:
 
 *  :doc:`psclip` has added an extended **-C** option to close different types of clip paths.
 
-*  :doc:`pscoast` has added a new option **-F** which lets users specify one or more countries
+*  :doc:`pscoast` has added a new option **-E** which lets users specify one or more countries
    to paint, fill, extract, or use as plot domain (requires DCW to be installed).
 
 *  :doc:`pscontour` is now similar to :doc:`grdcontour` in the options it
@@ -2952,15 +2957,15 @@ Binary table i/o: The **-b** option
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 All GMT programs that accept table data input may read ASCII, native
-binary, or netCDF data. Native binary files may have a header section
+binary, or netCDF tables. Native binary files may have a header section
 and the **-h**\ *n* option (see Section `Header data records: The -h option`_) can be used to
-skip the first *n* bytes. The data record can be in any format, mixing
-different data types and even containing byte-swapped items. When using
+skip the first *n* bytes. The data record can be in any format, you may mix
+different data types and even byte-swap individual columns or the entire record. When using
 native binary data the user must be aware of the fact that GMT has no
 way of determining the actual number of columns in the file. You must
 therefore pass that information to GMT via the binary
-**-bi** option, where *n* is the actual number of data
-columns and **t** must be one of **c** (signed 1-byte character,
+**-bi** *n*\ **t** option, where *n* is the number of data
+columns of given type **t**, where **t** must be one of **c** (signed 1-byte character,
 int8_t), **u** (unsigned 1-byte character, uint8_t), **h** (signed
 2-byte int, int16_t), **H** (unsigned 2-byte int, uint16_t), **i**
 (signed 4-byte int, int32_t), **I** (unsigned 4-byte int, uint32_t),
@@ -2980,7 +2985,7 @@ not set]. If *n* < *m* an error is generated. Multiple segment
 files are allowed and the segment headers are assumed to be records
 where all the fields equal NaN.
 
-For binary output, use the **-bo** option; see **-bi** for further details.
+For native binary output, use the **-bo** option; see **-bi** for further details.
 
 Because of its meta data, reading netCDF tables (i.e., netCDF files
 containing 1-dimensional arrays) is quite a bit less complex than
@@ -6373,11 +6378,12 @@ records that do *not* start with '#' then you must make sure to use the
 **-h** option and set the parameter :ref:`IO_N_HEADER_RECS <IO_N_HEADER_RECS>` in the :doc:`gmt.conf` file
 (GMT default is one header record if **-h** is given; you may also use
 **-h**\ *nrecs* directly). Fields within a record must be separated by
-spaces, tabs, or commas. Each field can be an integer or floating-point
+spaces, tabs, commas, or semi-colons. Each field can be an integer or floating-point
 number or a geographic coordinate string using the
 [+\ \|\ -]dd[:mm[:ss]][W:\ \|\ S\ \|\ N\ \|\ E\ \|\ w\ \|\ s\ \|\ n\ \|\ e]
 format. Thus, 12:30:44.5W, 17.5S, 1:00:05, and 200:45E are all valid
-input strings. On output, fields will be separated by the character
+input strings. GMT is expected to handle most CVS (Comma-Separated Values)
+files, including numbers given in double quotes.  On output, fields will be separated by the character
 given by the parameter :ref:`IO_COL_SEPARATOR <IO_COL_SEPARATOR>`, which by default is a TAB.
 
 Optional segment header records
@@ -6473,7 +6479,7 @@ slightly deviating from the standards used by GMT can also be read.
 .. _tbl-netcdf-format:
 
 +----------------------+--------------------------------------------------------------------+
-| **Atributte**        | **Description**                                                    |
+| **Attribute**        | **Description**                                                    |
 +======================+====================================================================+
 |                      | *Global attributes*                                                |
 +----------------------+--------------------------------------------------------------------+

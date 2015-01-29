@@ -97,7 +97,7 @@ struct GMTAPI_DATA_OBJECT {
 	bool no_longer_owner;			/* true if the data pointed to by the object was passed on to another object */
 	bool messenger;				/* true for output objects passed from the outside to receive data from GMT. If true we destroy data pointer before writing */
 	enum GMT_enum_alloc alloc_mode;		/* GMT_ALLOCATED_{BY_GMT|EXTERNALLY} */
-	enum GMT_io_enum direction;		/* GMT_IN or GMT_OUT */
+	enum GMT_enum_std direction;		/* GMT_IN or GMT_OUT */
 	enum GMT_enum_family family;		/* One of GMT_IS_{DATASET|TEXTSET|CPT|IMAGE|GRID|MATRIX|VECTOR|COORD} */
 	enum GMT_enum_family actual_family;	/* May be GMT_IS_MATRIX|VECTOR when one of the others are created via those */
 	unsigned method;		/* One of GMT_IS_{FILE,STREAM,FDESC,DUPLICATE,REFERENCE} or sum with enum GMT_enum_via (GMT_VIA_{NONE,VECTOR,MATRIX,OUTPUT}); using unsigned type because sum exceeds enum GMT_enum_method */
@@ -136,6 +136,7 @@ struct GMTAPI_CTRL {
 	unsigned int mode;			/* 1 if called via external API (Matlab, Python) [0] */
 	unsigned int leave_grid_scaled;		/* 1 if we dont want to unpack a grid after we packed it for writing [0] */
 	unsigned int n_cores;			/* Number of available cores on this system */
+	unsigned int verbose;			/* Used until GMT is set up */
 	bool registered[2];			/* true if at least one source/destination has been registered (in and out) */
 	bool io_enabled[2];			/* true if access has been allowed (in and out) */
 	size_t n_objects_alloc;			/* Allocation counter for data objects */

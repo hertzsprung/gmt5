@@ -1882,7 +1882,7 @@ struct GMT_PALETTE * GMT_create_palette (struct GMT_CTRL *GMT, uint64_t n_colors
 	P = GMT_memory (GMT, NULL, 1, struct GMT_PALETTE);
 	if (n_colors > 0) P->range = GMT_memory (GMT, NULL, n_colors, struct GMT_LUT);
 	P->n_colors = (unsigned int)n_colors;
-	P->alloc_mode = GMT_ALLOCATED_BY_GMT;		/* Memory can be freed by GMT. */
+	P->alloc_mode = GMT_ALLOC_INTERNALLY;		/* Memory can be freed by GMT. */
 	P->alloc_level = GMT->hidden.func_level;	/* Must be freed at this level. */
 	P->id = GMT->parent->unique_var_ID++;		/* Give unique identifier */
 
@@ -4431,7 +4431,7 @@ void GMT_contlabel_free (struct GMT_CTRL *GMT, struct GMT_CONTOUR *G)
 		GMT_free (GMT, L);
 	}
 	if (G->segment) GMT_free (GMT, G->segment);
-	GMT_free_table (GMT, G->xp, GMT_ALLOCATED_BY_GMT);
+	GMT_free_table (GMT, G->xp, GMT_ALLOC_INTERNALLY);
 	if (G->f_n) {	/* Array for fixed points */
 		GMT_free (GMT, G->f_xy[GMT_X]);
 		GMT_free (GMT, G->f_xy[GMT_Y]);
@@ -5121,10 +5121,14 @@ char * GMT_make_filename (struct GMT_CTRL *GMT_UNUSED(GMT), char *template, unsi
 /*! . */
 void GMT_sprintf_float (char *string, char *format, double x)
 {	/* Determines if %-apostrophe is used in the format for a float. If so, use LC_NUMERIC=en_US */
+#ifdef HAVE_SETLOCALE
 	char *use_locale = strstr (format, "%'");
 	if (use_locale) setlocale (LC_NUMERIC, "en_US");
+#endif
 	sprintf (string, format, x);
+#ifdef HAVE_SETLOCALE
 	if (use_locale) setlocale (LC_NUMERIC, "C");
+#endif
 }
 
 /*! . */
@@ -7656,7 +7660,13 @@ int GMT_getinsert (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP
 
 /*! . */
 int GMT_getscale (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_SCALE *ms) {
-	/* Pass text as &argv[i][2] */
+	/* This function parses the -L map scale syntax:
+	 * 	-L[f][x]<lon0>/<lat0>[/<slon>]/<slat>/<length>[e|f|M|n|k|u][+u]
+	 * The function is also backwards compatible with the previous map scale syntax:
+	 * 	-L [f][x]<lon0>/<lat0>[/<slon>]/<slat>/<length>[e|f|M|n|k|u][+l<label>][+j<just>][+p<pen>][+g<fill>][+u]
+	 * The old syntax is recognized by the optional +p and +g modifiers.  If either of these are present then we know
+	 * we are looking at the old syntax and we parse those options but give warning of obsolesnce; otherwise
+	 * we do the parsing of the newer format where the background panel is handled by another options (e.g. -F in psbasemap). */
 
 	int j = 0, i, n_slash, error = 0, k = 0, options;
 	char txt_cpy[GMT_BUFSIZ] = {""}, txt_a[GMT_LEN256] = {""}, txt_b[GMT_LEN256] = {""}, txt_sx[GMT_LEN256] = {""}, txt_sy[GMT_LEN256] = {""}, txt_len[GMT_LEN256] = {""};
@@ -7669,7 +7679,6 @@ int GMT_getscale (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_
 	GMT_memset (ms, 1, struct GMT_MAP_SCALE);
 	ms->measure = 'k';	/* Default distance unit is km */
 	ms->justify = 't';
-	GMT_rgb_copy (ms->fill.rgb, GMT->session.no_rgb);
 
 	/* First deal with possible prefixes f and x (i.e., f, x, xf, fx) */
 	if (text[j] == 'f') ms->fancy = true, j++;
@@ -7699,10 +7708,13 @@ int GMT_getscale (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_
 		error++;
 	i = (int)strlen (txt_len) - 1;
 	if (isalpha ((int)txt_len[i])) {	/* Letter at end of distance value */
-		if (strchr (GMT_LEN_UNITS2, (int)txt_len[i])) {	/* Gave a valid distance unit */
-			ms->measure = txt_len[i];
-			txt_len[i] = '\0';
+		ms->measure = txt_len[i];
+		if (GMT_compat_check (GMT, 4) && ms->measure == 'm') {
+			GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Distance unit m is deprecated; use M for statute miles\n");
+			ms->measure = 'M';
 		}
+		if (strchr (GMT_LEN_UNITS2, ms->measure))	/* Gave a valid distance unit */
+			txt_len[i] = '\0';
 		else {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error -%c option:  Valid distance units are %s\n", option, GMT_LEN_UNITS2_DISPLAY);
 			error++;
@@ -7747,19 +7759,31 @@ int GMT_getscale (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Syntax error -%c option:  Defining latitude is out of range\n", option);
 		error++;
 	}
+	
+	ms->old_style = (strstr (txt_cpy, "+f") || strstr (txt_cpy, "+g") || strstr (txt_cpy, "+p"));
+	
 	if (options > 0) {	/* Gave +?<args> which now must be processed */
-		char p[GMT_BUFSIZ];
+		char p[GMT_BUFSIZ], oldshit[GMT_LEN128] = {""};
 		unsigned int pos = 0, bad = 0;
 		while ((GMT_strtok (txt_cpy, "+", &pos, p))) {
 			switch (p[0]) {
 				case 'f':	/* Fill specification */
-					if (GMT_compat_check (GMT, 4))	/* Warn and fall through */
-						GMT_Report (GMT->parent, GMT_MSG_COMPAT, "+f<fill> in map scale is deprecated, use +g<fill> instead\n");
+					if (ms->old_style && GMT_compat_check (GMT, 4)) {	/*  Warn about old GMT 4 syntax */
+						GMT_Report (GMT->parent, GMT_MSG_COMPAT, "+f<fill> in map scale is deprecated, use -F panel settings instead\n");
+						strcat (oldshit, "+g");
+						strcat (oldshit, &p[1]);
+					}
 					else
 						bad++;
+					break;
 				case 'g':	/* Fill specification */
-					if (GMT_getfill (GMT, &p[1], &ms->fill)) bad++;
-					ms->boxfill = true;
+					if (ms->old_style && GMT_compat_check (GMT, 5)) {	/* Warn about old GMT 5 syntax */
+						GMT_Report (GMT->parent, GMT_MSG_COMPAT, "+g<fill> in map scale is deprecated, use -F panel settings instead\n");
+						strcat (oldshit, "+");
+						strcat (oldshit, p);
+					}
+					else
+						bad++;
 					break;
 
 				case 'j':	/* Label justification */
@@ -7768,8 +7792,13 @@ int GMT_getscale (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_
 					break;
 
 				case 'p':	/* Pen specification */
-					if (GMT_getpen (GMT, &p[1], &ms->pen)) bad++;
-					ms->boxdraw = true;
+					if (ms->old_style && GMT_compat_check (GMT, 5)) {	/* Warn about old syntax */
+						GMT_Report (GMT->parent, GMT_MSG_COMPAT, "+p<pen> in map scale is deprecated, use -F panel settings instead\n");
+						strcat (oldshit, "+");
+						strcat (oldshit, p);
+					}
+					else
+						bad++;
 					break;
 
 				case 'l':	/* Label specification */
@@ -7789,14 +7818,14 @@ int GMT_getscale (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_
 		}
 		error += bad;
 		text[options] = '+';	/* Restore original string */
+		if (ms->old_style && GMT_getpanel (GMT, 'F', oldshit, &(ms->panel))) {
+			GMT_mappanel_syntax (GMT, 'F', "Specify a rectanglar panel behind the scale", 3);
+			error++;
+		}
 	}
-
-	if (error) {
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "syntax error -%c option:  Correct syntax\n", option);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "\t-%c[f][x]<x0>/<y0>/[<lon>/]<lat>/<length>[%s][+l<label>][+j<just>][+p<pen>][+g<fill>][+u]\n", option, GMT_LEN_UNITS2_DISPLAY);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "\t  Append length distance unit from %s [k]\n", GMT_LEN_UNITS2_DISPLAY);
-		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "\t  Justification can be l, r, b, or t [Default]\n");
-	}
+	if (error)
+		GMT_mapscale_syntax (GMT, 'L', " Draw a map scale centered on <lon0>/<lat0>.");
+	
 	ms->plot = true;
 	return (error);
 }
@@ -7982,7 +8011,6 @@ int GMT_getpanel (struct GMT_CTRL *GMT, char option, char *text, struct GMT_MAP_
 					n_errors++;
 				}
 				for (n = 0; n < 4; n++) P->off[n] *= GMT->session.u2u[GMT->current.setting.proj_length_unit][GMT_INCH];	/* Since GMT_Get_Value might return cm */
-				P->clearance = true;
 				break;
 			case 'i':	/* Secondary pen info */
 				P->mode |= GMT_PANEL_INNER;
@@ -10022,7 +10050,7 @@ int gmt_load_macros (struct GMT_CTRL *GMT, char *mtype, struct MATH_MACRO **M) {
 	/* Load in any gmt/grdmath macros.  These records are of the format
 	 * MACRO = ARG1 ARG2 ... ARGN [ : comments on what they do]
 	 * The comments, if present, must be preceded by :<space> to distinguish
-	 * teh flag from any dd:mm:ss or hh:mm:ss constants used in the macro. */
+	 * the flag from any dd:mm:ss or hh:mm:ss constants used in the macro. */
 
 	unsigned int n = 0, k = 0, pos = 0;
 	size_t n_alloc = 0;
@@ -10041,7 +10069,7 @@ int gmt_load_macros (struct GMT_CTRL *GMT, char *mtype, struct MATH_MACRO **M) {
 		if (line[0] == '#') continue;
 		GMT_chop (line);
 		if ((c = strstr (line, ": ")))	/* This macro has comments */
-			c[0] = '\0';	/* Chop off comments */
+			c[0] = '\0';		/* Chop off the comments */
 		GMT_strstrip (line, true);	/* Remove leading and trailing whitespace */
 		sscanf (line, "%s = %[^\n]", name, args);	/* Get name and everything else */
 		if (n == n_alloc) macro = GMT_memory (GMT, macro, n_alloc += GMT_TINY_CHUNK, struct MATH_MACRO);
@@ -10767,7 +10795,7 @@ unsigned int GMT_split_line_at_dateline (struct GMT_CTRL *GMT, struct GMT_DATASE
 	Sx->n_rows = row;	/* Number of points in extended feature with explicit crossings */
 	if (n_split == 0) {	/* No crossings, should not have been called in the first place */
 		GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "No need to insert new points at 180\n");
-		GMT_free_segment (GMT, &Sx, GMT_ALLOCATED_BY_GMT);
+		GMT_free_segment (GMT, &Sx, GMT_ALLOC_INTERNALLY);
 		GMT_free (GMT, pos);
 		return 0;
 	}
@@ -10789,7 +10817,7 @@ unsigned int GMT_split_line_at_dateline (struct GMT_CTRL *GMT, struct GMT_DATASE
 		if (S->ogr) GMT_duplicate_ogr_seg (GMT, L[seg], S);
 		start = pos[seg];
 	}
-	GMT_free_segment (GMT, &Sx, GMT_ALLOCATED_BY_GMT);
+	GMT_free_segment (GMT, &Sx, GMT_ALLOC_INTERNALLY);
 	GMT_free (GMT, pos);
 
 	*Lout = L;		/* Pass pointer to the array of segments */

@@ -50,8 +50,9 @@ struct GRDVECTOR_CTRL {
 		bool active;
 		struct GMT_FILL fill;
 	} G;
-	struct I {	/* -Idx[/dy] */
+	struct I {	/* -I[x]<dx>[/<dy>] */
 		bool active;
+		unsigned int mode;
 		double inc[2];
 	} I;
 	struct N {	/* -N */
@@ -104,7 +105,7 @@ int GMT_grdvector_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_show_name_and_purpose (API, THIS_MODULE_LIB, THIS_MODULE_NAME, THIS_MODULE_PURPOSE);
 	if (level == GMT_MODULE_PURPOSE) return (GMT_NOERROR);
 	GMT_Message (API, GMT_TIME_NONE, "usage: grdvector <gridx> <gridy> %s %s [-A] [%s]\n", GMT_J_OPT, GMT_Rgeo_OPT, GMT_B_OPT);
-	GMT_Message (API, GMT_TIME_NONE, "\t[-C[<cpt>]] [-G<fill>] [-I<dx>/<dy>] [-K] [-N] [-O] [-P] [-Q<params>] [-S[i|l]<scale>[<unit>]]\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t[-C[<cpt>]] [-G<fill>] [-I[x]<dx>/<dy>] [-K] [-N] [-O] [-P] [-Q<params>] [-S[i|l]<scale>[<unit>]]\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t[-T] [%s] [%s] [-W<pen>] [%s]\n\t[%s] [-Z] [%s] [%s]\n\t[%s] [%s]\n\n", 
 		GMT_U_OPT, GMT_V_OPT, GMT_X_OPT, GMT_Y_OPT, GMT_c_OPT, GMT_f_OPT, GMT_p_OPT, GMT_t_OPT);
 
@@ -121,6 +122,7 @@ int GMT_grdvector_usage (struct GMTAPI_CTRL *API, int level)
     GMT_Message (API, GMT_TIME_NONE, "\t   continuous cpt from those colors automatically.\n");
 	GMT_fill_syntax (API->GMT, 'G', "Select vector fill [Default is outlines only].");
 	GMT_Message (API, GMT_TIME_NONE, "\t-I Plot only those nodes that are <dx>/<dy> apart [Default is all nodes].\n");
+	GMT_Message (API, GMT_TIME_NONE, "\t   Optionally, use -Ix<fact>[/<yfact>] to give multiples of grid spacing.\n");
 	GMT_Option (API, "K");
 	GMT_Message (API, GMT_TIME_NONE, "\t-N Do Not clip vectors that exceed the map boundaries [Default will clip].\n");
 	GMT_Option (API, "O,P");
@@ -202,7 +204,8 @@ int GMT_grdvector_parse (struct GMT_CTRL *GMT, struct GRDVECTOR_CTRL *Ctrl, stru
 				break;
 			case 'I':	/* Only use gridnodes Ctrl->I.inc[GMT_X],Ctrl->I.inc[GMT_Y] apart */
 				Ctrl->I.active = true;
-				if (GMT_getinc (GMT, opt->arg, Ctrl->I.inc)) {
+				if (opt->arg[0] == 'x') Ctrl->I.mode = 1;
+				if (GMT_getinc (GMT, &opt->arg[Ctrl->I.mode], Ctrl->I.inc)) {
 					GMT_inc_syntax (GMT, 'I', 1);
 					n_errors++;
 				}
@@ -454,20 +457,26 @@ int GMT_grdvector (void *V_API, int mode, void *args)
 	
 
 	if (!Ctrl->N.active) GMT_map_clip_on (GMT, GMT->session.no_rgb, 3);
-
+	if (Ctrl->I.mode) {	/* Gave multiplier so get actual strides */
+		Ctrl->I.inc[GMT_X] *= Grid[0]->header->inc[GMT_X];
+		Ctrl->I.inc[GMT_Y] *= Grid[0]->header->inc[GMT_Y];
+	}
 	if (Ctrl->I.inc[GMT_X] != 0.0 && Ctrl->I.inc[GMT_Y] != 0.0) {	/* Coarsen the output interval. The new -Idx/dy must be integer multiples of the grid dx/dy */
-		double val = Ctrl->I.inc[GMT_Y] * Grid[0]->header->r_inc[GMT_Y];
+		double val = Ctrl->I.inc[GMT_Y] * Grid[0]->header->r_inc[GMT_Y];	/* Should be ~ an integer within 1 ppm */
 		d_row = urint (val);
-		if (d_row == 0 || !doubleAlmostEqualZero (d_row, val)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: New y grid spacing (%g) is not a multiple of actual grid spacing (%g)\n", Ctrl->I.inc[GMT_Y], Grid[0]->header->inc[GMT_Y]);
+		if (d_row == 0 || fabs ((d_row - val)/d_row) > GMT_CONV6_LIMIT) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error: New y grid spacing (%.12lg) is not a multiple of actual grid spacing (%.12g) [within %g]\n", Ctrl->I.inc[GMT_Y], Grid[0]->header->inc[GMT_Y], GMT_CONV6_LIMIT);
 			Return (EXIT_FAILURE);
 		}
+		Ctrl->I.inc[GMT_Y] = d_row * Grid[0]->header->r_inc[GMT_Y];	/* Get exact y-increment in case of slop */
 		val = Ctrl->I.inc[GMT_X] * Grid[0]->header->r_inc[GMT_X];
 		d_col = urint (val);
-		if (d_col == 0 || !doubleAlmostEqualZero (d_col, val)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Error: New x grid spacing (%g) is not a multiple of actual grid spacing (%g)\n", Ctrl->I.inc[GMT_X], Grid[0]->header->inc[GMT_X]);
+		if (d_col == 0 || fabs ((d_col - val)/d_col) > GMT_CONV6_LIMIT) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error: New x grid spacing (%.12g) is not a multiple of actual grid spacing (%.12g) [within %g]\n", Ctrl->I.inc[GMT_X], Grid[0]->header->inc[GMT_X], GMT_CONV6_LIMIT);
 			Return (EXIT_FAILURE);
 		}
+		Ctrl->I.inc[GMT_X] = d_col * Grid[0]->header->r_inc[GMT_X];	/* Get exact x-increment in case of slop */
+		
 		/* Determine starting row/col for straddled access */
 		tmp = ceil (Grid[0]->header->wesn[YHI] / Ctrl->I.inc[GMT_Y]) * Ctrl->I.inc[GMT_Y];
 		if (tmp > Grid[0]->header->wesn[YHI]) tmp -= Ctrl->I.inc[GMT_Y];

@@ -432,12 +432,24 @@ void GMT_xy_axis (struct GMT_CTRL *GMT, double x0, double y0, double length, dou
 		dim[2] = vector_width; dim[3] = 10.0 * vector_width; dim[4] = 5.0 * vector_width;
 		dim[5] = GMT->current.setting.map_vector_shape; dim[6] = GMT_VEC_END | GMT_VEC_FILL;
 		if (horizontal) {
-			dim[0] = 1.075 * length; dim[1] = 0.0;
-			PSL_plotsymbol (PSL, length, 0.0, dim, PSL_VECTOR);
+			double x = 0.0;
+			if (GMT->current.proj.xyz_pos[axis]) {
+				x = length;
+				dim[0] = 1.075 * length;
+			}
+			else
+				dim[0] = -0.075 * length;
+			PSL_plotsymbol (PSL, x, 0.0, dim, PSL_VECTOR);
 		}
 		else {
-			dim[0] = 0.0; dim[1] = 1.075 * length;
-			PSL_plotsymbol (PSL, 0.0, length, dim, PSL_VECTOR);
+			double y = 0.0;
+			if (GMT->current.proj.xyz_pos[axis]) {
+				y = length;
+				dim[1] = 1.075 * length;
+			}
+			else
+				dim[1] = -0.075 * length;
+			PSL_plotsymbol (PSL, 0.0, y, dim, PSL_VECTOR);
 		}
 	}
 
@@ -2020,8 +2032,8 @@ void gmt_label_trim (char *label, int stage)
 
 void gmt_map_annotate (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, double e, double s, double n)
 {
-	unsigned int i, k, nx, ny, form, remove[2] = {0,0}, trim, add;
-	bool do_minutes, do_seconds, done_Greenwich, done_Dateline;
+	unsigned int i, k, nx, ny, last, form, remove[2] = {0,0}, trim, add;
+	bool do_minutes, do_seconds, done_Greenwich, done_Dateline, check_edges;
 	bool full_lat_range, proj_A, proj_B, annot_0_and_360 = false, dual[2], is_dual, annot, is_world_save, lon_wrap_save;
 	char label[GMT_LEN256] = {""};
 	char **label_c = NULL;
@@ -2076,6 +2088,7 @@ void gmt_map_annotate (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, dou
 	dual[GMT_X] = (dx[1] > 0.0);
 	dual[GMT_Y] = (dy[1] > 0.0);
 	is_dual = (dual[GMT_X] | dual[GMT_Y]);
+	check_edges = (!GMT->common.R.oblique && (GMT->current.setting.map_frame_type & GMT_IS_INSIDE));
 
 	PSL_comment (PSL, "Map annotations\n");
 
@@ -2103,8 +2116,10 @@ void gmt_map_annotate (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, dou
 				nx = GMT_coordinate_array (GMT, w, e, &GMT->current.map.frame.axis[GMT_X].item[GMT_ANNOT_UPPER], &val, &label_c);
 			else
 				nx = GMT_linear_array (GMT, w, e, dx[k], GMT->current.map.frame.axis[GMT_X].phase, &val);
-
+			last = nx - 1;
 			for (i = 0; i < nx; i++) {	/* Worry that we do not try to plot 0 and 360 OR -180 and +180 on top of each other */
+				if (check_edges && ((i == 0 && val[i] == w) || (i == last && val[i] == e)))
+					continue;	/* To avoid/limit clipping of annotations */
 				if (GMT_IS_ZERO (val[i]))
 					done_Greenwich = true;		/* OK, want to plot 0 */
 				if (doubleAlmostEqual (val[i], -180.0))
@@ -2167,10 +2182,14 @@ void gmt_map_annotate (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, dou
 					ny = GMT_linear_array (GMT, s, n, dy[k], GMT->current.map.frame.axis[GMT_Y].phase, &val);
 				tval = val;	/* Same thing */
 			}
+			last = ny - 1;
 			for (i = 0; i < ny; i++) {
 				if ((GMT->current.proj.polar || GMT->current.proj.projection == GMT_VANGRINTEN) && doubleAlmostEqual (fabs (val[i]), 90.0))
 					continue;
 				annot = true, trim = 0;
+				if (check_edges && ((i == 0 && val[i] == s) || (i == last && val[i] == n)))
+					continue;	/* To avoid/limit clipping of annotations */
+				
 				if (dual[GMT_Y] && k == 0) {
 					del = fmod (val[i] - s2, dy[1]);
 					if (GMT_IS_ZERO (del) || doubleAlmostEqual (del, dy[1]))
@@ -2750,20 +2769,21 @@ void GMT_draw_map_insert (struct GMT_CTRL *GMT, struct GMT_MAP_INSERT *B)
 	if (B->boxfill) GMT_setfill (GMT, &B->fill, B->boxdraw);
 	if (B->boxdraw) GMT_setpen (GMT, &B->pen);
 	GMT_geo_polygons (GMT, S);
-	GMT_free_segment (GMT, &S, GMT_ALLOCATED_BY_GMT);
+	GMT_free_segment (GMT, &S, GMT_ALLOC_INTERNALLY);
 }
 
 int GMT_draw_map_scale (struct GMT_CTRL *GMT, struct GMT_MAP_SCALE *ms)
 {
-	unsigned int i, j, jj, form;
-	unsigned int n_f_ticks[10] = {5, 4, 6, 4, 5, 6, 7, 4, 3, 5};
-	unsigned int n_a_ticks[10] = {1, 2, 3, 2, 1, 3, 1, 2, 1, 1};
-	int js;
+	/* unit_width is array of approximate widths of one space plus the various unit abbreviations in multiples of GMT_LET_WIDTH for Helvetica */
+	/* name_width is array of approximate widths of the various labels in multiples of GMT_LET_WIDTH for Helvetica */
+	unsigned int form, j;
+	double unit_width[GMT_N_UNITS] = {1.1, 1.5, 1.5, 1.5, 2.0, 2.0, 2.0, 1.1, 2.25};
+	double name_width[GMT_N_UNITS] = {1.0, 2.3, 4.02, 10.7, 3.2, 2.0, 2.0, 3.05, 8.6};
 	enum GMT_enum_units unit;
-	double x1, x2, y1, y2, tx, ty, off, f_len, a_len, x_left, x_right, bar_length, x_label, y_label;
-	double XL, YL, XR, YR, dist, scl;
-	double base, d_base, width, half, bar_width, dx, dx_f, dx_a;
-	char txt[GMT_LEN256] = {""}, *this_label = NULL;
+	double x1, x2, y1, y2, tx, ty, dist_to_annot, scale_height, x_left, x_right, bar_length_km;
+	double XL, YL, XR, YR, dist, scl, bar_width, dx;
+	char txt[GMT_LEN256] = {""}, format[GMT_LEN64] = {""}, *this_label = NULL;
+	/* inch, cm, pt is not used here but in the array since GMT_get_unit_number uses this sequence */ 
 	char *label[GMT_N_UNITS] = {"m", "km", "miles", "nautical miles", "inch", "cm", "pt", "feet", "survey feet"};
 	char *units[GMT_N_UNITS] = {"m", "km", "mi", "nm", "in", "cm", "pt", "ft", "usft"}, measure;
 	struct PSL_CTRL *PSL= GMT->PSL;
@@ -2772,17 +2792,13 @@ int GMT_draw_map_scale (struct GMT_CTRL *GMT, struct GMT_MAP_SCALE *ms)
 
 	if (!GMT_is_geographic (GMT, GMT_IN)) return GMT_OK;	/* Only for geographic projections */
 
-	measure = (ms->measure == 0) ? 'k' : ms->measure;	/* Km is default */
-	if (GMT_compat_check (GMT, 4) && measure == 'm') {
-		GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: Distance unit m is deprecated; use M for statute miles\n");
-		measure = 'M';
-	}
+	measure = (ms->measure == 0) ? 'k' : ms->measure;	/* Km is default distance unit */
 	if ((unit = GMT_get_unit_number (GMT, measure)) == GMT_IS_NOUNIT) {
 		GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Error: Bad distance unit %c\n", measure);
 		GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
 	}
 
-	bar_length = 0.001 * GMT->current.proj.m_per_unit[unit] * ms->length;	/* Now in km */
+	bar_length_km = 0.001 * GMT->current.proj.m_per_unit[unit] * ms->length;	/* Now in km */
 
 	if (ms->gave_xy)	/* Also get lon/lat coordinates */
 		GMT_xy_to_geo (GMT, &ms->lon, &ms->lat, ms->x0, ms->y0);
@@ -2792,6 +2808,7 @@ int GMT_draw_map_scale (struct GMT_CTRL *GMT, struct GMT_MAP_SCALE *ms)
 		GMT_geo_to_xy (GMT, ms->lon, ms->lat, &ms->x0, &ms->y0);
 	}
 
+	/* Estimate the local scale so we can draw correct length */
 	/* 1. Pick a reasonably small dx, e.g., 5% of map width */
 	dx = 0.05 * GMT->current.map.width;
 	/* 2. Compute test x1, x2 to either side of x0, y0 */
@@ -2802,98 +2819,140 @@ int GMT_draw_map_scale (struct GMT_CTRL *GMT, struct GMT_MAP_SCALE *ms)
 	/* 4. Get distances in km between (XL,YL) and (XR,YR) */
 	dist = 0.001 * GMT_great_circle_dist_meter (GMT, XL, YL, XR, YR);
 	/* Get local scale of desired length to this reference length */
-	scl = bar_length / dist;
+	scl = bar_length_km / dist;
 	/* Revise the selection of dx, x1, x2 using this scale.  Use center y as coordinates for a horizontal bar */
 	dx *= scl; x1 = ms->x0 - dx;	x2 = ms->x0 + dx;
 	y1 = y2 = ms->y0;
 	
-	width = hypot (x2 - x1, y2 - y1);
-	half = 0.5 * width;
-	a_len = fabs (GMT->current.setting.map_scale_height);
-	off = a_len + 0.75 * GMT->current.setting.map_annot_offset[0];
-	x_left  = ms->x0 - half;
-	x_right = ms->x0 + half;
+	bar_width = hypot (x2 - x1, y2 - y1);		/* Width of scale bar in inches */
+	scale_height = fabs (GMT->current.setting.map_scale_height);	/* Nominal scale bar height */
+	dist_to_annot = scale_height + 0.75 * GMT->current.setting.map_annot_offset[0];	/* Dist from top of scalebar to top of annotations */
+	x_left  = ms->x0 - 0.5 * bar_width;	/* x-coordinate of leftmost  scalebar point */
+	x_right = ms->x0 + 0.5 * bar_width;	/* x-coordinate of rightmost scalebar point */
 
 	if (ms->fancy) {	/* Fancy scale */
+		unsigned int i, justify, form;
+		unsigned int n_f_ticks[10] = {5, 4, 6, 4, 5, 6, 7, 4, 3, 5};
+		unsigned int n_a_ticks[10] = {1, 2, 3, 2, 1, 3, 1, 2, 1, 1};
+		int js;
+		double base, d_base, dx_f, dx_a, bar_height, bar_tick_len;
+		/* Based on magnitue of length, determine reasonable annotation spacings */
 		js = irint (floor (d_log10 (GMT, ms->length / 0.95)));
 		base = pow (10.0, (double)js);
 		i = urint (ms->length / base) - 1;
 		d_base = ms->length / n_a_ticks[i];
-		dx_f = width / n_f_ticks[i];
-		dx_a = width / n_a_ticks[i];
-		bar_width = 0.5 * fabs (GMT->current.setting.map_scale_height);
-		f_len = 0.75 * fabs (GMT->current.setting.map_scale_height);
-		if (ms->boxdraw || ms->boxfill) {	/* Draw a rectangle beneath the scale */
-			dx = fabs (0.5 * js * 0.4 * (GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH));
-			if (ms->boxdraw) GMT_setpen (GMT, &ms->pen);
-			GMT_setfill (GMT, &ms->fill, ms->boxdraw);
-			PSL_plotbox (PSL, x_left - 2.0 * GMT->current.setting.map_annot_offset[0] - dx,
-				ms->y0 - 1.5 * a_len - GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH - ((ms->justify == 'b') ?  fabs(GMT->current.setting.map_label_offset) + 0.85 * GMT->current.setting.font_label.size / PSL_POINTS_PER_INCH: 0.0),
-				x_right + 2.0 * GMT->current.setting.map_annot_offset[0] + dx,
-				ms->y0 + 1.5 * a_len + ((ms->justify == 't') ? fabs(GMT->current.setting.map_label_offset) + GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH : 0.0));
+		dx_f = bar_width / n_f_ticks[i];
+		dx_a = bar_width / n_a_ticks[i];
+		bar_height = 0.5 * fabs (GMT->current.setting.map_scale_height);	/* Height of the black/white checkered fancy bar */
+		bar_tick_len = 0.75 * fabs (GMT->current.setting.map_scale_height);	/* Length of tickmarks */
+		if (ms->panel.mode) {	/* Place rectangle behind the map scale */
+			double x_center, y_center, dim[4], l_width = 0.0, l_height = 0.0, l_shift = 0.0;
+
+			/* Adjustment for size of largest annotation is ~half its length (= js+1) times approximate dimensions: */
+			dim[XLO] = dim[XHI] = 0.5 * (js+1) * GMT_DEC_WIDTH * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH;
+			if (ms->unit) {	/* Adjust for units at end of each annotation */
+				dim[XLO] += unit_width[unit] * GMT_LET_WIDTH * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH;
+				dim[XHI] += unit_width[unit] * GMT_LET_WIDTH * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH;
+			}
+			if (ms->do_label) {
+				/* We estimate the width of the label similarly; if no label given then we use the name_widths from above rather than strlen */
+				l_width = bar_tick_len + (ms->label[0] ? strlen (ms->label) : name_width[unit]) * GMT_LET_WIDTH * GMT->current.setting.font_label.size * GMT->session.u2u[GMT_PT][GMT_INCH];
+				/* When label is placed to left|rigth it sticks up by l_shift and we must ensure dim[YHI] is at least that large */
+				l_height = GMT_LET_HEIGHT * GMT->current.setting.font_label.size / PSL_POINTS_PER_INCH;	/* Approximate height of label */
+				l_shift  = l_height - scale_height;	/* Adjust for the shift in y-coordinate */
+			}
+			if (ms->justify == 'l' && l_width > dim[XLO]) dim[XLO] = l_width;	/* Extend rectangle on the left to accomodate the label */
+			else if (ms->justify == 'r' && l_width > dim[XHI]) dim[XHI] = l_width;	/* Extend rectangle on the right to accomodate the label */
+			/* Estimate approximate distance from anchor point down to base of annotations */
+			dim[YLO] = dist_to_annot + GMT_LET_HEIGHT * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH;
+			dim[YHI] = 0.0;	/* Normally nothing above the scale bar */
+			/* If label is above or below bar, add label offset and approximate label height to the space dim */
+			if (ms->do_label && ms->justify == 'b') dim[YLO] += fabs (GMT->current.setting.map_label_offset) + l_height;
+			else if (ms->do_label && ms->justify == 't') dim[YHI] += fabs (GMT->current.setting.map_label_offset) + l_height;
+			else if (ms->do_label && l_shift > dim[YHI]) dim[YHI] = l_shift;
+			/* Determine center of gravity for panel */
+			x_center = ms->x0 + 0.5 * (dim[XHI] - dim[XLO]);
+			y_center = ms->y0 + 0.5 * (dim[YHI] - dim[YLO]);
+			/* Determine panel dimensions */
+			ms->panel.width = bar_width + dim[XHI] + dim[XLO];	ms->panel.height = dim[YHI] + dim[YLO];
+			GMT_draw_map_panel (GMT, x_center, y_center, 3U, &(ms->panel));
 		}
+		/* Draw bar scale ticks using tick pen as well as checkerboard using map_default_pen color [black] and page color [white] */
 		GMT_setpen (GMT, &GMT->current.setting.map_tick_pen[0]);
-		PSL_plotsegment (PSL, x_left, ms->y0 - f_len, x_left, ms->y0);
+		PSL_plotsegment (PSL, x_left, ms->y0 - bar_tick_len, x_left, ms->y0);
 		for (j = 0; j < n_f_ticks[i]; j++) {
 			PSL_setfill (PSL, (j%2) ? GMT->PSL->init.page_rgb : GMT->current.setting.map_default_pen.rgb, true);
-			PSL_plotbox (PSL, x_left + j * dx_f, ms->y0, x_left + (j+1) * dx_f, ms->y0 - bar_width);
-			PSL_plotsegment (PSL, x_left + (j+1) * dx_f, ms->y0 - f_len, x_left + (j+1) * dx_f, ms->y0);
+			PSL_plotbox (PSL, x_left + j * dx_f, ms->y0, x_left + (j+1) * dx_f, ms->y0 - bar_height);
+			PSL_plotsegment (PSL, x_left + (j+1) * dx_f, ms->y0 - bar_tick_len, x_left + (j+1) * dx_f, ms->y0);
 		}
-		ty = ms->y0 - off;
+		/* Place annotations */
+		ty = ms->y0 - dist_to_annot;	/* The y-coordinate at the top of the annotations */
 		form = GMT_setfont (GMT, &GMT->current.setting.font_annot[0]);
 		for (j = 0; j <= n_a_ticks[i]; j++) {
-			if (ms->unit)
-				sprintf (txt, "%g %s", j * d_base, units[unit]);
+			GMT_sprintf_float (format, GMT->current.setting.format_float_map, j * d_base);
+			if (ms->unit) /* Must append unit */
+				sprintf (txt, "%s %s", format, units[unit]);
 			else
-				sprintf (txt, "%g", j * d_base);
-			tx = x_left + j * dx_a;
-			PSL_plotsegment (PSL, tx, ms->y0 - a_len, tx, ms->y0);
-			PSL_plottext (PSL, tx, ty, GMT->current.setting.font_annot[0].size, txt, 0.0, PSL_TC, form);
+				sprintf (txt, "%s", format);
+			tx = x_left + j * dx_a;	/* center x-coordinate for this annotation */
+			PSL_plotsegment (PSL, tx, ms->y0 - scale_height, tx, ms->y0);	/* Draw the tick mark */
+			PSL_plottext (PSL, tx, ty, GMT->current.setting.font_annot[0].size, txt, 0.0, PSL_TC, form);	/* Place annotation */
 		}
-		switch (ms->justify) {
-			case 'l':	/* Left */
-				x_label = x_left - f_len;
-				y_label = ms->y0 - a_len;
-				jj = PSL_BR;	/* Left side annotation are right-justified, etc. */
-				break;
-			case 'r':	/* right */
-				x_label = x_right + f_len;
-				y_label = ms->y0 - a_len;
-				jj = PSL_BL;
-				break;
-			case 't':	/* top */
-				x_label = ms->x0;
-				y_label = ms->y0 + fabs(GMT->current.setting.map_label_offset);
-				jj = PSL_BC;
-				break;
-			default:	/* bottom */
-				x_label = ms->x0;
-				y_label = ms->y0 - a_len - fabs(GMT->current.setting.map_label_offset) - 0.85 * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH;
-				jj = PSL_TC;
-				break;
-		}
-		if (ms->do_label) {
-			this_label = (ms->label[0]) ? ms->label : label[unit];
+		if (ms->do_label) {	/* Label was requested */
+			/* Determine placement of the label */
+			switch (ms->justify) {
+				case 'l':	/* Left */
+					tx = x_left - bar_tick_len;
+					ty = ms->y0 - scale_height;
+					justify = PSL_BR;	/* Left side annotation are right-justified, etc. */
+					break;
+				case 'r':	/* Right */
+					tx = x_right + bar_tick_len;
+					ty = ms->y0 - scale_height;
+					justify = PSL_BL;
+					break;
+				case 't':	/* Top */
+					tx = ms->x0;
+					ty = ms->y0 + fabs (GMT->current.setting.map_label_offset);
+					justify = PSL_BC;
+					break;
+				default:	/* Bottom */
+					tx = ms->x0;
+					ty = ms->y0 - dist_to_annot - GMT_LET_HEIGHT * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH - fabs (GMT->current.setting.map_label_offset);
+					justify = PSL_TC;
+					break;
+			}
+			this_label = (ms->label[0]) ? ms->label : label[unit];	/* Use user label or default to the unit names */
 			form = GMT_setfont (GMT, &GMT->current.setting.font_label);
-			PSL_plottext (PSL, x_label, y_label, GMT->current.setting.font_label.size, this_label, 0.0, jj, form);
+			PSL_plottext (PSL, tx, ty, GMT->current.setting.font_label.size, this_label, 0.0, justify, form);
 		}
 	}
-	else {	/* Simple scale */
-		if (ms->boxdraw || ms->boxfill) {	/* Draw a rectangle beneath the scale */
-			if (ms->boxdraw) GMT_setpen (GMT, &ms->pen);
-			dx = fabs (0.5 * lrint (floor (d_log10 (GMT, ms->length))) * 0.4 * (GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH));
-			GMT_setfill (GMT, &ms->fill, ms->boxdraw);
-			PSL_plotbox (PSL, x_left - 2.0 * GMT->current.setting.map_annot_offset[0] - dx,
-				ms->y0 - 1.5 * a_len - GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH,
-				x_right + 2.0 * GMT->current.setting.map_annot_offset[0] + dx, ms->y0 + 1.5 * a_len);
+	else {	/* Simple scale has no annotation and just the length and unit centered beneath */
+		double xp[4], yp[4];	/* Line for simple scale */
+		if (ms->panel.mode) {	/* Place rectangle behind the map scale */
+			double x_center, y_center, dim[4];
+
+			/* Adjustment for size of largest annotation is half the length times dimensions: */
+			dim[XLO] = dim[XHI] = fabs (GMT->current.setting.map_annot_offset[0]);
+			dim[YLO] = dist_to_annot + GMT_LET_HEIGHT * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH;
+			dim[YHI] = 0.0;
+			/* Determine center of gravity for panel */
+			x_center = ms->x0 + 0.5 * (dim[XHI] - dim[XLO]);
+			y_center = ms->y0 + 0.5 * (dim[YHI] - dim[YLO]);
+			/* Determine panel dimensions */
+			ms->panel.width = bar_width + dim[XHI] + dim[XLO];	ms->panel.height = dim[YHI] + dim[YLO];
+			GMT_draw_map_panel (GMT, x_center, y_center, 3U, &(ms->panel));
 		}
+		/* Draw the simple scale bar using tick pen */
 		GMT_setpen (GMT, &GMT->current.setting.map_tick_pen[0]);
-		PSL_plotsegment (PSL, x_left, ms->y0 - GMT->current.setting.map_scale_height, x_left, ms->y0);
-		PSL_plotsegment (PSL, x_left, ms->y0, x_right, ms->y0);
-		PSL_plotsegment (PSL, x_right, ms->y0, x_right, ms->y0 - GMT->current.setting.map_scale_height);
-		sprintf (txt, "%g %s", ms->length, label[unit]);
+		xp[0] = xp[1] = x_left;	xp[2] = xp[3] = x_right;
+		yp[0] = yp[3] = ms->y0 - scale_height;	yp[1] = yp[2] = ms->y0;
+		PSL_plotline (PSL, xp, yp, 4, PSL_MOVE + PSL_STROKE);
+		/* Make a basic label using the length and chosen unit and place below the scale */
+		GMT_sprintf_float (format, GMT->current.setting.format_float_map, ms->length);
+		sprintf (txt, "%s %s", format, (ms->unit) ? units[unit] : label[unit]);
 		form = GMT_setfont (GMT, &GMT->current.setting.font_annot[0]);
-		PSL_plottext (PSL, ms->x0, ms->y0 - off, GMT->current.setting.font_annot[0].size, txt, 0.0, 10, form);
+		PSL_plottext (PSL, ms->x0, ms->y0 - dist_to_annot, GMT->current.setting.font_annot[0].size, txt, 0.0, PSL_TC, form);
 	}
 	return GMT_OK;
 }
@@ -3159,6 +3218,17 @@ void GMT_draw_map_rose (struct GMT_CTRL *GMT, struct GMT_MAP_ROSE *mr)
 		GMT_geo_to_xy (GMT, mr->lon, mr->lat, &mr->x0, &mr->y0);
 	}
 
+	if (mr->panel.mode) {	/* Place rectangle behind the map rose */
+		double x_center, y_center, dim[4] = {0.0, 0.0, 0.0, 0.0};
+
+		/* Determine center of gravity for panel */
+		x_center = mr->x0 + 0.5 * (dim[XHI] - dim[XLO]);
+		y_center = mr->y0 + 0.5 * (dim[YHI] - dim[YLO]);
+		/* Determine panel dimensions */
+		mr->panel.width = mr->size + dim[XHI] + dim[XLO];	mr->panel.height = mr->size + dim[YHI] + dim[YLO];
+		GMT_draw_map_panel (GMT, x_center, y_center, 3U, &(mr->panel));
+	}
+
 	/* Temporarily use miter to get sharp points to compass rose */
 	tmp_join = PSL->internal.line_join;	PSL_setlinejoin (PSL, 0);
 	tmp_limit = PSL->internal.miter_limit;	PSL_setmiterlimit (PSL, 0);
@@ -3333,7 +3403,7 @@ void gmt_format_symbol_string (struct GMT_CTRL *GMT, struct GMT_CUSTOM_SYMBOL_IT
 		   we must scan the GMT->io.current.current_record for the col'th item and strcpy that into text.  The reason n -> col is
 		   tricky is while we may know this is the 3rd extra variable, we dont know if -C<cpt< was used or if this is psxyz, no? */
 		want_col = start + n;
-		for (col = pos = 0; col <= want_col; col++) GMT_strtok (GMT->current.io.current_record, " \t,", &pos, text);
+		for (col = pos = 0; col <= want_col; col++) GMT_strtok (GMT->current.io.current_record, GMT_TOKEN_SEPARATORS, &pos, text);
 	}
 	else {	/* Must replace special items within a template string */
 		unsigned int n_skip, in, out;
@@ -3940,7 +4010,7 @@ char *GMT_export2proj4 (struct GMT_CTRL *GMT) {
 	/* Cylindrical projections */
 	case GMT_UTM:
 		sprintf (szProj4, "+proj=utm +zone=%d", (int)GMT->current.proj.pars[0]);
-		if (GMT->current.proj.utm_hemisphere < 0) sprintf (szProj4, " +south");
+		if (GMT->current.proj.utm_hemisphere < 0) strcat (szProj4, " +south");
 		break;
 	case GMT_MERCATOR:
 		sprintf (szProj4, "+proj=merc +lon_0=%.16g +k=%.16g +x_0=%.16g +y_0=%.16g",
@@ -4597,7 +4667,7 @@ void GMT_geo_ellipse (struct GMT_CTRL *GMT, double lon, double lat, double major
 	px[GMT_ELLIPSE_APPROX] = px[0], py[GMT_ELLIPSE_APPROX] = py[0];
 	GMT_geo_polygons (GMT, S);
 
-	GMT_free_segment (GMT, &S, GMT_ALLOCATED_BY_GMT);
+	GMT_free_segment (GMT, &S, GMT_ALLOC_INTERNALLY);
 }
 
 float gmt_inch_to_degree_scale (struct GMT_CTRL *GMT)
@@ -4725,7 +4795,7 @@ void gmt_circle_pen_poly (struct GMT_CTRL *GMT, double *A, double *GMT_UNUSED(B)
 	GMT_geo_polygons (GMT, L);	/* "Draw" the line */
 	PSL_command (GMT->PSL, "U\n");
 
-	GMT_free_segment (GMT, &L, GMT_ALLOCATED_BY_GMT);
+	GMT_free_segment (GMT, &L, GMT_ALLOC_INTERNALLY);
 }
 
 void gmt_gcircle_sub (struct GMT_CTRL *GMT, double lon0, double lat0, double azimuth, double length, struct GMT_SYMBOL *S, struct GMT_CIRCLE *C)

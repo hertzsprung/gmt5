@@ -1456,7 +1456,7 @@ bool gmt_is_a_NaN_line (char *line) {
 	unsigned int pos = 0;
 	char p[GMT_LEN256] = {""};
 
-	while ((GMT_strtok (line, " \t,", &pos, p))) {
+	while ((GMT_strtok (line, GMT_TOKEN_SEPARATORS, &pos, p))) {
 		GMT_str_tolower (p);
 		if (strncmp (p, "nan", 3U)) return (false);
 	}
@@ -1570,7 +1570,7 @@ void *gmt_ascii_input (struct GMT_CTRL *GMT, FILE *fp, uint64_t *n, int *status)
 		in_col = -1;					/* Since we will increment right away inside the loop */
 
 		stringp = line;
-		while (!bad_record && col_no < n_use && (token = strsepz (&stringp, " \t,")) != NULL) {	/* Get one field at the time until we run out or have issues */
+		while (!bad_record && col_no < n_use && (token = strsepz (&stringp, GMT_TOKEN_SEPARATORS)) != NULL) {	/* Get one field at the time until we run out or have issues */
 			++in_col;	/* This is the actual column number in the input file */
 			if (GMT->common.i.active) {	/* Must do special column-based processing since the -i option was set */
 				if (GMT->current.io.col_skip[in_col]) continue;		/* Just skip and not even count this column */
@@ -4653,6 +4653,10 @@ int GMT_scanf (struct GMT_CTRL *GMT, char *s, unsigned int expectation, double *
 	int64_t rd;
 	size_t callen, clocklen;
 
+	if (s[0] == '\"') {	/* Must handle double-quoted items */
+		callen = strlen (s) - 1;
+		if (s[callen] == '\"') { s[callen] = '\0'; s++;}	/* Strip off trailing quote and advance pointer over the first */
+	}
 	if (s[0] == 'T') {	/* Numbers cannot start with letters except for clocks, e.g., T07:0 */
 		if (!isdigit ((int)s[1])) return (GMT_IS_NAN);	/* Clocks must have T followed by digit, e.g., T07:0 otherwise junk*/
 	}
@@ -6063,7 +6067,7 @@ struct GMT_TEXTSET * GMT_create_textset (struct GMT_CTRL *GMT, uint64_t n_tables
 
 		}
 	}
-	D->alloc_mode = GMT_ALLOCATED_BY_GMT;		/* Memory can be freed by GMT. */
+	D->alloc_mode = GMT_ALLOC_INTERNALLY;		/* Memory can be freed by GMT. */
 	D->alloc_level = GMT->hidden.func_level;	/* Must be freed at this level. */
 	D->id = GMT->parent->unique_var_ID++;		/* Give unique identifier */
 
@@ -6323,7 +6327,7 @@ struct GMT_DATASET * GMT_create_dataset (struct GMT_CTRL *GMT, uint64_t n_tables
 	if (!alloc_only) D->n_records = D->n_segments * n_rows;
 	for (tbl = 0; tbl < n_tables; tbl++) if ((D->table[tbl] = GMT_create_table (GMT, n_segments, n_rows, n_columns, alloc_only)) == NULL) return (NULL);
 	D->alloc_level = GMT->hidden.func_level;	/* Must be freed at this level. */
-	D->alloc_mode = GMT_ALLOCATED_BY_GMT;		/* So GMT_* modules can free this memory. */
+	D->alloc_mode = GMT_ALLOC_INTERNALLY;		/* So GMT_* modules can free this memory. */
 	D->id = GMT->parent->unique_var_ID++;		/* Give unique identifier */
 
 	return (D);
@@ -6555,13 +6559,13 @@ struct GMT_DATATABLE * GMT_read_table (struct GMT_CTRL *GMT, void *source, unsig
 	if (!use_GMT_io) GMT->current.io.input = psave;	/* Restore previous setting */
 
 	if (first_seg) {	/* Never saw any segment or data records */
-		GMT_free_table (GMT, T, GMT_ALLOCATED_BY_GMT);
+		GMT_free_table (GMT, T, GMT_ALLOC_INTERNALLY);
 		return (NULL);
 	}
 	if (T->segment[seg]->n_rows == 0) {	/* Last segment was empty; we delete to avoid problems downstream in applications */
 		GMT_free (GMT, T->segment[seg]);
 		if (seg == 0) {	/* Happens when we just read 1 segment header with no data */
-			GMT_free_table (GMT, T, GMT_ALLOCATED_BY_GMT);
+			GMT_free_table (GMT, T, GMT_ALLOC_INTERNALLY);
 			return (NULL);
 		}
 	}
@@ -6681,7 +6685,7 @@ struct GMT_DATASET * GMT_alloc_dataset (struct GMT_CTRL *GMT, struct GMT_DATASET
 		}
 	}
 	D->alloc_level = GMT->hidden.func_level;	/* Must be freed at this level. */
-	D->alloc_mode = GMT_ALLOCATED_BY_GMT;		/* So GMT_* modules can free this memory. */
+	D->alloc_mode = GMT_ALLOC_INTERNALLY;		/* So GMT_* modules can free this memory. */
 	D->id = GMT->parent->unique_var_ID++;		/* Give unique identifier */
 	return (D);
 }
@@ -6727,7 +6731,7 @@ void GMT_free_segment (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT **S, enum GM
 	uint64_t col;
 	struct GMT_DATASEGMENT *segment = *S;
 	if (!segment) return;	/* Do not try to free NULL pointer */
-	if (alloc_mode == GMT_ALLOCATED_BY_GMT) {	/* Free data GMT allocated */
+	if (alloc_mode == GMT_ALLOC_INTERNALLY) {	/* Free data GMT allocated */
 		for (col = 0; col < segment->n_columns; col++) if (segment->coord[col]) GMT_free (GMT, segment->coord[col]);
 	}
 	if (segment->coord) GMT_free (GMT, segment->coord);
@@ -6834,7 +6838,7 @@ struct GMT_IMAGE *GMT_create_image (struct GMT_CTRL *GMT)
 {	/* Allocates space for a new image container. */
 	struct GMT_IMAGE *I = GMT_memory (GMT, NULL, 1, struct GMT_IMAGE);
 	I->header = GMT_memory (GMT, NULL, 1, struct GMT_GRID_HEADER);
-	I->alloc_mode = GMT_ALLOCATED_BY_GMT;		/* Memory can be freed by GMT. */
+	I->alloc_mode = GMT_ALLOC_INTERNALLY;		/* Memory can be freed by GMT. */
 	I->alloc_level = GMT->hidden.func_level;	/* Must be freed at this level. */
 	I->id = GMT->parent->unique_var_ID++;		/* Give unique identifier */
 	GMT_grd_init (GMT, I->header, NULL, false); /* Set default values */
@@ -6924,7 +6928,7 @@ struct GMT_VECTOR * GMT_create_vector (struct GMT_CTRL *GMT, uint64_t n_columns,
 	V->type = GMT_memory (GMT, NULL, n_columns, enum GMT_enum_type);
 	V->n_columns = n_columns;
 	/* We expect external memory for input and GMT-allocated memory on output */
-	V->alloc_mode = (direction == GMT_IN) ? GMT_ALLOCATED_EXTERNALLY : GMT_ALLOCATED_BY_GMT;
+	V->alloc_mode = (direction == GMT_IN) ? GMT_ALLOC_EXTERNALLY : GMT_ALLOC_INTERNALLY;
 	V->alloc_level = GMT->hidden.func_level;	/* Must be freed at this level */
 	V->id = GMT->parent->unique_var_ID++;		/* Give unique identifier */
 
@@ -6994,7 +6998,7 @@ unsigned int GMT_free_vector_ptr (struct GMT_CTRL *GMT, struct GMT_VECTOR *V, bo
 	if (V->data && free_vector) {
 		uint64_t col;
 		for (col = 0; col < V->n_columns; col++) {
-			if (V->alloc_mode == GMT_ALLOCATED_BY_GMT) GMT_free_univector (GMT, &(V->data[col]), V->type[col]);
+			if (V->alloc_mode == GMT_ALLOC_INTERNALLY) GMT_free_univector (GMT, &(V->data[col]), V->type[col]);
 			GMT_null_univector (GMT, &(V->data[col]), V->type[col]);
 		}
 	}
@@ -7036,7 +7040,7 @@ struct GMT_MATRIX * GMT_create_matrix (struct GMT_CTRL *GMT, uint64_t layers, un
 	struct GMT_MATRIX *M = NULL;
 	M = GMT_memory (GMT, NULL, 1, struct GMT_MATRIX);
 	/* We expect external memory for input and GMT-allocated memory on output */
-	M->alloc_mode = (direction == GMT_IN) ? GMT_ALLOCATED_EXTERNALLY : GMT_ALLOCATED_BY_GMT;
+	M->alloc_mode = (direction == GMT_IN) ? GMT_ALLOC_EXTERNALLY : GMT_ALLOC_INTERNALLY;
 	M->alloc_level = GMT->hidden.func_level;	/* Must be freed at this level. */
 	M->id = GMT->parent->unique_var_ID++;		/* Give unique identifier */
 	M->n_layers = (layers) ? layers : 1;		/* Default to 1 if not set */
@@ -7075,7 +7079,7 @@ unsigned int GMT_free_matrix_ptr (struct GMT_CTRL *GMT, struct GMT_MATRIX *M, bo
 	if (!M) return 0;	/* Nothing to deallocate */
 	/* Only free M->data if allocated by GMT AND free_matrix is true */
 	if (&(M->data) && free_matrix) {
-		if (M->alloc_mode == GMT_ALLOCATED_BY_GMT) GMT_free_univector (GMT, &(M->data), M->type);
+		if (M->alloc_mode == GMT_ALLOC_INTERNALLY) GMT_free_univector (GMT, &(M->data), M->type);
 		GMT_null_univector (GMT, &(M->data), M->type);
 	}
 	return (M->alloc_mode);
@@ -7131,7 +7135,7 @@ int GMT_conv_intext2dbl (struct GMT_CTRL *GMT, char *record, unsigned int ncols)
 	unsigned int k = 0, pos = 0;
 	char p[GMT_BUFSIZ];
 
-	while (k < ncols && GMT_strtok (record, " \t,", &pos, p)) {	/* Get each field in turn and bail when done */
+	while (k < ncols && GMT_strtok (record, GMT_TOKEN_SEPARATORS, &pos, p)) {	/* Get each field in turn and bail when done */
 		if (!(p[0] == '+' || p[0] == '-' || p[0] == '.' || isdigit ((int)p[0]))) continue;	/* Numbers must be [+|-][.][<digits>] */
 		GMT_scanf (GMT, p, GMT->current.io.col_type[GMT_IN][k], &GMT->current.io.curr_rec[k]);	/* Be tolerant of errors */
 		k++;

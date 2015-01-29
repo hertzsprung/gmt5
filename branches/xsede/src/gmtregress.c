@@ -367,8 +367,8 @@ double icept_weighted (struct GMT_CTRL *GMT, double *e, double *W, uint64_t n, u
 		uint64_t k;
 		ee = GMT_memory (GMT, NULL, n, struct OBSERVATION);
 		for (k = 0; k < n; k++) {
-			ee[k].weight = W[k];
-			ee[k].value  = e[k];
+			ee[k].weight = (float)W[k];
+			ee[k].value  = (float)e[k];
 		}
 	}
 	switch (norm) {
@@ -445,8 +445,8 @@ double L1_scale (struct GMT_CTRL *GMT_UNUSED(GMT), double *ey, double *W, uint64
 	/* Compute the (weighted) MAD */
 	ee = GMT_memory (GMT, NULL, n, struct OBSERVATION);
 	for (k = 0; k < n; k++) {
-		ee[k].weight = W[k];
-		ee[k].value  = ey[k];
+		ee[k].weight = (float)W[k];
+		ee[k].value  = (float)ey[k];
 	}
 	MAD = GMT_median_weighted (GMT, ee, n, 0.5);
 	GMT_free (GMT, ee);
@@ -1001,8 +1001,8 @@ int GMT_gmtregress (void *V_API, int mode, void *args)
 	if (mode == GMT_MODULE_PURPOSE) return (GMT_gmtregress_usage (API, GMT_MODULE_PURPOSE));	/* Return the purpose of program */
 	options = GMT_Create_Options (API, mode, args);	if (API->error) return (API->error);	/* Set or get option list */
 
-	if (!options || options->option == GMT_OPT_USAGE) bailout (GMT_gmtregress_usage (API, GMT_USAGE));/* Return the usage message */
-	if (options->option == GMT_OPT_SYNOPSIS) bailout (GMT_gmtregress_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
+	if (options && options->option == GMT_OPT_USAGE) bailout (GMT_gmtregress_usage (API, GMT_USAGE));/* Return the usage message */
+	if (options && options->option == GMT_OPT_SYNOPSIS) bailout (GMT_gmtregress_usage (API, GMT_SYNOPSIS));	/* Return the synopsis */
 
 	/* Parse the command-line arguments */
 
@@ -1197,7 +1197,7 @@ int GMT_gmtregress (void *V_API, int mode, void *args)
 	}
 	
 	if (Ctrl->A.active) {	/* Free special arrays and segment used for -A experiment */
-		GMT_free_segment (GMT, &Sa, GMT_ALLOCATED_BY_GMT);
+		GMT_free_segment (GMT, &Sa, GMT_ALLOC_INTERNALLY);
 		GMT_free (GMT, U);
 		GMT_free (GMT, V);
 		GMT_free (GMT, W);

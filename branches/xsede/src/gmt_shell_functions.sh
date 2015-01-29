@@ -3,7 +3,8 @@
 #
 # These functions can be used from any sh/bash script by specifying
 # . gmt_shell_functions.sh
-# in your script.  See our script template gmt_script.sh for usage.
+# in your script. Placing it in .bashrc makes the functions avaiable
+# on the command line as well.  See documentation for usage.
 #
 #----GMT SHELL FUNCTIONS--------------------
 #	Creates a unique temp directory and points GMT_TMPDIR to it
@@ -97,6 +98,11 @@ gmt_map_height() {
 # Make output PostScript file name based on script base name
 gmt_set_psfile() {
 	echo `basename $1 '.sh'`.ps
+}
+
+# Make output PDF file name based on script base name
+gmt_set_pdffile() {
+	echo `basename $1 '.sh'`.pdf
 }
 
 # For animations: Create a lexically increasing file namestem (no extension) based on prefix and frame number

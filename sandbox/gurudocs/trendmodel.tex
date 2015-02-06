@@ -1,0 +1,136 @@
+%	$Id$
+% Internal documentation for what will happen with trend-modeling in GMT 5.2
+% Paul Wessel, Feb 5, 2015.
+\documentclass[12pt,letterpaper,margin=0.5in]{report}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{breqn}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{lscape}
+\textheight = 9 in
+\topmargin = -1 in
+\begin{document}
+\noindent
+{\bf IMPROVE TREND-MODELING IN GMT 5.2} \\
+
+We seek to enhance the three trend-fitting modules in GMT: {\it trend1d, trend2d}, and {\it grdtrend}.
+To do this we need to extend the {\bf --N} option to accommodate more flexible trend specifications
+while retaining backwards compatibility with GMT 5 and earlier syntax.  The existing syntax is
+\\ \\
+{\bf --N}[{\bf f}]{\it n}[{\bf r}]
+\\ \\
+where the optional {\bf f} selects Fourier rather than the default polynomial bases, $n$ sets the degree of
+the model, and the optional {\bf r} selects robust fitting.
+
+\par
+\noindent
+{\bf 1. Specifying a trend model in 1-D (trend1d)}
+\noindent
+
+The proposed revised syntax for 1-D will be
+\\ \\
+{\bf --N}[{\bf p}$|${\bf P}$|${\bf f}$|${\bf F}$|${\bf c}$|${\bf C}$|${\bf s}$|${\bf S}]{\it n}[{\bf +l}$X$][{\bf +o}$x_0$][{\bf +r}]
+\\ \\
+with new choices for specifying basis types and new modifier that override default settings for key parameters; these are discuss
+in more detail when they are introduced.
+The general 1-D trend model is
+\begin{equation}
+y(x) = \sum_{i = 0}^n p_i x^i + \sum_{i = 0}^m  f_i \cos \left [\omega_i (x-x_0) - \phi_i \right ],
+\end{equation}
+where the Fourier frequencies are $\omega_i = 2 \pi i / X$.  Here, $x_0$ is the coordinate origin and $X$ is the fundamental period (or wavelength) of the signal.
+We will assume that $x$ (and $y$ below) have been corrected for their respective origins and thus
+use $x$ to mean $(x-x_0)$.  This model is nonlinear in  $\phi_i$; we rewrite the Fourier terms using trigonometric identities:
+\begin{equation}
+f_i \cos \left [\omega_i x - \phi_i \right ] =  c_i \cos \omega_i x  + s_i \sin \omega_i x .
+\end{equation}
+We recover the original model parameters via $\phi_i = \tan^{-1}(s_i/c_i)$ and $f_i = \sqrt{c_i^2 + s_i^2}$.
+\par
+We want to select this entire sum or just portions of it.  Consider these selections:
+\begin{enumerate}
+	\item {\bf p}{\it n} will include all $n+1$ terms of the full polynomial sum in (1) [The old {\bf --N}{\it n}].
+	\item {\bf P}{\it n} (or {\bf x}{\it n}, or {\bf xx...x}) will only include the single term $x^n$.
+	\item {\bf f}{\it m} will include all $2n$ terms in the full Fourier sum (1), i.e., both the cosine and sine components [The old {\bf --Nf}{\it n}].
+	\item {\bf F}{\it m} will only include 2 items: the sine and cosine terms for the $m$'th frequency.
+	\item {\bf c}{\it m} will include only the cosine series ($m$ terms) in (1).
+	\item {\bf C}{\it m} will only include the single cosine term for the $m$'th frequency.
+	\item {\bf s}{\it m} will include only the sine series ($m$ terms) in (1).
+	\item {\bf S}{\it m} will only include the single sine term for the $m$'th frequency.
+\end{enumerate}
+Thus, to recreate (1) exactly in {\it trend1d} we would specify {\bf --Np}{\it n},{\bf f}{\it m}, for some values of {\it n} and {\it m}.  Note:
+\begin{enumerate}
+	\item While the Fourier series starts at $i = 0$, the sine term vanishes and the cosine term becomes an intercept.
+	\item If both polynomial and Fourier terms are selected and both include an intercept then we start the Fourier sum at $i = 1$ instead.
+\end{enumerate}
+
+\par
+\noindent
+{\bf 2. Specifying a trend model in 2-D (trend1d, grdtrend)}
+
+
+\noindent
+The proposed revised syntax for 2-D is similar:
+\\ \\
+{\bf --N}[{\bf p}$|${\bf P}$|${\bf f}$|${\bf F}$|${\bf c}$|${\bf C}$|${\bf s}$|${\bf S}$|${\bf x}$|${\bf X}$|${\bf y}$|${\bf Y}][{\bf x}]{\it n}[{\bf y}{\it m}][{\bf +l}$X/Y$][{\bf +o}$x_0/y_0$][{\bf +r}]
+\\ \\
+Here, the general model is
+\begin{equation}
+z(x,y) = \sum_{i = 0}^n \sum_{j = 0}^n p_{ij} x^iy^j + \sum_{i = 0}^m \sum_{j = 0}^m f_{ij} \cos \left [\omega_i^x x \
+	- \phi_i^x \right ] \cos \left [\omega_j^y y - \phi_j^y \right ] .
+\end{equation}
+with the obvious extension to include $y$-parameters.
+This model is nonlinear in $\phi_i^x$ and $\phi_i^y$ so we linearize the Fourier terms, i.e.,
+\begin{dmath}
+f_{ij} \cos \left [\omega_i^x x- \phi_i^x \right ] \cos \left [\omega_j^y y - \phi_j^y \right ] =
+a_{ij} \cos \omega_i^x x \cos \omega_j^y y + b_{ij} \cos \omega_i^x x \sin \omega_j^y y + \\
+c_{ij} \sin \omega_i^x x \cos \omega_j^y y + d_{ij} \sin \omega_i^x x \sin \omega_j^y y
+\end{dmath}
+and we recover the original parameters via $\phi_i^x = \tan^{-1}(c_{ij}/a_{ij})$ and $\phi_i^y = \tan^{-1}(b_{ij}/a_{ij})$
+for the two phases and $f_{ij} = \sqrt{a_{ij}^2 + b_{ij}^2 + c_{ij}^2 + f_{ij}^2}$ for the single amplitude.
+As for the 1-D case
+we wish to be able to specify subsets of this general model.  Here are the arguments to {\bf --N}:
+\begin{enumerate}
+	\item {\bf p}{\it n} will include the $n^2$ terms of the full polynomial sum in (1).
+	\item {\bf P}{\it n} will only retain the $n(n+1)/2$ terms in the sum for which $i+j \leq n$.  [The old {\bf --N}{\it n}]
+	\item {\bf x}{\it n} will only include the sum over the $x^n$-series (i.e., it implicitly sets $j = 0$ in (3)).
+	\item {\bf X}{\it n} will only include the term $x^n$.
+	\item {\bf y}{\it n} will only include the sum over the $y^n$-series (i.e., it implicitly sets $i = 0$ in (3)).
+	\item {\bf Y}{\it n} will only include the term $y^n$.
+	\item {\bf x}{\it n}{\bf y}{\it m} (or {\bf xx...xyy...y} will only include the single term $x^ny^m$.
+	\item {\bf f}{\it m} will include all $4m^2$ terms of the full Fourier sum in (3), i.e., four terms (4) for each frequency.
+	\item {\bf F}{\it m} will only include the four sine and cosine terms for the $m$'th frequency.
+	\item {\bf c}{\it m} will include only the cosine product series ($m$ terms) in (4), i.e., let phases equal zero.
+	\item {\bf C}{\it m} will only include the cosine product for the $m$'th frequency.
+	\item {\bf s}{\it m} will include only the sine product series ($m$ terms) in (4), i.e., let phases equal 90.
+	\item {\bf S}{\it m} will only include the sine product for the $m$'th frequency.
+	\item {\bf fx}{\it m} will ignore y-terms and just include the $2m$ terms of the full 1-D Fourier sum in (1) for $x$, i.e., both the cosine and sine components.
+	\item {\bf fy}{\it m} will ignore x-terms and just include the $2m$ terms of the full 1-D Fourier sum in (1) for $y$, i.e., both the cosine and sine components.
+	\item {\bf Fx}{\it m} will only include the cosine term for the $m$'th frequency in $x$.
+	\item {\bf Fy}{\it m} will only include the cosine term for the $m$'th frequency in $y$.
+	\item {\bf cx}{\it m} will include only the cosine series ($m$ terms) in (1) in $x$.
+	\item {\bf cy}{\it m} will include only the cosine series ($m$ terms) in (1) in $y$.
+	\item {\bf Cx}{\it m} will only include the single cosine term for the $m$'th frequency in $x$.
+	\item {\bf Cy}{\it m} will only include the single cosine term for the $m$'th frequency in $y$.
+	\item {\bf sx}{\it m} will include only the sine series ($m$ terms) in (1) in $x$.
+	\item {\bf sy}{\it m} will include only the sine series ($m$ terms) in (1) in $y$.
+	\item {\bf Sx}{\it m} will only include the single sine term for the $m$'th frequency in $x$.
+	\item {\bf Sy}{\it m} will only include the single sine term for the $m$'th frequency in $y$.
+\end{enumerate}
+Some 1-D examples of arguments to {\bf --N} and the equations they imply:
+\begin{enumerate}
+	\item {\bf p}3 means $p_0 + p_1x + p_2x^2 + p_3x^3$.
+	\item {\bf P}3,{\bf f}1 means $p_3x^3 + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
+	\item {\bf f}1 means $c_0 + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
+	\item {\bf p}1,{\bf f}1 means $p_0 + p_1x + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
+	\item {\bf x}0,{\bf x}2 means $p_0 + p_2x^2$.
+\end{enumerate}
+Some 2-D examples of arguments to {\bf --N} and the equations they imply:
+\begin{enumerate}
+	\item {\bf p}1 means $p_0 + p_1 x + p_2 y + p_3xy$ (bilinear).
+	\item {\bf P}3 means the full 10-term 3rd degree polynomial used in trend2d -N10.
+	\item {\bf p}3 means the full 16-term bicubic.
+	\item {\bf s}3 means the 4-term sum over powers of x.
+	\item {\bf f}1 means $c_0 + a_1\cos \omega^x_1 x \cos \omega ^y_1 y + a_2\cos \omega^x_1 x \sin \omega ^y_1 y + a_3\sin \omega^x_1 x \cos \omega ^y_1 y + a_4\sin \omega^x_1 x \sin \omega ^y_1 y$.
+\end{enumerate}
+
+As for backwards compatibility, we simply translate options like {\bf --N}[{\bf f}]{\it n}[{\bf r}] to {\bf --N}[{\bf f}$|${\bf p}]{\it n}[{\bf +r}].
+\end{document}

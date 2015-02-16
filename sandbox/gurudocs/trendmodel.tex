@@ -10,8 +10,8 @@
 \textheight = 9 in
 \topmargin = -1 in
 \begin{document}
-\noindent
-{\bf IMPROVE TREND-MODELING IN GMT 5.2} \\
+
+\section*{IMPROVING TREND-MODELING OPTIONS IN GMT 5.2}
 
 We seek to enhance the three trend-fitting modules in GMT: {\it trend1d, trend2d}, and {\it grdtrend}.
 To do this we need to extend the {\bf --N} option to accommodate more flexible trend specifications
@@ -19,55 +19,58 @@ while retaining backwards compatibility with GMT 5 and earlier syntax.  The exis
 \\ \\
 {\bf --N}[{\bf f}]{\it n}[{\bf r}]
 \\ \\
-where the optional {\bf f} selects Fourier rather than the default polynomial bases, $n$ sets the degree of
+where the optional {\bf f} selects Fourier rather than the default polynomial bases (currently only available in {\it trend1d}), $n$ sets the degree of
 the model, and the optional {\bf r} selects robust fitting.
 
-\par
-\noindent
-{\bf 1. Specifying a trend model in 1-D (trend1d)}
-\noindent
+\section*{1. Specifying a trend model in 1-D (trend1d)}
 
 The proposed revised syntax for 1-D will be
 \\ \\
 {\bf --N}[{\bf p}$|${\bf P}$|${\bf f}$|${\bf F}$|${\bf c}$|${\bf C}$|${\bf s}$|${\bf S}]{\it n}[{\bf +l}$X$][{\bf +o}$x_0$][{\bf +r}]
 \\ \\
-with new choices for specifying basis types and new modifier that override default settings for key parameters; these are discuss
-in more detail when they are introduced.
-The general 1-D trend model is
+with new choices for specifying basis types and new modifiers that override default settings for key parameters; these are discussed
+in more detail when they are introduced below.
+The general 1-D trend model we wish to fit is defined as
 \begin{equation}
 y(x) = \sum_{i = 0}^n p_i x^i + \sum_{i = 0}^m  f_i \cos \left [\omega_i (x-x_0) - \phi_i \right ],
+\label{1D}
 \end{equation}
-where the Fourier frequencies are $\omega_i = 2 \pi i / X$.  Here, $x_0$ is the coordinate origin and $X$ is the fundamental period (or wavelength) of the signal.
-We will assume that $x$ (and $y$ below) have been corrected for their respective origins and thus
-use $x$ to mean $(x-x_0)$.  This model is nonlinear in  $\phi_i$; we rewrite the Fourier terms using trigonometric identities:
+where the Fourier frequencies are $\omega_i = 2 \pi i / X$.  Here, $x_0$ is the coordinate origin (by default the minimum $x$ input coordinate unless overruled by
+a {\bf +o}$x_0$ modifier), and $X$ is the fundamental period (or wavelength) of the signal (by default the range of the input data unless overruled by a {\bf +l}$X$ modifier). Note that the polynomial as given herein is only used for clarity; the solution actually uses Chebychev polynomials for stability.
+We will assume that $x$ (and $y$ below) have been corrected for their respective origins before we do the fitting and thus simply
+use $x$ below to represent $(x-x_0)$.  As written this model is nonlinear in $\phi_i$; we rewrite the Fourier terms using trigonometric identities:
 \begin{equation}
 f_i \cos \left [\omega_i x - \phi_i \right ] =  c_i \cos \omega_i x  + s_i \sin \omega_i x .
 \end{equation}
 We recover the original model parameters via $\phi_i = \tan^{-1}(s_i/c_i)$ and $f_i = \sqrt{c_i^2 + s_i^2}$.
 \par
-We want to select this entire sum or just portions of it.  Consider these selections:
+We want to select this entire sum (\ref{1D}) or just portions of it.  The new syntax would allow one or more comma-separated specifications like these:
 \begin{enumerate}
-	\item {\bf p}{\it n} will include all $n+1$ terms of the full polynomial sum in (1) [The old {\bf --N}{\it n}].
+	\item {\bf p}{\it n} will include all $n+1$ terms of the full polynomial sum in (1) [i.e., the old {\bf --N}{\it n}].
 	\item {\bf P}{\it n} (or {\bf x}{\it n}, or {\bf xx...x}) will only include the single term $x^n$.
-	\item {\bf f}{\it m} will include all $2n$ terms in the full Fourier sum (1), i.e., both the cosine and sine components [The old {\bf --Nf}{\it n}].
+	\item {\bf f}{\it m} will include all $2m$ terms in the full Fourier sum (1), i.e., both the cosine and sine components [The old {\bf --Nf}{\it m}].
 	\item {\bf F}{\it m} will only include 2 items: the sine and cosine terms for the $m$'th frequency.
 	\item {\bf c}{\it m} will include only the cosine series ($m$ terms) in (1).
 	\item {\bf C}{\it m} will only include the single cosine term for the $m$'th frequency.
 	\item {\bf s}{\it m} will include only the sine series ($m$ terms) in (1).
 	\item {\bf S}{\it m} will only include the single sine term for the $m$'th frequency.
 \end{enumerate}
-Thus, to recreate (1) exactly in {\it trend1d} we would specify {\bf --Np}{\it n},{\bf f}{\it m}, for some values of {\it n} and {\it m}.  Note:
+Thus, to recreate (\ref{1D}) exactly in {\it trend1d} we would specify {\bf --Np}{\it n},{\bf f}{\it m}, for some values of {\it n} and {\it m}.  Note:
 \begin{enumerate}
 	\item While the Fourier series starts at $i = 0$, the sine term vanishes and the cosine term becomes an intercept.
-	\item If both polynomial and Fourier terms are selected and both include an intercept then we start the Fourier sum at $i = 1$ instead.
+	\item If both polynomial and Fourier terms are selected and both include an intercept then we start the Fourier sum at $i = 1$ instead (i.e., the intercept will normally be considered part of the polynomial series).
+\end{enumerate}
+Some 1-D examples of arguments to {\bf --N} and the equations they imply:
+\begin{enumerate}
+	\item {\bf p}3 means $p_0 + p_1x + p_2x^2 + p_3x^3$.
+	\item {\bf P}3,{\bf f}1 means $p_3x^3 + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
+	\item {\bf f}1 means $c_0 + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
+	\item {\bf p}1,{\bf f}1 means $p_0 + p_1x + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
+	\item {\bf x}0,{\bf x}2 means $p_0 + p_2x^2$.
 \end{enumerate}
 
-\par
-\noindent
-{\bf 2. Specifying a trend model in 2-D (trend1d, grdtrend)}
+\section*{2. Specifying a trend model in 2-D (trend2d, grdtrend)}
 
-
-\noindent
 The proposed revised syntax for 2-D is similar:
 \\ \\
 {\bf --N}[{\bf p}$|${\bf P}$|${\bf f}$|${\bf F}$|${\bf c}$|${\bf C}$|${\bf s}$|${\bf S}$|${\bf x}$|${\bf X}$|${\bf y}$|${\bf Y}][{\bf x}]{\it n}[{\bf y}{\it m}][{\bf +l}$X/Y$][{\bf +o}$x_0/y_0$][{\bf +r}]
@@ -76,6 +79,7 @@ Here, the general model is
 \begin{equation}
 z(x,y) = \sum_{i = 0}^n \sum_{j = 0}^n p_{ij} x^iy^j + \sum_{i = 0}^m \sum_{j = 0}^m f_{ij} \cos \left [\omega_i^x x \
 	- \phi_i^x \right ] \cos \left [\omega_j^y y - \phi_j^y \right ] .
+\label{2D}
 \end{equation}
 with the obvious extension to include $y$-parameters.
 This model is nonlinear in $\phi_i^x$ and $\phi_i^y$ so we linearize the Fourier terms, i.e.,
@@ -87,23 +91,23 @@ c_{ij} \sin \omega_i^x x \cos \omega_j^y y + d_{ij} \sin \omega_i^x x \sin \omeg
 and we recover the original parameters via $\phi_i^x = \tan^{-1}(c_{ij}/a_{ij})$ and $\phi_i^y = \tan^{-1}(b_{ij}/a_{ij})$
 for the two phases and $f_{ij} = \sqrt{a_{ij}^2 + b_{ij}^2 + c_{ij}^2 + f_{ij}^2}$ for the single amplitude.
 As for the 1-D case
-we wish to be able to specify subsets of this general model.  Here are the arguments to {\bf --N}:
+we wish to be able to specify subsets of this general model in (\ref{2D}).  Here are the possible arguments to {\bf --N}, alone or comma-separated:
 \begin{enumerate}
 	\item {\bf p}{\it n} will include the $n^2$ terms of the full polynomial sum in (1).
 	\item {\bf P}{\it n} will only retain the $n(n+1)/2$ terms in the sum for which $i+j \leq n$.  [The old {\bf --N}{\it n}]
-	\item {\bf x}{\it n} will only include the sum over the $x^n$-series (i.e., it implicitly sets $j = 0$ in (3)).
+	\item {\bf x}{\it n} will only include the sum over the $x^n$-series (i.e., it implicitly sets $j = 0$ in (\ref{2D})).
 	\item {\bf X}{\it n} will only include the term $x^n$.
-	\item {\bf y}{\it n} will only include the sum over the $y^n$-series (i.e., it implicitly sets $i = 0$ in (3)).
+	\item {\bf y}{\it n} will only include the sum over the $y^n$-series (i.e., it implicitly sets $i = 0$ in (\ref{2D})).
 	\item {\bf Y}{\it n} will only include the term $y^n$.
 	\item {\bf x}{\it n}{\bf y}{\it m} (or {\bf xx...xyy...y} will only include the single term $x^ny^m$.
-	\item {\bf f}{\it m} will include all $4m^2$ terms of the full Fourier sum in (3), i.e., four terms (4) for each frequency.
+	\item {\bf f}{\it m} will include all $4m^2$ terms of the full Fourier sum in (\ref{2D}), i.e., four terms (4) for each frequency.
 	\item {\bf F}{\it m} will only include the four sine and cosine terms for the $m$'th frequency.
 	\item {\bf c}{\it m} will include only the cosine product series ($m$ terms) in (4), i.e., let phases equal zero.
 	\item {\bf C}{\it m} will only include the cosine product for the $m$'th frequency.
 	\item {\bf s}{\it m} will include only the sine product series ($m$ terms) in (4), i.e., let phases equal 90.
 	\item {\bf S}{\it m} will only include the sine product for the $m$'th frequency.
-	\item {\bf fx}{\it m} will ignore y-terms and just include the $2m$ terms of the full 1-D Fourier sum in (1) for $x$, i.e., both the cosine and sine components.
-	\item {\bf fy}{\it m} will ignore x-terms and just include the $2m$ terms of the full 1-D Fourier sum in (1) for $y$, i.e., both the cosine and sine components.
+	\item {\bf fx}{\it m} will ignore y-terms and just include the $2m$ terms of the full 1-D Fourier sum in (\ref{1D}) for $x$, i.e., both the cosine and sine components.
+	\item {\bf fy}{\it m} will ignore x-terms and just include the $2m$ terms of the full 1-D Fourier sum in (\ref{1D}) for $y$, i.e., both the cosine and sine components.
 	\item {\bf Fx}{\it m} will only include the cosine term for the $m$'th frequency in $x$.
 	\item {\bf Fy}{\it m} will only include the cosine term for the $m$'th frequency in $y$.
 	\item {\bf cx}{\it m} will include only the cosine series ($m$ terms) in (1) in $x$.
@@ -115,14 +119,6 @@ we wish to be able to specify subsets of this general model.  Here are the argum
 	\item {\bf Sx}{\it m} will only include the single sine term for the $m$'th frequency in $x$.
 	\item {\bf Sy}{\it m} will only include the single sine term for the $m$'th frequency in $y$.
 \end{enumerate}
-Some 1-D examples of arguments to {\bf --N} and the equations they imply:
-\begin{enumerate}
-	\item {\bf p}3 means $p_0 + p_1x + p_2x^2 + p_3x^3$.
-	\item {\bf P}3,{\bf f}1 means $p_3x^3 + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
-	\item {\bf f}1 means $c_0 + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
-	\item {\bf p}1,{\bf f}1 means $p_0 + p_1x + c_1\cos \omega_1 x + s_1 \sin \omega_1 x$.
-	\item {\bf x}0,{\bf x}2 means $p_0 + p_2x^2$.
-\end{enumerate}
 Some 2-D examples of arguments to {\bf --N} and the equations they imply:
 \begin{enumerate}
 	\item {\bf p}1 means $p_0 + p_1 x + p_2 y + p_3xy$ (bilinear).
@@ -130,7 +126,39 @@ Some 2-D examples of arguments to {\bf --N} and the equations they imply:
 	\item {\bf p}3 means the full 16-term bicubic.
 	\item {\bf s}3 means the 4-term sum over powers of x.
 	\item {\bf f}1 means $c_0 + a_1\cos \omega^x_1 x \cos \omega ^y_1 y + a_2\cos \omega^x_1 x \sin \omega ^y_1 y + a_3\sin \omega^x_1 x \cos \omega ^y_1 y + a_4\sin \omega^x_1 x \sin \omega ^y_1 y$.
+	\item {\bf X}2,{\bf Sy}2 means $c_0 x^2 + c_1 \sin \omega^y_2 y$
 \end{enumerate}
 
-As for backwards compatibility, we simply translate options like {\bf --N}[{\bf f}]{\it n}[{\bf r}] to {\bf --N}[{\bf f}$|${\bf p}]{\it n}[{\bf +r}].
+\section*{3. Backwards Compatibility}
+
+\subsection*{3.1 trend1d}
+There is one-to-one correspondence between the old syntax and its equivalent
+in the proposal.  Options like {\bf --N}[{\bf f}]{\it n}[{\bf r}] will be translated to {\bf --N}[{\bf f}$|${\bf p}]{\it n}[{\bf +r}], i.e.,
+we simply add the {\bf p} basis indicator if none were given.
+
+\subsection*{3.2 trend2d, grdtrend}
+In the
+2-D case there were never any Fourier option, so the only ambiguity arises for options
+with no basis function indicator.  When such arguments are found we assume it represent
+the old syntax and the order {\it n} means the first {\it n}
+terms in the fixed polynomial
+\begin{equation}
+z(x,y) = m_1 + m_2 x + m_3 y + m_4 xy + m_5 x^2 + m_6 y^2 + m_7 x^3 + m_8 x^2y + m_9 xy^2 + m_{10} y^3.
+\label{eq:2Dold}
+\end{equation}
+We may then translate a plain {\bf --N}{\it n}[{\bf r}] option, provided
+{\it n} is in the 1--10 range, by substituting the new syntax that is equivalent to the original legacy intent (\ref{eq:2Dold}). Below, {\it n} is the item number:
+\begin{enumerate}
+	\item {\bf --NP}{\it 0}[{\bf +r}]
+	\item {\bf --Nx}{\it 1}[{\bf +r}]
+	\item {\bf --NP}{\it 1}[{\bf +r}]
+	\item {\bf --NP}{\it 1},{\bf xy}[{\bf +r}]
+	\item {\bf --NP}{\it 1},{\bf xy},{\bf xx}[{\bf +r}]
+	\item {\bf --NP}{\it 2}[{\bf +r}]
+	\item {\bf --NP}{\it 2},{\bf xxx}[{\bf +r}]
+	\item {\bf --NP}{\it 2},{\bf xxx},{\bf xxy}[{\bf +r}]
+	\item {\bf --NP}{\it 2},{\bf xxx},{\bf xxy},{\bf xyy}[{\bf +r}]
+	\item {\bf --NP}{\it 3}[{\bf +r}]
+\end{enumerate}
+The accommodations ensures 100\% backwards compatibility with previous versions.
 \end{document}

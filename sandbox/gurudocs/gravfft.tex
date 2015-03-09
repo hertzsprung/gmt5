@@ -1,0 +1,95 @@
+%	$Id$
+% Internal documentation for what will happen with trend-modeling in GMT 5.2
+% Paul Wessel, Feb 5, 2015.
+\documentclass[12pt,letterpaper,margin=0.5in]{report}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{breqn}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{lscape}
+\textheight = 9 in
+\topmargin = -1 in
+\begin{document}
+
+\section*{Gravity calculations for gravfft}
+\subsection*{Single interface}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=5in]{h.pdf}
+  \caption{Single interface with variable density contrast.}
+\end{figure}
+
+\noindent
+Parker's [1972] classical Fourier-based free-air anomaly is given by
+\begin{equation}
+\Delta g(\mathbf{k}) = -2\pi G e^{-k|z_0|} \sum_{n=1}^\infty \mathcal{F} \left [ \Delta \rho(\mathbf{x}) h^n(\mathbf{x}) \right ],
+\end{equation}
+with $\mathbf{x} = (x,y)$ is the horizontal position vector, $\mathbf{k} = (k_x, k_y)$ the corresponding wavenumber
+vector, $k$ is the magnitude of $\mathbf{k}$, $h(\mathbf{x})$ is the undulation of the interface and $z_0$ is the observation level.  Here,
+$\Delta \rho(\mathbf{x})$ is the density contrast across the interface,  Thus, no finite volume is specified
+and hence the gravity calculation yields anomalies relative to an undetermined constant level.  According to Parker [1972]
+we are best off selecting a different $z$ origin, here $\bar{h}$ (this is the mean level) and measure the distance to
+the observation level from this new origin, using $\Delta h(\mathbf{x}) = h(\mathbf{x}) - \bar{h}$, thus obtaining
+\begin{equation}
+\Delta g(\mathbf{k}) = -2\pi G e^{-k|\bar{h}-z_0|} \sum_{n=1}^\infty \mathcal{F} \left [ \Delta \rho(\mathbf{x}) \Delta h^n(\mathbf{x}) \right ].
+\end{equation}
+For marine applications, $z_0 = 0$ and we find
+\begin{equation}
+\Delta g(\mathbf{k}) = -2\pi G e^{-k|\bar{h}|} \sum_{n=1}^\infty \mathcal{F} \left [ \Delta \rho(\mathbf{x}) \Delta h^n(\mathbf{x}) \right ].
+\label{eq:A}
+\end{equation}
+Note that because we subtracted $\bar{h}$, $\Delta h(\mathbf{x})$ has zero mean and hence $\Delta h(\mathbf{k} = 0) = 0$ and thus the
+mean gravity attraction is zero as well.  Parker [1972] suggested that $h_{middle)}$ may yield faster convergence; in that
+case one should set $\Delta h(\mathbf{k}=0)$ to avoid an unnecessary and arbitrary constant gravity level.
+\subsection*{Two interfaces enclosing a layer}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=5in]{g.pdf}
+  \caption{Two interfaces with variable density contrast across them yields a finite body.}
+\end{figure}
+
+A special case involves the presence of two separate and non-intersecting interfaces $h(\mathbf{x})$ and $g(\mathbf{x})$ which delineates a
+fixed volume between them.  If that volume has a density $\rho(\mathbf{x})$ and the surrounding medium both
+above $h(\mathbf{x})$ and below $g(\mathbf{x})$ has the same density $\rho_0(\mathbf{x})$, then $\Delta \rho(\mathbf{x}) = \rho(\mathbf{x}) - \rho_0(\mathbf{x})$
+and we can compute the absolute gravity anomaly due to this mass anomaly as
+\begin{equation}
+\Delta g(\mathbf{k}) = -2\pi G e^{-k|z_0|} \sum_{n=1}^\infty \mathcal{F} \left [ \Delta \rho(\mathbf{x}) \left (h^n(\mathbf{x}) - g^n(\mathbf{x})  \right) \right ].
+\end{equation}
+Here, we consider the contributions from the two interfaces separately, via~\ref{eq:A}, and find the relative contributions
+\begin{equation}
+\Delta g_h(\mathbf{k}) = -2\pi G e^{-k|\bar{h}|} \sum_{n=1}^\infty \mathcal{F} \left [ \Delta \rho(\mathbf{x}) \Delta h^n(\mathbf{x}) \right ],
+\label{eq:h}
+\end{equation}
+\begin{equation}
+\Delta g_g(\mathbf{k}) = -2\pi G e^{-k|\bar{g}|} \sum_{n=1}^\infty \mathcal{F} \left [ \Delta \rho(\mathbf{x}) \Delta g^n(\mathbf{x}) \right ],
+\label{eq:g}
+\end{equation}
+and the attraction of the variable-density slab making up the material between the levels $\bar{h}$ and $\bar{g}$:
+\begin{equation}
+\Delta g_{slab}(\mathbf{k}) = -2\pi G \Delta \rho(\mathbf{k}) \frac{e^{-k|\bar{h}|} - e^{-k|\bar{g}|}}{k}.
+\label{eq:sl}
+\end{equation}
+For $k = 0$, per l'Hopital's rule we find 
+\begin{equation}
+\Delta g_{slab}(0) = -2\pi G \Delta \rho(0) \left (\bar{h} - \bar{g} \right),
+\label{eq:sl}
+\end{equation}
+i.e., the standard Bouguer slab equation and the only component if the density contrast is a constant.  Hence, the complete anomaly becomes
+\begin{equation}
+\Delta g(\mathbf{k}) = \Delta g_h(\mathbf{k}) - \Delta g_g(\mathbf{k}) + \Delta g_{slab}(\mathbf{k}).
+\label{q:total}
+\end{equation}
+\subsection*{Top interface is a constant level}
+In this case, $\Delta g_h(\mathbf{k}) = 0$ since $\Delta h(\mathbf{x}) = 0$, but the slab calculation remains the same, with the complete anomaly
+given by
+\begin{equation}
+\Delta g(\mathbf{k}) = \Delta g_{slab}(\mathbf{k}) - \Delta g_g(\mathbf{k}).
+\label{q:total2}
+\end{equation}
+\subsection*{Bottom interface is a constant level}
+Likewise, $\Delta g_g(\mathbf{k}) = 0$ since $\Delta g(\mathbf{x}) = 0$, but the slab calculation remains the same.  Total anomaly becomes
+\begin{equation}
+\Delta g(\mathbf{k}) = \Delta g_h(\mathbf{k}) + \Delta g_{slab}(\mathbf{k}).
+\label{q:total3}
+\end{equation}
+\end{document}

@@ -30,16 +30,73 @@
 
 #ifndef _GMT_TYPES_H
 #define _GMT_TYPES_H
-#ifdef HAVE_STDBOOL_H_
-#	include <stdbool.h>
-#else
-#	include "compat/stdbool.h"
-#endif
+#include <stdbool.h>
 #include <stdint.h>
 
 /*--------------------------------------------------------------------
  * GMT TYPE DEFINITIONS
  *--------------------------------------------------------------------*/
+
+/*! Definition of MATH_MACRO used by grdmath and gmtmath */
+struct MATH_MACRO {
+	unsigned int n_arg;	/* How many commands this macro represents */
+	char *name;	/* The macro name */
+	char **arg;	/* List of those commands */
+};
+
+/*! Definition of structure use for finding optimal nx.ny for surface */
+struct GMT_SURFACE_SUGGESTION {	/* Used to find top ten list of faster grid dimensions  */
+	unsigned int nx;
+	unsigned int ny;
+	double factor;	/* Speed up by a factor of factor  */
+};
+
+/*! Definition of structure used for holding information of integer items to be selected */
+struct GMT_INT_SELECTION {	/* Used to hold array with items (0-n) that have been selected */
+	uint64_t *item;		/* Array with item numbers given (0 is first), sorted into ascending order */
+	uint64_t n;		/* Number of items */
+	uint64_t current;	/* Current item in item array */
+	bool invert;		/* Instead select the items NOT listed in item[] */
+};
+
+/*! Definition of structure used for holding information of text items to be selected */
+struct GMT_TEXT_SELECTION {	/* Used to hold array with items (0-n) that have been selected */
+	char **pattern;		/* Array with text items given, sorted into lexical order */
+	int ogr_item;		/* Used if ogr_match is true */
+	uint64_t n;		/* Number of items */
+	bool invert;		/* Instead select the items NOT listed in item[] */
+	bool *regexp;		/* Item is a regex expression */
+	bool *caseless;		/* Treat as caseless */
+	bool ogr_match;		/* Compare pattern to an OGR item */
+};
+
+/*! Definition of structure used for holding information about an anchor point */
+struct GMT_ANCHOR {	/* Used to hold items relevant for an anchor point */
+	double x;		/* X position of anchor point */
+	double y;		/* Y position of anchor point */
+	enum GMT_enum_anchor mode;	/* Coordinate mode */
+	int justify;		/* Justification integer (1-11) for anchor (if given via -Dj) */
+	char *args;		/* Text representation of any additional arguments */
+};
+
+/*! For weighted mean/mode */
+struct GMT_OBSERVATION {
+	float value;
+	float weight;
+};
+
+/*! For trend-fitting models */
+struct GMT_MODEL {
+	unsigned int kind[2];
+	unsigned int order[2];
+};
+
+struct GMT_DIST {	/* Holds info for a particular distance calculation */
+	bool init;	/* true if we have initialized settings for this type via GMT_init_distaz */
+	bool arc;	/* true if distances are in deg/min/sec or arc; otherwise they are e|f|k|M|n or Cartesian */
+	double (*func) (struct GMT_CTRL *, double, double, double, double);	/* pointer to function returning distance between two points points */
+	double scale;	/* Scale to convert function output to desired unit */
+};
 
 struct GMT_MAP {		/* Holds all map-related parameters */
 	struct GMT_PLOT_FRAME frame;		/* Everything about the frame parameters */
@@ -86,6 +143,40 @@ struct GMT_MAP {		/* Holds all map-related parameters */
 	double (*geodesic_az_backaz) (struct GMT_CTRL *, double, double, double, double, bool);	/* pointer to geodesic function returning azimuth or backazimuth between two points points */
 };
 
+struct GMT_GCAL {	/* (proleptic) Gregorian calendar  */
+	int year;		/* signed; negative and 0 allowed  */
+	unsigned int month;	/* Always between 1 and 12  */
+	unsigned int day_m;	/* Day of month; always in 1 - 31  */
+	unsigned int day_y;	/* Day of year; 1 thru 366  */
+	unsigned int day_w;	/* Day of week; 0 (Sun) thru 6 (Sat)  */
+	int iso_y;		/* ISO year; not necessarily == year */
+	unsigned int iso_w;	/* ISO week of iso_y; must be in 1 -- 53  */
+	unsigned int iso_d;	/* ISO day of iso_w; uses 1 (Mon) thru 7 (Sun)  */
+	unsigned int hour;	/* 00 through 23  */
+	unsigned int min;	/* 00 through 59  */
+	double sec;		/* 00 through 59.xxxx; leap not yet handled  */
+};
+
+struct GMT_Y2K_FIX {	/* The issue that refuses to go away... */
+	unsigned int y2_cutoff;	/* The 2-digit offset year.  If y2 >= y2_cuttoff, add y100 else add y200 */
+	int y100;	/* The multiple of 100 to add to the 2-digit year if we are above the time_Y2K_offset_year */
+	int y200;	/* The multiple of 100 to add to the 2-digit year if we are below the time_Y2K_offset_year */
+};
+
+struct GMT_MOMENT_INTERVAL {
+	struct GMT_GCAL	cc[2];		
+	double dt[2];		
+	double sd[2];		/* Seconds since the start of the day.  */
+	int64_t rd[2];
+	unsigned int step;
+	char unit;
+};
+
+struct GMT_TRUNCATE_TIME {		/* Used when TIME_IS_INTERVAL is not OFF */
+	struct GMT_MOMENT_INTERVAL T;
+	unsigned int direction;		/* 0 [+] to center on next interval, 1 [-] for previous interval */
+};
+
 struct GMT_TIME_CONV {		/* Holds all time-related parameters */
 	struct GMT_TRUNCATE_TIME truncate;
 	struct GMT_Y2K_FIX Y2K_fix;		/* Used to convert 2-digit years to 4-digit years */
@@ -107,6 +198,7 @@ struct GMT_INIT { /* Holds misc run-time parameters */
 	/* The rest of the struct contains pointers that may point to memory not included by this struct */
 	char *runtime_bindir;         /* Directory that contains the main exe at run-time */
 	char *runtime_libdir;         /* Directory that contains the main shared lib at run-time */
+	char *runtime_plugindir;      /* Directory that contains the main supplemental plugins at run-time */
 	char *history[GMT_N_UNIQUE];  /* The internal gmt.history information */
 	struct GMT_CUSTOM_SYMBOL **custom_symbol; /* For custom symbol plotting in psxy[z]. */
 };
@@ -137,6 +229,11 @@ struct GMT_CURRENT {
 	struct GMT_PS ps;		/* Hold parameters related to PS setup */
 	struct GMT_OPTION *options;	/* Pointer to current program's options */
 	struct GMT_FFT_HIDDEN fft;	/* Structure with info that must survive between FFT calls */
+#ifdef HAVE_GDAL
+	struct GMT_GDALREAD_IN_CTRL  gdal_read_in;  /* Hold parameters related to options transmitted to gdalread */ 
+	struct GMT_GDALREAD_OUT_CTRL gdal_read_out; /* Hold parameters related to options transmitted from gdalread */ 
+	struct GMT_GDALWRITE_CTRL    gdal_write;    /* Hold parameters related to options transmitted to gdalwrite */ 
+#endif
 };
 
 struct GMT_INTERNAL {

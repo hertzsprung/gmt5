@@ -64,6 +64,7 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
 **-C**\ *dx*/*dy*
     Sets the clearance between the legend frame and the internal items
     [4\ **p**/4\ **p**].
+
 **-F**\ [\ **+c**\ *clearances*][\ **+g**\ *fill*][**+i**\ [[*gap*/]\ *pen*]][\ **+p**\ [*pen*]][\ **+r**\ [*radius*\ ]][\ **+s**\ [[*dx*/*dy*/][*shade*\ ]]]
     Without further options, draws a rectangular border around the legend using
     **MAP\_FRAME\_PEN**; specify a different pen with **+p**\ *pen*.
@@ -123,6 +124,10 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
     the syntax for each of these records are presented below:
 **#** *comment*
     Records starting with # and blank lines are skipped.
+**A** *cptname*
+    Symbol or cell color fills may be given indirectly via a *z*-value 
+    which can be used for the color look-up via the given CPT file *cptname*.
+    You may switch to other *cptname* by repeating this command.
 **B** *cptname offset height* [ *optional arguments* ]
     The **B** record will plot a horizontal color bar, **psscale**-style
     in the middle, starting at *offset* from the left edge, and of the
@@ -132,7 +137,8 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
 **C** *textcolor*
     The **C** record specifies the color with which the remaining text
     is to be printed. *textcolor* can be in the form *r/g/b*, *c/m/y/k*,
-    or a named color. Use **-** to reset to default color.
+    a named color, or an indirect color via z=*value* (requires the **A** command).
+    Use **-** to reset to default color.
 **D** [*offset] pen* [**-**\|**+**\|**=**]
     The **D** record results in a horizontal line with specified *pen*
     across the legend with one quarter of the line-spacing left blank
@@ -145,7 +151,9 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
     after the line, add **+**.  For no spacing at all, add **=**
     [Default places a quarter line-spacing both before and after the line].
 **F** *fill1 fill2 ... filln*
-    Specify fill (color of pattern) for cells.  If only *fill1* is given
+    Specify fill (color of pattern) for cells.  Alternatively, you can
+    specify an indirect color via z=*value* (requires the **A** command).
+    If only *fill1* is given
     then it is used to fill the entire row, otherwise give one fill value
     for each active column (see **N**).  If any fill is - then no fill
     takes place [Default].
@@ -205,7 +213,10 @@ annotation font and size in effect (i.e., FONT\_ANNOT\_PRIMARY)
     (see :doc:`psxy`). The symbol is centered at *dx1* from the left margin
     of the column, with the optional explanatory *text* starting *dx2*
     from the margin, printed with **FONT\_ANNOT\_PRIMARY**. Use **-** if
-    no *fill* or outline (*pen*) is required. When plotting just a
+    no *fill* or outline (*pen*) is required. Alternatively, the *fill*
+    may be specified indirectly via z=*value* and the color is assigned
+    vi the CPT look-up (requires the **A** command).
+    When plotting just a
     symbol, without text, *dx2* and *text* can be omitted.  The *dx1* value
     can also be given as a justification code L, C, R which justifies the
     symbol with respect to the current column.  If no arguments are given
@@ -265,7 +276,7 @@ Examples
 To add an example of a legend to a Mercator plot (map.ps) with the given
 specifications, use
 
-::
+   ::
 
      gmt pslegend -R-10/10/-10/10 -JM6i -F+gazure1 -Dx0.5i/0.5i/5i/3.3i/BL \
      -C0.1i/0.1i -L1.2 -B5f1 << EOF >> map.ps

@@ -21,13 +21,16 @@
  * \brief Define structures to interface with gdalread|write
  */
 
+#ifndef _GMT_GDALREAD_H
+#define _GMT_GDALREAD_H
+
 #include <gdal.h>
 #include <ogr_srs_api.h>
 #include <cpl_string.h>
 #include <cpl_conv.h>
 
 /*! Structure to control which options are transmited to GMT_gdalwrite */
-struct GDALWRITE_CTRL {
+struct GMT_GDALWRITE_CTRL {
 	char *driver;		/* The GDAL diver name */
 	char *type;			/* Data type */
 	char *command;		/* command line */
@@ -56,7 +59,7 @@ struct GDALWRITE_CTRL {
 };
 
 /*! Structure to control which options are transmited to GMT_gdalread */
-struct GDALREAD_CTRL {
+struct GMT_GDALREAD_IN_CTRL {
 	struct GD_B {	/* Band selection */
 		int active;
 		char *bands;
@@ -70,6 +73,9 @@ struct GDALREAD_CTRL {
 	struct GD_M {	/* Metadata only */
 		int active;
 	} M;
+	struct GD_O {	/* Three chars code to specify the array layout in memory */
+		char mem_layout[4]; /* first char T(op)|B(ot), second R(ow)|C(ol), third L(eft)|R(ight), fourth P(ix)|L(ine)|S(equencial) */
+	} O;
 	struct GD_P {	/* Preview mode */
 		int active;
 		char *jump;
@@ -124,7 +130,7 @@ struct GDAL_BAND_FNAMES {
 };
 
 /*! Structure with the output data transmited by GMT_gdalread */
-struct GD_CTRL {
+struct GMT_GDALREAD_OUT_CTRL {
 	/* active is true if the option has been activated */
 	struct UInt8 {			/* Declare byte pointer */
 		int active;
@@ -177,3 +183,5 @@ struct GD_CTRL {
 
 	struct GDAL_BAND_FNAMES *band_field_names;
 };
+
+#endif  /* _GMT_GDALREAD_H */

@@ -52,7 +52,7 @@ struct DATUM {
 	double xyz[3];		/* Coordinate shifts in meter for x, y, and z */
 };
 
-struct gmt_encoding {
+struct GMT_ENCODING {
 	char name[GMT_LEN64];
 	int code[5]; /* Codes for symbols we print. */
 };
@@ -93,12 +93,8 @@ struct GMT_DEFAULTS {
 	unsigned int triangulate; /* 0 for Watson [Default], 1 for Shewchuk (if configured) */
 	unsigned int verbose;     /* Level of verbosity 0-4 [1] */
 	unsigned int fft;         /* Any of FFT_implementations: k_fft_auto, k_fft_accelerate, k_fft_fftw3, k_fft_kiss, k_fft_brenner */
-#ifdef HAVE_FFTW3F
-	unsigned int fftw_plan;   /* Any of FFTW_planner_flags: FFTW_ESTIMATE, FFTW_MEASURE, FFTW_PATIENT, FFTW_EXHAUSTIVE */
-#ifdef HAVE_FFTW3F_THREADS
-	bool fftwf_threads;   /* Any of FFTW_planner_flags: FFTW_ESTIMATE, FFTW_MEASURE, FFTW_PATIENT, FFTW_EXHAUSTIVE */
-#endif
-#endif
+	unsigned int fftw_plan;   /* Only accessed if HAVE_FFTW3F is defined: Any of FFTW_planner_flags: FFTW_ESTIMATE, FFTW_MEASURE, FFTW_PATIENT, FFTW_EXHAUSTIVE */
+	bool fftwf_threads;   /* Only accessed if HAVE_FFTW3F_THREADS is defined: Any of FFTW_planner_flags: FFTW_ESTIMATE, FFTW_MEASURE, FFTW_PATIENT, FFTW_EXHAUSTIVE */
 	unsigned int history;     /* mode to pass information via history file gmt.history (k_history_off, k_history_read, k_history_write) */
 	double extrapolate_val[2];/* Choose between [0] = 0, 1D extrapolated vals are NaN, = 1 -> extrapolate, = 2 -> set to const stored in [1] */
 	/* IO group */
@@ -163,7 +159,7 @@ struct GMT_DEFAULTS {
 	bool ps_orientation;			/* Orientation of page [false = Landscape, true = Portrait] */
 	bool ps_comments;			/* true if we write comments in the PS file */
 	char ps_transpmode[16];			/* Transparency mode for PDF only */
-	struct gmt_encoding ps_encoding;
+	struct GMT_ENCODING ps_encoding;
 	/* TIME group */
 	enum GMT_enum_tictoc timer_mode;	/* Choose GMT_NO_TIMER, GMT_ABS_TIMER, GMT_ELAPSED_TIMER [GMT_NO_TIMER] */
 	double time_interval_fraction;		/* How much of a partial interval is needed in order to annotate it */

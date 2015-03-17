@@ -583,8 +583,9 @@ int GMT_native_write_grd_header (FILE *fp, struct GMT_GRID_HEADER *header)
 	return (err);
 }
 
-int GMT_native_skip_grd_header (FILE *fp, struct GMT_GRID_HEADER * GMT_UNUSED(header))
+int GMT_native_skip_grd_header (FILE *fp, struct GMT_GRID_HEADER *header)
 {
+	GMT_UNUSED(header);
 	int err = GMT_NOERROR;
 	/* Because GMT_GRID_HEADER is not 64-bit aligned we must estimate the # of bytes in parts */
 
@@ -1523,7 +1524,7 @@ int GMT_srf_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
  *		GMT_gdal_write_grd_info, GMT_gdal_read_grd, GMT_gdal_write_grd
  *-----------------------------------------------------------*/
 
-static inline void free_from_gdalread(struct GMT_CTRL *GMT, struct GD_CTRL *from_gdalread) {
+static inline void free_from_gdalread(struct GMT_CTRL *GMT, struct GMT_GDALREAD_OUT_CTRL *from_gdalread) {
 	int i;
 	if (from_gdalread->ColorMap)
 		GMT_free (GMT, from_gdalread->ColorMap);
@@ -1538,8 +1539,8 @@ static inline void free_from_gdalread(struct GMT_CTRL *GMT, struct GD_CTRL *from
 }
 
 int GMT_gdal_read_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
-	struct GDALREAD_CTRL *to_gdalread = NULL;
-	struct GD_CTRL *from_gdalread = NULL;
+	struct GMT_GDALREAD_IN_CTRL *to_gdalread = NULL;
+	struct GMT_GDALREAD_OUT_CTRL *from_gdalread = NULL;
 
 	if (!strcmp (header->name, "=")) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Pipes cannot be used within the GDAL interface.\n");
@@ -1547,8 +1548,8 @@ int GMT_gdal_read_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header
 	}
 
 	/* Allocate new control structures */
-	to_gdalread = GMT_memory (GMT, NULL, 1, struct GDALREAD_CTRL);
-	from_gdalread = GMT_memory (GMT, NULL, 1, struct GD_CTRL);
+	to_gdalread = GMT_memory (GMT, NULL, 1, struct GMT_GDALREAD_IN_CTRL);
+	from_gdalread = GMT_memory (GMT, NULL, 1, struct GMT_GDALREAD_OUT_CTRL);
 
 	to_gdalread->M.active = true;		/* Metadata only */
 
@@ -1581,7 +1582,8 @@ int GMT_gdal_read_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header
 	return (GMT_NOERROR);
 }
 
-int GMT_gdal_write_grd_info (struct GMT_CTRL * GMT_UNUSED(GMT), struct GMT_GRID_HEADER * GMT_UNUSED(header)) {
+int GMT_gdal_write_grd_info (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header) {
+	GMT_UNUSED(GMT); GMT_UNUSED(header);
 	return (GMT_NOERROR);
 }
 
@@ -1594,15 +1596,15 @@ int GMT_gdal_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 	/*		Note: The file has only real values, we simply allow space in the complex array */
 	/*		for real and imaginary parts when processed by grdfft etc. */
 
-	struct GDALREAD_CTRL *to_gdalread = NULL;
-	struct GD_CTRL *from_gdalread = NULL;
+	struct GMT_GDALREAD_IN_CTRL *to_gdalread = NULL;
+	struct GMT_GDALREAD_OUT_CTRL *from_gdalread = NULL;
 	int nBand, subset;
 	uint64_t i, j, row, col;
 	char strR[128];
 
 	/* Allocate new control structures */
-	to_gdalread = GMT_memory (GMT, NULL, 1, struct GDALREAD_CTRL);
-	from_gdalread = GMT_memory (GMT, NULL, 1, struct GD_CTRL);
+	to_gdalread = GMT_memory (GMT, NULL, 1, struct GMT_GDALREAD_IN_CTRL);
+	from_gdalread = GMT_memory (GMT, NULL, 1, struct GMT_GDALREAD_OUT_CTRL);
 
 	if (complex_mode & GMT_GRID_IS_COMPLEX_MASK) {
 		to_gdalread->Z.active = true;		/* Force reading into a compex array */
@@ -1752,7 +1754,8 @@ int GMT_gdal_read_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, flo
 	return (GMT_NOERROR);
 }
 
-int GMT_gdal_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, float *grid, double wesn[], unsigned int * GMT_UNUSED(pad), unsigned int complex_mode) {
+int GMT_gdal_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, float *grid, double wesn[], unsigned int *pad, unsigned int complex_mode) {
+	GMT_UNUSED(pad);
 	uint64_t node = 0, ij, imag_offset;
 	int first_col, last_col;	/* First and last column to deal with */
 	int first_row, last_row;	/* First and last row to deal with */
@@ -1766,7 +1769,7 @@ int GMT_gdal_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, fl
 	unsigned short int *zu16 = NULL;
 	int *zi32 = NULL;
 	unsigned int *zu32 = NULL;
-	struct GDALWRITE_CTRL *to_GDALW = NULL;
+	struct GMT_GDALWRITE_CTRL *to_GDALW = NULL;
 	type[0] = '\0';
 
 	if (header->pocket == NULL) {
@@ -1778,7 +1781,7 @@ int GMT_gdal_write_grd (struct GMT_CTRL *GMT, struct GMT_GRID_HEADER *header, fl
 	(void)GMT_init_complex (header, complex_mode, &imag_offset);	/* Set offset for imaginary complex component */
 
 	sscanf (header->pocket, "%[^/]/%s", driver, type);
-	to_GDALW = GMT_memory (GMT, NULL, 1, struct GDALWRITE_CTRL);
+	to_GDALW = GMT_memory (GMT, NULL, 1, struct GMT_GDALWRITE_CTRL);
 	to_GDALW->driver = strdup(driver);
 	to_GDALW->P.ProjectionRefPROJ4 = NULL;
 	to_GDALW->flipud = 0;

@@ -210,16 +210,16 @@ set (GMT_PSL_SRCS pslib.c common_string.c common_string.h common_runpath.c
 # libgmt
 set (GMT_LIB_SRCS block_subs.h common_byteswap.h common_math.h
 	common_runpath.h common_sighandler.c common_string.h declspec.h getopt.h
-	gmt_dev.h gmt_calclock.h gmt_colors.h gmt_common.h gmt_constants.h
-	gmt_contour.h gmt_crossing.h gmt_customio.h gmt_dcw.h gmt_defaults.h
-	gmt_error.h gmt_gdalread.h gmt_grd.h gmt_grdio.h gmt_hash.h gmt_init.h
-	gmt_internals.h gmt_io.h gmt_macros.h gmt_map.h gmt_media_name.h
+	gmt_dev.h gmt_common.h gmt_constants.h  compat/qsort.h
+	gmt_contour.h gmt_customio.h gmt_dcw.h gmt_defaults.h
+	gmt_error.h gmt_gdalread.h gmt_glib.h gmt_grd.h gmt_grdio.h gmt_hash.h
+	gmt_internals.h gmt_io.h gmt_macros.h gmt_media_name.h
 	gmt_media_size.h gmt_mgg_header2.h gmt_sharedlibs.h gmt_memory.h
-	gmt_core_module.h gmt_nan.h gmt_notposix.h gmt_option.h gmt_pennames.h
-	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h gmt_stat.h
-	gmt_support.h gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
+	gmt_core_module.h gmt_nan.h gmt_notposix.h gmt_pennames.h
+	gmt_plot.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h
+	gmt_symbol.h gmt_synopsis.h gmt_texture.h gmt_time.h
 	gmt_types.h gmt_unique.h gmt_version.h gshhg_version.h pslib.h
-	s_rint.h triangle.h gmt.h gmt_resources.h gmt_define.h gmt_private.h
+	s_rint.h triangle.h gmt.h gmt_resources.h gmt_private.h
 	gmt_error_codes.h gmt_api.c gmt_bcr.c gmt_calclock.c gmt_cdf.c gmt_compat.c
 	gmt_customio.c gmt_dcw.c gmt_error.c gmt_fft.c gmt_grdio.c gmt_io.c
 	gmt_memory.c gmt_nc.c gmt_notposix.c gmt_proj.c gmt_shore.c gmt_sph.c
@@ -555,9 +555,25 @@ string (REPLACE ".c" "" _gmt_modules "${GMT_PROGS_SRCS}")
 install_module_symlink (${_gmt_modules} ${GMT_COMPAT_MODULES})
 
 # Install public headers
-install (FILES gmt.h gmt_define.h gmt_option.h gmt_resources.h declspec.h
+install (FILES gmt.h gmt_resources.h declspec.h
 	DESTINATION ${GMT_INCLUDEDIR}
 	COMPONENT Runtime)
+
+if (BUILD_DEVELOPER)
+	# Install Developer headers [These are clean and have no #define HAVE_* configuration]
+	install (FILES pslib.h common_math.h common_string.h gmt_common.h gmt_constants.h gmt_contour.h
+		gmt_dcw.h gmt_defaults.h gmt_error.h gmt_error_codes.h gmt_fft.h gmt_gdalread.h gmt_grd.h
+		gmt_grdio.h gmt_hash.h gmt_io.h gmt_macros.h gmt_memory.h gmt_nan.h gmt_notposix.h gmt_plot.h
+		gmt_private.h gmt_project.h gmt_prototypes.h gmt_ps.h gmt_shore.h gmt_symbol.h gmt_synopsis.h
+		gmt_texture.h gmt_time.h gmt_types.h gmt_dev.h gmt_customio.h
+		DESTINATION ${GMT_INCLUDEDIR}
+		COMPONENT Runtime)
+	# Install Configured Developer headers [These are produced by cmake from *.h.in files]
+	install (FILES ${PROJECT_BINARY_DIR}/src/config.h ${PROJECT_BINARY_DIR}/src/gmt_config.h
+		${PROJECT_BINARY_DIR}/src/gmt_dimensions.h ${PROJECT_BINARY_DIR}/src/gmt_version.h
+		DESTINATION ${GMT_INCLUDEDIR}
+		COMPONENT Runtime)
+endif (BUILD_DEVELOPER)
 
 # symlink to gmt-wrapper in bindir and libdir:
 if (UNIX AND GMT_INSTALL_NAME_SUFFIX)
@@ -576,16 +592,15 @@ install (PROGRAMS
 	DESTINATION ${GMT_BINDIR}
 	COMPONENT Runtime)
 
-install (CODE "
-execute_process (
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-	\"${CMAKE_CURRENT_SOURCE_DIR}/gmtswitch\"
-	\"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${GMT_BINDIR}/gmtswitch${GMT_INSTALL_NAME_SUFFIX}\")
-execute_process (
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different
-	\"${CMAKE_CURRENT_SOURCE_DIR}/gmt_shell_functions.sh\"
-	\"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${GMT_BINDIR}/gmt_shell_functions${GMT_INSTALL_NAME_SUFFIX}.sh\")
-")
+install (PROGRAMS gmtswitch
+	RENAME gmtswitch${GMT_INSTALL_NAME_SUFFIX}
+	DESTINATION ${GMT_BINDIR}
+	COMPONENT Runtime)
+
+install (PROGRAMS gmt_shell_functions.sh
+	RENAME gmt_shell_functions${GMT_INSTALL_NAME_SUFFIX}.sh
+	DESTINATION ${GMT_BINDIR}
+	COMPONENT Runtime)
 
 if (WIN32)
 	install (PROGRAMS

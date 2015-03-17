@@ -417,8 +417,9 @@ double gmt_gammq (struct GMT_CTRL *GMT, double a, double x) {
  * of Bessel Functions).
  */
 
-double GMT_ber (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
+double GMT_ber (struct GMT_CTRL *GMT, double x)
 {
+	GMT_UNUSED(GMT);
 	double t, rxsq, alpha, beta;
 
 	if (x == 0.0) return (1.0);
@@ -454,8 +455,9 @@ double GMT_ber (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
 	}
 }
 
-double GMT_bei (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
+double GMT_bei (struct GMT_CTRL *GMT, double x)
 {
+	GMT_UNUSED(GMT);
 	double t, rxsq, alpha, beta;
 
 	if (x == 0.0) return (0.0);
@@ -570,9 +572,10 @@ double GMT_kei (struct GMT_CTRL *GMT, double x)
 	}
 }
 
-double GMT_i0 (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
+double GMT_i0 (struct GMT_CTRL *GMT, double x)
 {
 /* Modified from code in Press et al. */
+	GMT_UNUSED(GMT);
 	double y, res;
 
 	if (x < 0.0) x = -x;
@@ -588,10 +591,10 @@ double GMT_i0 (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
 	return (res);
 }
 
-double GMT_i1 (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
+double GMT_i1 (struct GMT_CTRL *GMT, double x)
 {
 	/* Modified Bessel function I1(x) */
-
+	GMT_UNUSED(GMT);
 	double y, res;
 
 	if (x < 0.0) x = -x;
@@ -640,9 +643,10 @@ double GMT_in (struct GMT_CTRL *GMT, unsigned int n, double x)
 	return (res);
 }
 
-double GMT_k0 (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
+double GMT_k0 (struct GMT_CTRL *GMT, double x)
 {
 /* Modified from code in Press et al. */
+	GMT_UNUSED(GMT);
 	double y, z, res;
 
 	if (x < 0.0) x = -x;
@@ -958,8 +962,9 @@ void GMT_plm_bar_all (struct GMT_CTRL *GMT, int lmax, double x, bool ortho, doub
 
 /* GMT_sinc (x) calculates the sinc function */
 
-double GMT_sinc (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
+double GMT_sinc (struct GMT_CTRL *GMT, double x)
 {
+	GMT_UNUSED(GMT);
 	if (x == 0.0) return (1.0);
 	x *= M_PI;
 	return (sin (x) / x);
@@ -1229,10 +1234,10 @@ int GMT_student_t_a (struct GMT_CTRL *GMT, double t, uint64_t n, double *prob)
 	return (0);
 }
 
-double GMT_zdist (struct GMT_CTRL *GMT_UNUSED(GMT), double x)
+double GMT_zdist (struct GMT_CTRL *GMT, double x)
 {
 	/* Cumulative Normal (z) distribution */
-
+	GMT_UNUSED(GMT);
 	return (0.5 * (erf (x / M_SQRT2) + 1.0));
 }
 
@@ -1334,8 +1339,9 @@ double GMT_chi2crit (struct GMT_CTRL *GMT, double alpha, double nu)
 	return (chi2_mid);
 }
 
-void gmt_F_to_ch1_ch2 (struct GMT_CTRL *GMT_UNUSED(GMT), double F, double nu1, double nu2, double *chisq1, double *chisq2)
+void gmt_F_to_ch1_ch2 (struct GMT_CTRL *GMT, double F, double nu1, double nu2, double *chisq1, double *chisq2)
 {	/* Silly routine to break F up into parts needed for GMT_f_q */
+	GMT_UNUSED(GMT);
 	*chisq2 = 1.0;
 	*chisq1 = F * nu1 / nu2;
 }
@@ -1597,7 +1603,7 @@ int GMT_median (struct GMT_CTRL *GMT, double *x, uint64_t n, double xmin, double
 
 int compare_observation (const void *a, const void *b)
 {
-	const struct OBSERVATION *obs_1 = a, *obs_2 = b;
+	const struct GMT_OBSERVATION *obs_1 = a, *obs_2 = b;
 
 	/* Sorts observations into ascending order based on obs->value */
 	if (obs_1->value < obs_2->value)
@@ -1622,7 +1628,7 @@ double GMT_mean_weighted (struct GMT_CTRL *GMT, double *x, double *w, uint64_t n
 	return (sum_xw / sum_w);
 }
 
-double GMT_median_weighted (struct GMT_CTRL *GMT, struct OBSERVATION *data, uint64_t n, double quantile)
+double GMT_median_weighted (struct GMT_CTRL *GMT, struct GMT_OBSERVATION *data, uint64_t n, double quantile)
 {
 	uint64_t k;
 	double weight_half = 0.0, weight_count;
@@ -1631,7 +1637,7 @@ double GMT_median_weighted (struct GMT_CTRL *GMT, struct OBSERVATION *data, uint
 
 	/* First sort data on z */
 
-	qsort (data, n, sizeof (struct OBSERVATION), compare_observation);
+	qsort (data, n, sizeof (struct GMT_OBSERVATION), compare_observation);
 
 	/* Find weight sum, then get half-value */
 
@@ -1646,7 +1652,7 @@ double GMT_median_weighted (struct GMT_CTRL *GMT, struct OBSERVATION *data, uint
 	return ((double)((weight_count == weight_half) ? 0.5 * (data[k].value + data[k+1].value) : data[k].value));
 }
 
-double GMT_mode_weighted (struct GMT_CTRL *GMT, struct OBSERVATION *data, uint64_t n)
+double GMT_mode_weighted (struct GMT_CTRL *GMT, struct GMT_OBSERVATION *data, uint64_t n)
 {
 	/* Looks for the “shortest 50%”. This means that when the cumulative weight
 	   (y) is plotted against the value (x) then the line between (xi,yi) and
@@ -1659,7 +1665,7 @@ double GMT_mode_weighted (struct GMT_CTRL *GMT, struct OBSERVATION *data, uint64
 	if (n == 0) return (GMT->session.d_NaN);	/* No data, so no defined mode */
 
 	/* First sort data on z */
-	qsort (data, n, sizeof (struct OBSERVATION), compare_observation);
+	qsort (data, n, sizeof (struct GMT_OBSERVATION), compare_observation);
 
 	/* Compute the total weight */
 	for (wsum = 0.0, i = 0; i < n; i++) wsum += data[i].weight;
@@ -2295,3 +2301,6 @@ void GMT_PvQv (struct GMT_CTRL *GMT, double x, double v_ri[], double pq[], unsig
 		pq[QV_IM] = a[1]*M_SQRT_PI*(A[GMT_IM] - B[GMT_IM])/2.0;
 	}
 }
+
+bool GMT_is_fnan_func (float value) { return (GMT_is_fnan (value)); }
+bool GMT_is_dnan_func (double value) { return (GMT_is_dnan (value)); }

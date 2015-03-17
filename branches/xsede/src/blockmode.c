@@ -32,6 +32,7 @@
 #define THIS_MODULE_NAME	"blockmode"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Block average (x,y,z) data tables by mode estimation"
+#define THIS_MODULE_KEYS	"<DI,>DO"
 
 #include "gmt_dev.h"
 #include "block_subs.h"
@@ -82,7 +83,7 @@ int GMT_blockmode_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Option (API, "a,bi");
 	GMT_Message (API, GMT_TIME_NONE, "\t    Default is 3 columns (or 4 if -W is set).\n");
 	GMT_Option (API, "bo,d,f,h,i,o,r,:,.");
-	
+
 	return (EXIT_FAILURE);
 }
 
@@ -218,17 +219,18 @@ struct BIN_MODE_INFO *bin_setup (struct GMT_CTRL *GMT, struct BLK_DATA *d, doubl
 	B->n_bins = B->max - B->min + 1;
 	B->count = GMT_memory (GMT, NULL, B->n_bins, double);
 	B->mode_choice = (mode_choice == BLOCKMODE_DEF) ? BLOCKMODE_AVE : mode_choice;
-	
+
 	return (B);
 }
 
-double bin_mode (struct GMT_CTRL *GMT_UNUSED(GMT), struct BLK_DATA *d, uint64_t n, uint64_t k, struct BIN_MODE_INFO *B)
+double bin_mode (struct GMT_CTRL *GMT, struct BLK_DATA *d, uint64_t n, uint64_t k, struct BIN_MODE_INFO *B)
 {
 	/* Estimate mode by finding a maximum in the histogram resulting
 	 * from binning the data with the specified width. Note that the
 	 * data array is already sorted on a[k]. We check if we find more
 	 * than one mode and return the chosen one as per the settings. */
 
+	GMT_UNUSED(GMT);
 	double value = 0.0, mode_count = 0.0;
 	uint64_t i;
 	unsigned int n_modes = 0;
@@ -250,9 +252,9 @@ double bin_mode (struct GMT_CTRL *GMT_UNUSED(GMT), struct BLK_DATA *d, uint64_t 
 		value = ((mode_bin + B->min) + B->o_offset) * B->width;
 		return (value);
 	}
-	
+
 	/* Here we found more than one mode and must choose according to settings */
-	
+
 	for (bin = 0, done = false; !done && bin < (int)B->n_bins; bin++) {	/* Loop over bin counts */
 		if (B->count[bin] < mode_count) continue;	/* Not one of the modes */
 		switch (B->mode_choice) {
@@ -348,7 +350,7 @@ double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint6
 	   of the total sum of weights */
 
 	double top, bottom, p, p_max, mode;
-	uint64_t i, j, src, n_modes = 1;
+	uint64_t i, j, src;
 
 
 	/* Do some initializations */
@@ -386,6 +388,7 @@ double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint6
 #if 0
 		else if (doubleAlmostEqual (p, p_max)) {	/* Same peak as previous best mode */
 			double new_mode = 0.5 * (d[i].a[k] + d[j].a[k]);
+			uint64_t n_modes = 1;
 			switch (mode_type) {
 				case BLOCKMODE_LOW:	/* Pick lowest mode */
 					if (new_mode < mode) {
@@ -405,9 +408,11 @@ double weighted_mode (struct BLK_DATA *d, double wsum, unsigned int emode, uint6
 					break;
 			}
 		}
-#endif
 	}
-	//if (n_modes > 1) mode /= n_modes;
+	if (n_modes > 1) mode /= n_modes;
+#else
+	}
+#endif
 	if (emode && index) *index = src;
 	return (mode);
 }
@@ -514,7 +519,7 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 	sid_col = (Ctrl->W.weighted[GMT_IN]) ? 4 : 3;	/* Column with integer source id [if -Es is set] */
 	n_read = n_pitched = 0;	/* Initialize counters */
 
-	GMT->session.min_meminc = GMT_INITIAL_MEM_ROW_ALLOC;	/* Start by allocating a 32 Mb chunk */ 
+	GMT->session.min_meminc = GMT_INITIAL_MEM_ROW_ALLOC;	/* Start by allocating a 32 Mb chunk */
 
 	/* Read the input data */
 	is_integer = true;	/* Until proven otherwise */
@@ -528,7 +533,7 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 			if (GMT_REC_IS_EOF (GMT)) 		/* Reached end of file */
 				break;
 		}
-		
+
 		if (GMT_is_dnan (in[GMT_Z])) 		/* Skip if z = NaN */
 			continue;
 
@@ -570,7 +575,7 @@ int GMT_blockmode (void *V_API, int mode, void *args)
 	} while (true);
 
 	GMT->session.min_meminc = GMT_MIN_MEMINC;		/* Reset to the default value */
-	
+
 	if (GMT_End_IO (API, GMT_IN, 0) != GMT_OK) {	/* Disables further data input */
 		Return (API->error);
 	}

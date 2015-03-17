@@ -35,6 +35,7 @@
 #define THIS_MODULE_NAME	"mgd77list"
 #define THIS_MODULE_LIB		"mgd77"
 #define THIS_MODULE_PURPOSE	"Extract data from MGD77 files"
+#define THIS_MODULE_KEYS	">DO"
 
 #include "gmt_dev.h"
 #include "mgd77.h"
@@ -744,7 +745,7 @@ int GMT_mgd77list (void *V_API, int mode, void *args)
 	struct MGD77_CONTROL M;
 	struct MGD77_DATASET *D = NULL;
 	struct MGD77_AUX_INFO aux[N_MGD77_AUX];
-	struct GMT_gcal cal;
+	struct GMT_GCAL cal;
 	struct MGD77_CARTER Carter;
 	struct MGD77_CORRTABLE **CORR = NULL;
 	struct MGD77_AUXLIST auxlist[N_MGD77_AUX] = {

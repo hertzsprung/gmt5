@@ -29,6 +29,7 @@
 #define THIS_MODULE_NAME	"gmt2kml"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Convert GMT data tables to KML files for Google Earth"
+#define THIS_MODULE_KEYS	"<DI,>TO"
 
 #include "gmt_dev.h"
 #include <stdarg.h>
@@ -897,7 +898,7 @@ int GMT_gmt2kml (void *V_API, int mode, void *args)
 			if (!strcmp (file[GMT_IN], "<stdin>"))
 				kml_print (API, N, "<name>stdin</name>\n");
 			else
-				kml_print (API, N, "<name>%s</name>\n", GMT_basename (file[GMT_IN]));
+				kml_print (API, N, "<name>%s</name>\n", basename (file[GMT_IN]));
 		}
 		for (seg = 0; seg < n_segments; seg++) {	/* Process each segment in this table */
 			pnt_nr = 0;

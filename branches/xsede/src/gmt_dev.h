@@ -57,14 +57,11 @@ extern "C" {
  * warnings [-Wunused-variable]. To suppress those (and only those), we can define GMT_UNUSED as this:
  */
 
-#ifdef __GNUC__
-#define GMT_UNUSED __attribute__ ((unused))
-#else
-#define GMT_UNUSED
-#endif
+#define GMT_UNUSED(x) (void)(x)
 
-/* and then call GMT_UNUSED() on all such variables.  For GNU compilers the warning is then suppressed.
- * Other compilers will not see anything and give whatever harmless warnings they normally do.
+/* and then call GMT_UNUSED() on all such variables at the beginning of a routine. For example:
+ * bool func (int x) { GMT_UNUSED(x); return(true); }
+ * This should work for all compilers, GCC and others.
  * Just grep for GMT_UNUSED to see where these situations occur.
  */
 
@@ -107,7 +104,6 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 #include "gmt_defaults.h"       /* Declarations of structure for GMT default settings */
 #include "gmt_ps.h"             /* Declarations of structure for GMT PostScript settings */
 #include "gmt_hash.h"           /* Declarations of structure for GMT hashing */
-#include "gmt_crossing.h"       /* Declarations of structure for GMT map crossings */
 
 #ifdef HAVE_GDAL
 #	include "gmt_gdalread.h"      /* GDAL support */
@@ -125,16 +121,12 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 #include "gmt_grd.h"            /* Define grd file header structure */
 #include "gmt_grdio.h"          /* Defines function pointers for grd i/o operations */
 #include "gmt_io.h"             /* Defines structures and macros for table i/o */
-#include "gmt_colors.h"         /* Defines color/shading global structure */
 #include "gmt_shore.h"          /* Defines structures used when reading shore database */
 #include "gmt_dcw.h"            /* Defines structure and functions used when using DCW polygons */
-#include "gmt_calclock.h"       /* Calendar/time functions */
 #include "gmt_symbol.h"         /* Custom symbol functions */
 #include "gmt_contour.h"        /* Contour label structure and functions */
-#include "gmt_map.h"            /* extern functions defined in gmt_map.c */
 #include "gmt_plot.h"           /* extern functions defined in gmt_plot.c */
 #include "gmt_memory.h"         /* extern functions defined in gmt_memory.c */
-#include "gmt_support.h"        /* extern functions defined in gmt_support.c */
 #include "gmt_types.h"          /* GMT type declarations */
 
 #ifdef _OPENMP                  /* Using open MP parallelization */
@@ -142,8 +134,6 @@ struct GMT_CTRL; /* forward declaration of GMT_CTRL */
 #endif
 
 #include "gmt_prototypes.h"     /* All GMT low-level API */
-#include "gmt_init.h"           /* extern functions defined in gmt_init.c */
-#include "gmt_stat.h"           /* extern functions defined in gmt_stat.c */
 #include "common_string.h"      /* All code shared between GMT and PSL */
 
 #ifdef __cplusplus

@@ -667,6 +667,10 @@ Next table gives a list of all the functions and their purpose.
 +-------------------------+---------------------------------------------------+
 | GMT_Encode_ID_          | Encode a resources ID as a special filename       |
 +-------------------------+---------------------------------------------------+
+| GMT_Encode_Options_     | Encode option arguments for external interfaces   |
++-------------------------+---------------------------------------------------+
+| GMT_Expand_Option_      | Expand option with explicit memory references     |
++-------------------------+---------------------------------------------------+
 | GMT_End_IO_             | Disable further record-by-record i/o              |
 +-------------------------+---------------------------------------------------+
 | GMT_FFT_                | Take the Fast Fourier Transform of data object    |
@@ -1177,7 +1181,8 @@ and pass the ``par`` array as indicated below:
 
   **GMT_IS_MATRIX**
     An empty :ref:`GMT_MATRIX <struct-matrix>` structure is allocated. ``par[2]`` indicates
-    the number of layers for a 3-D matrix, or pass 0, 1, or NULL for a 2-D matrix.
+    the number of layers for a 3-D matrix, or pass 0, 1, or NULL for a 2-D matrix.  Here,
+    par[0] is the number of columns while par[1] has the number of rows.
 
 For the second approach, you
 instead pass ``wesn``, ``inc``, and ``registration`` and leave ``par`` as NULL
@@ -1407,6 +1412,9 @@ different data types.
     using GMT_Get_Row_ By default the rows will be automatically
     processed in order. To completely specify which row to be read, use
     ``GMT_GRID_ROW_BY_ROW_MANUAL`` instead.
+
+If you need to read the same resource more than once you should add the
+bitflag GMT_IO_RESET to the given ``mode``.
 
 Import from a memory location
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2017,7 +2025,7 @@ allow you to convert between the two argument formats. They are
 
   ::
 
-    struct GMT_OPTIONS *GMT_Create_Options (void *API, int argc, void *args);
+    struct GMT_OPTION *GMT_Create_Options (void *API, int argc, void *args);
 
 This function accepts your array of text arguments (cast via a void
 pointer), allocates the necessary space, performs the conversion, and
@@ -2047,7 +2055,7 @@ The inverse function prototype is
 
   ::
 
-    char **GMT_Create_Args (void *API, int *argc, struct GMT_OPTIONS *list);
+    char **GMT_Create_Args (void *API, int *argc, struct GMT_OPTION *list);
 
 which allocates space for the text strings and performs the conversion;
 it passes back the count of the arguments via ``argc`` and returns a
@@ -2085,7 +2093,7 @@ any use for the text string, call
 
   ::
 
-    int _GMT_Destroy_Cmd (void *API, char **argv);
+    int GMT_Destroy_Cmd (void *API, char **argv);
 
 to deallocate the space used. This function returns 1 if there is
 an error (which is passed back with ``API->error``), otherwise it
@@ -2212,6 +2220,86 @@ append to file.B:
 These options also work on the command line but usually one would have
 to escape the special characters < and > as they are
 used for file redirection.
+
+Encode option arguments for external interfaces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Developers writing interfaces between GMT and external platforms such
+as other languages (Python, Java, Julia, etc.) or tools (Matlab, Octave,
+etc.) need to manipulate linked options in a special way.  For instance,
+a GMT call in the Matlab or Octave application might look like
+
+::
+
+  table = gmt ('blockmean -R30W/30E/10S/10N -I2m', [x y z]);
+  grid  = gmt ('surface -R -I2m -Lu$', high_limit_grid, table);
+
+and in such environments we need the ability to (1) specify references
+to memory items (via a marker, here "$") and (2) supply implicit
+module arguments (here a command-line "$" will be added to both commands
+to represent the input 3-column table, a "> $" to indicate the output
+of blockmean should go to a memory reference (eventually end up in the
+variable table, and a "-G$" to indicate the output grid from surface
+should be written to a memory reference, ending up in the variable grid).
+Such explicit and implicit references to data sources requires processing
+and even the addition of extra options to the linked list of options.
+API developers may use ``GMT_Encode_Options`` to do so.
+The prototype is
+
+.. _GMT_Encode_Options:
+
+  ::
+
+    struct GMT_RESOURCE *GMT_Encode_Options (void *API, char *module, char marker, int nl,
+                    	                       struct GMT_OPTION **head, int *n_items);
+
+where ``module`` is the name of the module whose linked options are
+pointed to by ``*head``, the ``marker`` is the special character that
+identifies a data resource (usually $), the ``nl`` is the number of
+explicit items the calling program requested, and we return an array
+that contains specific information for those options that
+(after processing) contain explicit memory references.  The number of
+items in the array is returned via the ``n`` variable.  The function
+returns NULL if there are errors and sets ``API->error`` to the corresponding
+error number.  The GMT_RESOURCE structure is defined below:
+
+.. .. _struct-grid:
+
+.. code-block:: c
+
+   struct GMT_RESOURCE {	/* Information for passing resources */
+       enum GMT_enum_family family;     /* GMT data family */
+       enum GMT_enum_geometry geometry; /* One of the recognized GMT geometries */
+       enum GMT_enum_std direction;     /* Either GMT_IN or GMT_OUT */
+       struct GMT_OPTION *option;       /* Pointer to the corresponding module option */
+       int object_ID;                   /* Object ID returned by GMT_Register_IO */
+       int pos;                         /* Corresponding index into external object in|out arrays */
+       void *object;                    /* Pointer to the registered GMT object */
+   };
+
+API developers will need to provide specific code to handle the registration of native
+structures in their language or application and to translate between the GMT resources
+and the corresponding native items.  Developers should look at an existing and working
+interface such as the Matlab mex-gmt to see the required steps.
+
+Expand option with explicit memory references
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When the external tool or application knows the name of special file name
+used for memory references the developer should replace the ``marker`` character
+in any option string with the actual reference name.  This is accomplished by
+calling ``GMT_Expand_Option``, with prototype
+
+.. _GMT_Expand_Option:
+
+  ::
+
+    int GMT_Expand_Option (void *API, struct GMT_OPTION *option,
+	                         char marker, char *name);
+
+where ``option`` is the current option, ``marker`` is the character
+identifier representing an explicit memory reference, and ``name``
+is the special file name for the memory reference.
 
 Calling a GMT module
 --------------------

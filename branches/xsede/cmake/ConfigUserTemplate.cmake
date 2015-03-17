@@ -160,6 +160,10 @@
 # Build GMT shared lib with supplemental modules [TRUE]:
 #set (BUILD_SUPPLEMENTS FALSE)
 
+# Build/Install GMT Developer include files [FALSE]:
+# This installs the extra include files and configured files needed by gmt-devel
+#set (BUILD_DEVELOPER TRUE)
+
 ##
 ## Section 4: Advanced tweaking
 ##
@@ -246,6 +250,7 @@
 
 # If want to rename the DLLs to something else than the default (e.g. to
 # append the bitness - Windows only)
+# WARNING: if using this option it is mandatory that the suffix starts with an underscore.
 #if (WIN32)
 # set (BITAGE 32)
 # # Detect if we are building a 32 or 64 bits version

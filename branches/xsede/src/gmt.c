@@ -34,7 +34,6 @@
 #endif
 
 #define PROGRAM_NAME	"gmt"
-#define GMT_PAD_DEFAULT	2U
 
 /* Determine the system environmetal parameter that leads to shared libraries */
 #if defined _WIN32
@@ -50,7 +49,7 @@ int main (int argc, char *argv[]) {
 	int k, v_mode = GMT_MSG_COMPAT;		/* Default verbosity */
 	bool gmt_main = false;			/* Set to true if no module specified */
 	unsigned int modulename_arg_n = 0;	/* Argument number in argv[] that contains module name */
-	unsigned int mode = 0;			/* Default API mode */
+	unsigned int mode = GMT_SESSION_NORMAL;	/* Default API mode */
 	struct GMTAPI_CTRL *api_ctrl = NULL;	/* GMT API control structure */
 	char gmt_module[GMT_LEN32] = "gmt";
 	char *progname = NULL;			/* Last component from the pathname */
@@ -78,7 +77,7 @@ int main (int argc, char *argv[]) {
 	if ((api_ctrl = GMT_Create_Session (argv[0], GMT_PAD_DEFAULT, mode, NULL)) == NULL)
 		return EXIT_FAILURE;
 	api_ctrl->internal = true;	/* This is a proper GMT internal session (external programs will default to false) */
-	progname = strdup (GMT_basename (argv[0])); /* Last component from the pathname */
+	progname = strdup (basename (argv[0])); /* Last component from the pathname */
 	/* Remove any filename extensions added for example
 	 * by the MSYS shell when executing gmt via symlinks */
 	GMT_chop_ext (progname);
@@ -154,6 +153,12 @@ int main (int argc, char *argv[]) {
 				fprintf (stdout, "%s\n", api_ctrl->GMT->init.runtime_bindir);
 				goto exit;
 			}
+
+			/* Show the directory that contains the shared plugins */
+			if (!strcmp (argv[arg_n], "--show-plugindir")) {
+				fprintf (stdout, "%s\n", api_ctrl->GMT->init.runtime_plugindir);
+				goto exit;
+			}
 		} /* for (arg_n = 1; arg_n < argc; ++arg_n) */
 
 		/* If we get here, we were called without a recognized modulename or option
@@ -170,17 +175,18 @@ no_such:
 		fprintf (stderr, "This program comes with NO WARRANTY, to the extent permitted by law.\n");
 		fprintf (stderr, "You may redistribute copies of this program under the terms of the\n");
 		fprintf (stderr, "GNU Lesser General Public License (http://www.gnu.org/licenses/lgpl.html).\n");
-		fprintf (stderr, "For more information about these matters, see the file named LICENSE.TXT.\n\n");
+		fprintf (stderr, "For more information about legal matters, see the file named LICENSE.TXT.\n\n");
 		fprintf (stderr, "usage: %s [options]\n", PROGRAM_NAME);
-		fprintf (stderr, "       %s <module name> [<module options>]\n\n", PROGRAM_NAME);
+		fprintf (stderr, "       %s <module name> [<module-options>]\n\n", PROGRAM_NAME);
 		fprintf (stderr, "options:\n");
-		fprintf (stderr, "  --help            List and description of GMT modules.\n");
-		fprintf (stderr, "  --version         Print version and exit.\n");
-		fprintf (stderr, "  --show-cores      Show number of available cores and exit.\n");
-		fprintf (stderr, "  --show-datadir    Show data directory and exit.\n");
-		fprintf (stderr, "  --show-bindir     Show directory of executables and exit.\n\n");
-		fprintf (stderr, "if <module options> is \'=\' we call exit (0) if module exist and non-zero otherwise.\n\n");
-		if (modulename_arg_n == 1) {
+		fprintf (stderr, "  --help            List a description of GMT modules.\n");
+		fprintf (stderr, "  --version         Print version number.\n");
+		fprintf (stderr, "  --show-cores      Show number of available cores.\n");
+		fprintf (stderr, "  --show-datadir    Show directory of data.\n");
+		fprintf (stderr, "  --show-bindir     Show directory of executables.\n");
+		fprintf (stderr, "  --show-plugindir  Show directory of plug-ins.\n\n");
+		fprintf (stderr, "if <module-options> is \'=\' we call exit (0) if module exist and non-zero otherwise.\n\n");
+		if (modulename_arg_n == 1 && module[0] != '-') {
 			fprintf (stderr, "ERROR: No module named %s was found.  This could mean:\n", module);
 			fprintf (stderr, "  1. There actually is no such module; check your spelling.\n");
 			if (strlen (GMT_SUPPL_LIB_NAME))

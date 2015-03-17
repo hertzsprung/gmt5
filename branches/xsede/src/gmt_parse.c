@@ -113,8 +113,8 @@ struct GMT_OPTION * GMT_Create_Options (void *V_API, int n_args_in, void *in) {
 	 */
 
 	int error = GMT_OK;
-	unsigned int arg, first_char, n_args;
-	char option, **args = NULL, **new_args = NULL, *pch = NULL;
+	unsigned int arg, first_char, append = 0, n_args;
+	char option, **args = NULL, **new_args = NULL, *pch = NULL, *this_arg = NULL, buffer[BUFSIZ] = {""};
 	struct GMT_OPTION *head = NULL, *new_opt = NULL;
 	struct GMT_CTRL *G = NULL;
 	struct GMTAPI_CTRL *API = NULL;
@@ -165,10 +165,15 @@ struct GMT_OPTION * GMT_Create_Options (void *V_API, int n_args_in, void *in) {
 
 		if (!args[arg]) continue;	/* Skip any NULL arguments quietly */
 
+		/* Note: The UNIX command line will never see redirections like >, >>, and < pass as arguments to when we check for these
+		 * below it is because command-strings passed from external APIs may contain things like '-Fap -O -K >> plot.ps' */
+		
 		if (args[arg][0] == '<' && !args[arg][1] && (arg+1) < n_args && args[arg+1][0] != '-')	/* string command with "< file" for input */
 			first_char = 0, option = GMT_OPT_INFILE, arg++;
 		else if (args[arg][0] == '>' && !args[arg][1] && (arg+1) < n_args && args[arg+1][0] != '-')	/* string command with "> file" for output */
 			first_char = 0, option = GMT_OPT_OUTFILE, arg++;
+		else if (args[arg][0] == '>' && args[arg][1] == '>' && args[arg][2] == '\0' && (arg+1) < n_args && args[arg+1][0] != '-')	/* string command with ">> file" for appended output */
+			first_char = 0, option = GMT_OPT_OUTFILE, append = 1, arg++;
 		else if (args[arg][0] == '+' && !args[arg][1] && n_args == 1)	/* extended synopsis + */
 			first_char = 1, option = GMT_OPT_USAGE, G->common.synopsis.extended = true;
 		else if (args[arg][0] == '-' && args[arg][1] == '+' && !args[arg][2] && n_args == 1)	/* extended synopsis + */
@@ -184,7 +189,14 @@ struct GMT_OPTION * GMT_Create_Options (void *V_API, int n_args_in, void *in) {
 		else	/* Most likely found a regular option flag (e.g., -D45.0/3) */
 			first_char = 2, option = args[arg][1];
 
-		if ((new_opt = GMT_Make_Option (API, option, &args[arg][first_char])) == NULL)
+		if (append) {	/* Must prepend ">" to the filename so we select append mode when opening the file later */
+			sprintf (buffer, ">%s", args[arg]);
+			this_arg = buffer;
+			append = 0;
+		}
+		else
+			this_arg = &args[arg][first_char];
+		if ((new_opt = GMT_Make_Option (API, option, this_arg)) == NULL)
 			return_null (API, error);	/* Create the new option structure given the args, or return the error */
 
 		if (option == GMT_OPT_INFILE && ((pch = strstr(new_opt->arg, "+b")) != NULL) && !strstr(new_opt->arg, "=gd")) {
@@ -416,6 +428,29 @@ int GMT_Update_Option (void *V_API, struct GMT_OPTION *opt, char *arg) {
 	opt->arg = strdup (arg);
 
 	return (GMT_OK);	/* No error encountered */
+}
+
+/*! Replaces a marker character (e.g., $) with the replacement argument in txt. */
+int GMT_Expand_Option (void *V_API, struct GMT_OPTION *opt, char marker, char *arg) {
+	char buffer[BUFSIZ] = {""};
+	size_t in = 0, out = 0;
+	if (V_API == NULL) return_error (V_API, GMT_NOT_A_SESSION);	/* GMT_Create_Session has not been called */
+	if (opt == NULL) return_error (V_API, GMT_OPTION_IS_NULL);	/* We pass NULL as the option */
+	if (arg == NULL) return_error (V_API, GMT_ARG_IS_NULL);		/* We pass NULL as the argument */
+	if ((strlen (arg) + strlen (opt->arg)) > BUFSIZ) return_error (V_API, GMT_DIM_TOO_LARGE);		/* Don't have room */
+
+	while (opt->arg[in]) {
+		if (opt->arg[in] == marker) {	/* Found the marker character */
+			strcat (&buffer[out], arg);	/* Insert the given arg instead */
+			out += strlen (arg);	/* Adjust next output location */
+		}
+		else	/* Regular text, copy one-by-one */
+			buffer[out++] = opt->arg[in];
+		in++;
+	}
+	free (opt->arg);
+	opt->arg = strdup (buffer);
+	return (GMT_NOERROR);
 }
 
 /*! Append this entry to the end of the linked list */

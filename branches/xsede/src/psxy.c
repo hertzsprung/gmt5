@@ -27,6 +27,7 @@
 #define THIS_MODULE_NAME	"psxy"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot lines, polygons, and symbols on maps"
+#define THIS_MODULE_KEYS	"<DI,CCi,-Xo"
 
 #include "gmt_dev.h"
 
@@ -381,7 +382,7 @@ int GMT_psxy_usage (struct GMTAPI_CTRL *API, int level)
 	GMT_Message (API, GMT_TIME_NONE, "\t   Vectors: Direction and length must be in columns 3-4.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     If -SV rather than -Sv is selected, psxy will expect azimuth and\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     length and convert azimuths based on the chosen map projection.\n");
-	GMT_vector_syntax (API->GMT, 3);
+	GMT_vector_syntax (API->GMT, 19);
 	GMT_Message (API, GMT_TIME_NONE, "\t   Wedges: Start and stop directions of wedge must be in columns 3-4.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t     If -SW rather than -Sw is selected, specify two azimuths instead.\n");
 	GMT_Message (API, GMT_TIME_NONE, "\t   Geovectors: Azimuth and length (in km) must be in columns 3-4.\n");
@@ -608,7 +609,7 @@ int GMT_psxy (void *V_API, int mode, void *args)
 
 	char *text_rec = NULL, s_args[GMT_BUFSIZ] = {""};
 
-	double direction, length, dx, dy, dim[PSL_MAX_DIMS], *in = NULL;
+	double direction, length, dx, dy, d, dim[PSL_MAX_DIMS], *in = NULL;
 	double s, c, plot_x, plot_y, x_1, x_2, y_1, y_2;
 
 	struct GMT_PEN current_pen, default_pen;
@@ -774,6 +775,8 @@ int GMT_psxy (void *V_API, int mode, void *args)
 		GMT->current.io.col_type[GMT_IN][pos2x] = GMT->current.io.col_type[GMT_IN][GMT_X];
 		GMT->current.io.col_type[GMT_IN][pos2y] = GMT->current.io.col_type[GMT_IN][GMT_Y];
 	}
+	if (S.symbol == GMT_SYMBOL_VECTOR && S.v.status & GMT_VEC_COMPONENTS)
+		GMT->current.io.col_type[GMT_IN][pos2y] = GMT_IS_FLOAT;	/* Just the users dy component, not length */
 	if (S.symbol == GMT_SYMBOL_VECTOR || S.symbol == GMT_SYMBOL_GEOVECTOR || S.symbol == GMT_SYMBOL_MARC ) {	/* One of the vector symbols */
 		geovector = (S.symbol == GMT_SYMBOL_GEOVECTOR);
 		if ((S.v.status & GMT_VEC_FILL) == 0) Ctrl->G.active = false;	/* Want no fill so override -G*/
@@ -1084,17 +1087,26 @@ int GMT_psxy (void *V_API, int mode, void *args)
 					break;
 				case GMT_SYMBOL_VECTOR:
 					GMT_init_vector_param (GMT, &S, false, false, NULL, false, NULL);	/* Update vector head parameters */
-					length = in[ex2+S.read_size];
+					if (S.v.status & GMT_VEC_COMPONENTS)	/* Read dx, dy in user units */
+						length = hypot (in[ex1+S.read_size], in[ex2+S.read_size]) * S.v.comp_scale;
+					else
+						length = in[ex2+S.read_size];
 					if (GMT_is_dnan (length)) {
 						GMT_Report (API, GMT_MSG_VERBOSE, "Warning: Vector length = NaN near line %d\n", n_total_read);
 						continue;
 					}
+					if (S.v.status & GMT_VEC_COMPONENTS)	/* Read dx, dy in user units */
+						d = d_atan2d (in[ex2+S.read_size], in[ex1+S.read_size]);
+					else
+						d = in[ex1+S.read_size];
+						
 					if (!S.convert_angles)	/* Use direction as given */
-						direction = in[ex1+S.read_size];
+						direction = d;
 					else if (!GMT_is_geographic (GMT, GMT_IN))	/* Cartesian angle; change to azimuth */
-						direction = 90.0 - in[ex1+S.read_size];
+						direction = 90.0 - d;
 					else	/* Convert geo azimuth to map direction */
-						direction = GMT_azim_to_angle (GMT, in[GMT_X], in[GMT_Y], 0.1, in[ex1+S.read_size]);
+						direction = GMT_azim_to_angle (GMT, in[GMT_X], in[GMT_Y], 0.1, d);
+
 					if (GMT_is_dnan (direction)) {
 						GMT_Report (API, GMT_MSG_VERBOSE, "Warning: Vector direction = NaN near line %d\n", n_total_read);
 						continue;
@@ -1318,10 +1330,8 @@ int GMT_psxy (void *V_API, int mode, void *args)
 					for (k0 = 0; !split && k0 < GMT->current.plot.n; k0++) if (GMT->current.plot.pen[k0] == PSL_MOVE) split = true;
 					if (split) {	/* Must write out separate sections via GMT_hold_contour */
 						uint64_t k1, n_section;
-						size_t n_alloc = 0;
+						size_t n_alloc;
 						double *xxx = NULL, *yyy = NULL;
-						/* Get temp array of length GMT->current.plot.n since GMT_hold_contour may change length */
-						GMT_malloc2 (GMT, xxx, yyy, GMT->current.plot.n, &n_alloc, double);
 						k0 = 0;	/* Start of first section */
 						while (k0 < GMT->current.plot.n) {	/* While more sections... */
 							k1 = k0 + 1;	/* First point after anchor point */
@@ -1330,13 +1340,16 @@ int GMT_psxy (void *V_API, int mode, void *args)
 							n_section = k1 - k0;	/* Number of points in this section */
 							GMT_Report (API, GMT_MSG_DEBUG, "Quoted Sub-line starts at point %d and have length %d\n", (int)k0, (int)n_section);
 							/* Make a copy of this section's coordinates */
+							/* Get temp array of length n_section since GMT_hold_contour may change length */
+							n_alloc = 0;
+							GMT_malloc2 (GMT, xxx, yyy, n_section, &n_alloc, double);
 							GMT_memcpy (xxx, &GMT->current.plot.x[k0], n_section, double);
 							GMT_memcpy (yyy, &GMT->current.plot.y[k0], n_section, double);
 							GMT_hold_contour (GMT, &xxx, &yyy, n_section, 0.0, "N/A", 'A', S.G.label_angle, false, false, &S.G);
 							k0 = k1;	/* Goto start of next section */
+							GMT_free (GMT, xxx);
+							GMT_free (GMT, yyy);
 						}
-						GMT_free (GMT, xxx);
-						GMT_free (GMT, yyy);
 					}
 					else {	/* Just one line, which may even be closed */
 						closed = !(GMT_polygon_is_open (GMT, GMT->current.plot.x, GMT->current.plot.y, GMT->current.plot.n));

@@ -36,7 +36,6 @@
  *===================================================================================*/
 
 #include "gmt_error_codes.h"			/* All API error codes are defined here */
-#include "gmt_define.h"			/* All constant values are defined here */
 
 /*--------------------------------------------------------------------
  *			GMT CONSTANTS MACRO DEFINITIONS
@@ -71,6 +70,8 @@
 #define GMT_CONV8_LIMIT	 1.0e-8		/* Fairly tight convergence limit or "close to zero" limit */
 #define GMT_CONV6_LIMIT	 1.0e-6		/* 1 ppm */
 #define GMT_CONV4_LIMIT	 1.0e-4		/* Less tight convergence limit or "close to zero" limit */
+
+#define GMT_PAD_DEFAULT	2U		/* Default is 2 rows and 2 cols for grid padding */
 
 /*! Various allocation-length parameters */
 enum GMT_enum_length {
@@ -143,6 +144,27 @@ enum GMT_swap_direction {
 #define GMT_PEN_LEN	128
 #define GMT_PENWIDTH	0.25	/* Default pen width in points */
 
+#define GMT_N_MAX_MODEL	20	/* No more than 20 basis functions in a trend model */
+
+/*! Return codes from GMT_inonout */
+enum GMT_enum_inside {
+	GMT_OUTSIDE = 0,
+	GMT_ONEDGE,
+	GMT_INSIDE};
+
+/*! Return codes from GMT_get_anchorpoint */
+enum GMT_enum_anchor {
+	GMT_ANCHOR_NOTSET = -1,		/* -D */
+	GMT_ANCHOR_MAP,			/* -Dg */
+	GMT_ANCHOR_JUST,		/* -Dj */
+	GMT_ANCHOR_NORM,		/* -Dn */
+	GMT_ANCHOR_PLOT};		/* -Dx */
+
+/*! Various types of trend model */
+enum GMT_enum_model {
+	GMT_POLYNOMIAL, GMT_COSINE, GMT_SINE
+	};
+	
 /*! Various options for FFT calculations [Default is 0] */
 enum FFT_implementations {
 	k_fft_auto = 0,    /* Automatically select best FFT algorithm */
@@ -224,6 +246,39 @@ enum GMT_enum_geodesic {	/* Various geodesic algorithms */
 	GMT_GEODESIC_VINCENTY = 0,	/* Best possible, currently Vincenty */
 	GMT_GEODESIC_ANDOYER,		/* Faster approximation, currently Andoyer */
 	GMT_GEODESIC_RUDOE};		/* For legacy calculations */
+
+#define METERS_IN_A_FOOT		0.3048			/* 2.54 * 12 / 100 */
+#define METERS_IN_A_SURVEY_FOOT		(1200.0/3937.0)		/* ~0.3048006096 m */
+#define METERS_IN_A_KM			1000.0
+#define METERS_IN_A_MILE		1609.433	/* meters in statute mile */
+#define METERS_IN_A_NAUTICAL_MILE	1852.0
+#define GMT_MAP_DIST_UNIT		'e'		/* Default distance is the meter */
+
+enum GMT_enum_coord {GMT_GEOGRAPHIC = 0,	/* Means coordinates are lon,lat : compute spherical distances */
+	GMT_CARTESIAN,	/* Means coordinates are Cartesian x,y : compute Cartesian distances */
+	GMT_GEO2CART,	/* Means coordinates are lon,lat but must be mapped to (x,y) : compute Cartesian distances */
+	GMT_CART2GEO};	/* Means coordinates are lon,lat but must be mapped to (x,y) : compute Cartesian distances */
+
+enum GMT_enum_dist {GMT_MAP_DIST = 0,	/* Distance in the map */
+	GMT_CONT_DIST,		/* Distance along a contour or line in dist units */
+	GMT_LABEL_DIST};	/* Distance along a contour or line in dist label units */
+
+enum GMT_enum_path {GMT_RESAMPLE_PATH = 0,	/* Default: Resample geographic paths based in a max gap allowed (path_step) */
+	GMT_LEAVE_PATH};	/* Options like -A can turn of this resampling, where available */
+
+enum GMT_enum_cdist {GMT_CARTESIAN_DIST	 = 0,	/* Cartesian 2-D x,y data, r = hypot */
+	GMT_CARTESIAN_DIST2,		/* Cartesian 2-D x,y data, return r^2 to avoid hypot */
+	GMT_CARTESIAN_DIST_PROJ,	/* Project lon,lat to Cartesian 2-D x,y data, then get distance */
+	GMT_CARTESIAN_DIST_PROJ2,	/* Same as --"-- but return r^2 to avoid hypot */
+	GMT_CARTESIAN_DIST_PROJ_INV};	/* Project Cartesian 2-D x,y data to lon,lat, then get distance */
+enum GMT_enum_mdist {GMT_FLATEARTH = 1,	/* Compute Flat Earth distances */
+	GMT_GREATCIRCLE,	/* Compute great circle distances */
+	GMT_GEODESIC,		/* Compute geodesic distances */
+	GMT_LOXODROME};		/* Compute loxodrome distances (otherwise same as great circle machinery) */
+enum GMT_enum_sph {GMT_DIST_M = 10,	/* 2-D lon, lat data, convert distance to meter */
+	GMT_DIST_DEG = 20,	/* 2-D lon, lat data, convert distance to spherical degree */
+	GMT_DIST_COS = 30};	/* 2-D lon, lat data, convert distance to cos of spherical degree */
+
 
 /* Help us with big and little endianness */
 #ifdef WORDS_BIGENDIAN

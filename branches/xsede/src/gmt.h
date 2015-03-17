@@ -29,7 +29,7 @@
 /*
  * Author: 	Paul Wessel
  * Date:	10-JUN-2013
- * Version:	5 API
+ * Version:	5.2 API
  */
 
 #ifndef _GMT_H
@@ -55,10 +55,8 @@ extern "C" {
  */
 #include "declspec.h"
 
-/* Include GMT constants, option, and resources definitions */
+/* Include GMT constants and resources definitions */
 
-#include "gmt_define.h"
-#include "gmt_option.h"
 #include "gmt_resources.h"
 
 /*=====================================================================================
@@ -144,7 +142,9 @@ EXTERN_MSC int GMT_F77_readgrdinfo_	(unsigned int dim[], double wesn[], double i
 EXTERN_MSC int GMT_F77_readgrd_		(float *array, unsigned int dim[], double wesn[], double inc[], char *title, char *remark, char *file);
 EXTERN_MSC int GMT_F77_writegrd_	(float *array, unsigned int dim[], double wesn[], double inc[], char *title, char *remark, char *file);
 
-EXTERN_MSC int GMT_Insert_Data (void *V_API, int object_ID, void *obj);
+/* For external API developers only */
+EXTERN_MSC struct GMT_RESOURCE * GMT_Encode_Options	(void *V_API, char *module, char marker, int nleft, struct GMT_OPTION **head, unsigned int *n);
+EXTERN_MSC int GMT_Expand_Option			(void *API, struct GMT_OPTION *current, char marker, char *txt);
 
 #ifdef __cplusplus
 }

@@ -35,6 +35,7 @@
 #define THIS_MODULE_NAME	"psconvert"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Convert [E]PS file(s) to other formats using GhostScript"
+#define THIS_MODULE_KEYS	"FIo"
 
 #include "gmt_dev.h"
 
@@ -236,10 +237,11 @@ int parse_A_settings (struct GMT_CTRL *GMT, char *arg, struct PS2RASTER_CTRL *Ct
 	return (error);
 }
 
-int parse_GE_settings (struct GMT_CTRL *GMT_UNUSED(GMT), char *arg, struct PS2RASTER_CTRL *C)
+int parse_GE_settings (struct GMT_CTRL *GMT, char *arg, struct PS2RASTER_CTRL *C)
 {
 	/* Syntax: -W[+g][+k][+t<doctitle>][+n<layername>][+a<altmode>][+l<lodmin>/<lodmax>] */
 
+	GMT_UNUSED(GMT);
 	bool error = false;
 	unsigned int pos = 0;
 	char txt[GMT_BUFSIZ] = {""}, p[GMT_BUFSIZ] = {""};
@@ -512,7 +514,7 @@ int GMT_psconvert_parse (struct GMT_CTRL *GMT, struct PS2RASTER_CTRL *Ctrl, stru
 			case 'F':	/* Set explicitly the output file name */
 				if ((Ctrl->F.active = GMT_check_filearg (GMT, 'F', opt->arg, GMT_OUT, GMT_IS_TEXTSET))) {
 					Ctrl->F.file = strdup (opt->arg);
-					GMT_chop_ext (Ctrl->F.file);	/* Make sure file name has no extension */
+					if (!GMT_File_Is_Memory (Ctrl->F.file)) GMT_chop_ext (Ctrl->F.file);	/* Make sure file name has no extension */
 				}
 				else
 					n_errors++;
@@ -688,7 +690,7 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 	int sys_retval = 0, r, pos_file, pos_ext, error = 0;
 	size_t len, line_size = 0U;
 	bool got_BB, got_HRBB, file_has_HRBB, got_end, landscape, landscape_orig;
-	bool excessK, setup, found_proj = false, isGMT_PS = false;
+	bool excessK, setup, found_proj = false, isGMT_PS = false, return_image = false;
 	bool transparency = false, look_for_transparency, BeginPageSetup_here = false;
 
 	double xt, yt, xt_bak, yt_bak, w, h, x0 = 0.0, x1 = 612.0, y0 = 0.0, y1 = 828.0;
@@ -729,8 +731,8 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 #endif
 
 #ifdef HAVE_GDAL
-	struct GDALREAD_CTRL *to_gdalread = NULL;
-	struct GD_CTRL *from_gdalread = NULL;
+	struct GMT_GDALREAD_IN_CTRL  *to_gdalread = NULL;
+	struct GMT_GDALREAD_OUT_CTRL *from_gdalread = NULL;
 #endif
 
 	FILE *fp = NULL, *fpo = NULL, *fpb = NULL, *fpl = NULL, *fp2 = NULL, *fpw = NULL;
@@ -769,7 +771,7 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 			GMT_Report (API, GMT_MSG_NORMAL, "Error closing GhostScript version query.\n");
 		if (n != 2) {
 			/* command execution failed or cannot parse response */
-			GMT_Report (API, GMT_MSG_NORMAL, "Failed to parse response to GhostScript version query.\n");
+			GMT_Report (API, GMT_MSG_NORMAL, "Failed to parse response to GhostScript version query [n = %d %d %d].\n", n, gsVersion.major, gsVersion.minor);
 			Return (EXIT_FAILURE);
 		}
 	}
@@ -788,6 +790,13 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 		Ctrl->F.active = false;
 	}
 
+	if (Ctrl->F.active && GMT_File_Is_Memory (Ctrl->F.file)) {
+		if (Ctrl->T.device <= GS_DEV_SVG || Ctrl->In.n_files > 1) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Error: Can only return one raster image to calling program via memory array.\n");
+			Return (EXIT_FAILURE);
+		}
+		return_image = true;
+	}
 	/* Parameters for all the formats available */
 
 	gs_params = "-q -dSAFER -dNOPAUSE -dBATCH -dUseFlateCompression=true -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=true -dMonoImageFilter=/FlateEncode -dAutoFilterGrayImages=false -dGrayImageFilter=/FlateEncode -dAutoFilterColorImages=false -dColorImageFilter=/FlateEncode";
@@ -1004,7 +1013,7 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Format EPS file...\n");
 		if (Ctrl->T.eps) {
 			if (Ctrl->D.active) sprintf (tmp_file, "%s/", Ctrl->D.dir);	/* Use specified output directory */
-			if (!Ctrl->F.active)
+			if (!Ctrl->F.active || return_image)
 				strncat (tmp_file, &ps_file[pos_file], (size_t)(pos_ext - pos_file));
 			else
 				strcat (tmp_file, Ctrl->F.file);
@@ -1254,8 +1263,8 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 				/* Write a GeoPDF registration info */
 
 				/* Allocate new control structures */
-				to_gdalread = GMT_memory (GMT, NULL, 1, struct GDALREAD_CTRL);
-				from_gdalread = GMT_memory (GMT, NULL, 1, struct GD_CTRL);
+				to_gdalread = GMT_memory (GMT, NULL, 1, struct GMT_GDALREAD_IN_CTRL);
+				from_gdalread = GMT_memory (GMT, NULL, 1, struct GMT_GDALREAD_OUT_CTRL);
 				to_gdalread->W.active = true;
 				from_gdalread->ProjectionRefPROJ4 = proj4_cmd;
 				GMT_gdalread (GMT, NULL, to_gdalread, from_gdalread);
@@ -1341,7 +1350,7 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 			else
 				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Convert to %s...\n", tag);
 
-			if (!Ctrl->F.active) {
+			if (!Ctrl->F.active || return_image) {
 				if (Ctrl->D.active) sprintf (out_file, "%s/", Ctrl->D.dir);	/* Use specified output directory */
 				strncat (out_file, &ps_file[pos_file], (size_t)(pos_ext - pos_file));
 			}
@@ -1397,7 +1406,7 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 				Ctrl->T.device = dest_device;	/* Reset output device type */
 				strcpy (pdf_file, out_file);	/* Now the PDF is the infile */
 				*out_file = '\0'; /* truncate string to build new output file */
-				if (!Ctrl->F.active) {
+				if (!Ctrl->F.active || return_image) {
 					if (Ctrl->D.active) sprintf (out_file, "%s/", Ctrl->D.dir);	/* Use specified output directory */
 					strncat (out_file, &ps_file[pos_file], (size_t)(pos_ext - pos_file));
 				}
@@ -1427,6 +1436,21 @@ int GMT_psconvert (void *V_API, int mode, void *args)
 		if (Ctrl->Z.active) {
 			GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Removing %s...\n", ps_file);
 			remove (ps_file);
+		}
+
+		if (return_image) {	/* Must read in the saved raster image and return via Ctrl->F.file pointer */
+			struct GMT_IMAGE *I = NULL;
+			GMT_set_pad (GMT, 0U);	/* Temporary turn off padding (and thus BC setting) since we will use image exactly as is */
+			if ((I = GMT_Read_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, out_file, NULL)) == NULL) {
+				Return (API->error);
+			}
+			if (GMT_Write_Data (API, GMT_IS_IMAGE, GMT_IS_FILE, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, Ctrl->F.file, I) != GMT_OK)
+				Return (API->error);
+			GMT_set_pad (GMT, API->pad);	/* Reset padding to GMT default */
+			if (Ctrl->Z.active) {	/* Remove the image since it is returned to a calling program and -Z was given */
+				GMT_Report (API, GMT_MSG_LONG_VERBOSE, "Removing %s...\n", out_file);
+				remove (out_file);
+			}
 		}
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Done.\n");

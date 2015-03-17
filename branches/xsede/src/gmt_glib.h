@@ -15,32 +15,36 @@
  *
  *	Contact info: gmt.soest.hawaii.edu
  *--------------------------------------------------------------------*/
-/*
- * gmt_crossing.h contains definition of the structure for map crossings.
- *
- * Author:	Paul Wessel
- * Date:	01-OCT-2009
- * Version:	5 API
- */
 
 /*!
- * \file gmt_crossing.h
- * \brief Definition of the structure for map crossings.
- * 
+ * \file gmt_glib.h
+ * \brief Include file for items using glib.
  */
 
-#ifndef _GMT_CROSSING_H
-#define _GMT_CROSSING_H
+/* Authors:	J. Luis
+   Date:	1-OCT-2012
+   Version:	5 API
 
-/*--------------------------------------------------------------------
- *			GMT XINGS STRUCTURE DEFINITION
- *--------------------------------------------------------------------*/
+*/
 
-struct GMT_XINGS {
-        double xx[2], yy[2];    /* Cartesian coordinates of intersection with map boundary */
-        double angle[2];        /* Angles of intersection */
-        unsigned int sides[2];	/* Side id of intersection */
-        unsigned int nx;	/* Number of intersections (1 or 2) */
-};
+/* Include glib header and define mutex calls that are no-op when not linking against glib
+   These are used only GLIB based multi-threading */
 
-#endif  /* _GMT_CROSSING_H */
+#ifndef _GMT_GLIB_H
+
+#ifdef HAVE_GLIB_GTHREAD
+#include <glib.h>
+
+#define GMT_declare_gmutex static GMutex mutex;
+#define GMT_set_gmutex g_mutex_lock (&mutex);
+#define GMT_unset_gmutex g_mutex_unlock (&mutex);
+
+#else
+
+#define GMT_declare_gmutex
+#define GMT_set_gmutex
+#define GMT_unset_gmutex
+
+#endif
+
+#endif /* HAVE_GLIB_GTHREAD */

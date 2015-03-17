@@ -55,6 +55,7 @@
 #define THIS_MODULE_NAME	"img2grd"
 #define THIS_MODULE_LIB		"img"
 #define THIS_MODULE_PURPOSE	"Extract a subset from an img file in Mercator or Geographic format"
+#define THIS_MODULE_KEYS	"<GI,GGO"
 
 #include "gmt_imgsubs.h"
 #include "gmt_dev.h"
@@ -509,7 +510,7 @@ int GMT_img2grd (void *V_API, int mode, void *args)
 	}
 	GMT_Report (API, GMT_MSG_DEBUG, "Allocate Grid container for Mercator data\n");
 	if ((Merc = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc, \
-		GMT_GRID_PIXEL_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		GMT_GRID_PIXEL_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 	if (Ctrl->M.active) {
 		sprintf (Merc->header->x_units, "Spherical Mercator projected Longitude, -Jm1, length from %.12g", left);

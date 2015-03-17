@@ -24,9 +24,10 @@
  *
  */
 
-#define THIS_MODULE_NAME	"write"
+#define THIS_MODULE_NAME	"gmtwrite"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Write GMT objects from external API"
+#define THIS_MODULE_KEYS	"<?I,>?O"
 
 #include "gmt_dev.h"
 
@@ -149,7 +150,7 @@ int GMT_gmtwrite_parse (struct GMT_CTRL *GMT, struct GMTWRITE_CTRL *Ctrl, struct
 
 EXTERN_MSC int GMT_copy (struct GMTAPI_CTRL *API, enum GMT_enum_family family, unsigned int direction, char *ifile, char *ofile);
 
-int GMT_write (void *V_API, int mode, void *args)
+int GMT_gmtwrite (void *V_API, int mode, void *args)
 {
 	int error = 0;
 	struct GMTWRITE_CTRL *Ctrl = NULL;

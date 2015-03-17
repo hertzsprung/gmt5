@@ -27,6 +27,7 @@
 #define THIS_MODULE_NAME	"gmtspatial"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Do geospatial operations on lines and polygons"
+#define THIS_MODULE_KEYS	"<DI,DDi,NDi,TDi,>DO"
 
 #include "gmt_dev.h"
 
@@ -1710,7 +1711,7 @@ int GMT_gmtspatial (void *V_API, int mode, void *args)
 		struct GMT_DATASEGMENT **L = NULL;
 		
 		dim[GMT_TBL] = D->n_tables;	dim[GMT_COL] = D->n_columns;	/* Same number of tables and columns as the input */
-		if ((Dout = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, Ctrl->Out.file)) == NULL) Return (API->error);
+		if ((Dout = GMT_Create_Data (API, GMT_IS_DATASET, GMT_IS_POLY, 0, dim, NULL, NULL, 0, 0, NULL)) == NULL) Return (API->error);
 		/* Dout has no allocated segments yet */
 		Dout->n_segments = 0;
 		for (tbl = 0; tbl < D->n_tables; tbl++) {

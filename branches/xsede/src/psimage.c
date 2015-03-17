@@ -28,6 +28,7 @@
 #define THIS_MODULE_NAME	"psimage"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Place images or EPS files on maps"
+#define THIS_MODULE_KEYS	"<II,-Xo"
 
 #include "gmt_dev.h"
 
@@ -362,16 +363,15 @@ int find_unique_color (struct GMT_CTRL *GMT, unsigned char *rgba, size_t n, int 
 
 int GMT_psimage (void *V_API, int mode, void *args)
 {
-	int i, j, k, n, PS_interpolate = 1, PS_transparent = 1, known = 0, error = 0, has_trans = 0;
+	int i, j, n, PS_interpolate = 1, PS_transparent = 1, known = 0, error = 0;
 	unsigned int row, col;
 	bool free_GMT = false, did_gray = false;
 
 	double x, y, wesn[4];
 
-	unsigned char *picture = NULL, *buffer = NULL, colormap[4*256];
-	int r, g, b;
+	unsigned char *picture = NULL, *buffer = NULL;
 
-	char *format[2] = {"EPS", "Sun raster"};
+	char path[GMT_BUFSIZ] = {""}, *format[2] = {"EPS", "Sun raster"};
 
 	struct imageinfo header;
 
@@ -380,6 +380,8 @@ int GMT_psimage (void *V_API, int mode, void *args)
 	struct GMT_OPTION *options = NULL;
 	struct PSL_CTRL *PSL = NULL;		/* General PSL interal parameters */
 #ifdef HAVE_GDAL
+	int k, r,g,b, has_trans = 0;
+	unsigned char colormap[4*256];
 	struct GMT_IMAGE *I = NULL;		/* A GMT image datatype, if GDAL is used */
 #endif
 	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
@@ -413,8 +415,12 @@ int GMT_psimage (void *V_API, int mode, void *args)
 
 	memset (&header, 0, sizeof(struct imageinfo)); /* initialize struct */
 	if (known) {	/* Read an EPS or Sun raster file */
-		if (PSL_loadimage (PSL, Ctrl->In.file, &header, &picture)) {
-			GMT_Report (API, GMT_MSG_NORMAL, "Trouble loading %s file %s!\n", format[known-1], Ctrl->In.file);
+		if (GMT_getdatapath (GMT, Ctrl->In.file, path, R_OK) == NULL) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Cannot find/open file %s.\n", Ctrl->In.file);
+			Return (EXIT_FAILURE);
+		}
+		if (PSL_loadimage (PSL, path, &header, &picture)) {
+			GMT_Report (API, GMT_MSG_NORMAL, "Trouble loading %s file %s!\n", format[known-1], path);
 			Return (EXIT_FAILURE);
 		}
 	}

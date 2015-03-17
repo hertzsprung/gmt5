@@ -1000,6 +1000,38 @@ unsigned int gmt_radial_crossing (struct GMT_CTRL *GMT, double lon1, double lat1
 }
 
 /*! . */
+unsigned int gmt_genper_crossing (struct GMT_CTRL *GMT, double lon1, double lat1, double lon2, double lat2, double *clon, double *clat, double *xx, double *yy, unsigned int *sides)
+{
+	/* Awkward case of windowing which gives a boundary that is a clipped circle.
+	 * Here, the rectangular and circular boundaries take turns in being the definitive boundary.
+	 * Approach: Determine how the points do relative to either boundary. */
+
+	bool h_out[2], r_out[2];
+
+	/* Check if point 1 is beyond horizon: */
+	h_out[0] = gmt_radial_outside (GMT, lon1, lat1);	/* true if point 1 is beyond the horizon */
+	h_out[1] = gmt_radial_outside (GMT, lon2, lat2);	/* true if point 2 is beyond the horizon */
+	r_out[0] = gmt_rect_outside (GMT, lon1, lat1);		/* true if point 1 is beyond the map box */
+	r_out[1] = gmt_rect_outside (GMT, lon2, lat2);		/* true if point 2 is beyond the map box */
+	if (h_out[0] == false && h_out[1] == false)	/* We are not beyond horizon so technically inside unless clipped by the window: */
+		return (gmt_rect_crossing (GMT, lon1, lat1, lon2, lat2, clon, clat, xx, yy, sides));
+	if (r_out[0] == false && r_out[1] == false)	/* We are not outside the map box but might be beyond horizon: */
+		return (gmt_radial_crossing (GMT, lon1, lat1, lon2, lat2, clon, clat, xx, yy, sides));
+	/* Here we have a mixed bag.  Try our best */
+	if (h_out[0] == false && r_out[0] == true)	/* Point 1 is outside box but inside horizon.  That means point 2 is inside and we use rect_crossing */
+		return (gmt_rect_crossing (GMT, lon1, lat1, lon2, lat2, clon, clat, xx, yy, sides));
+	if (h_out[0] == true && r_out[0] == false)	/* Point 1 is beyond horizon but inside box.  That means point 2 is inside and we use gmt_radial_crossing */
+		return (gmt_radial_crossing (GMT, lon1, lat1, lon2, lat2, clon, clat, xx, yy, sides));
+	if (h_out[1] == false && r_out[1] == true)	/* Point 2 is outside box but inside horizon.  That means point 1 is inside and we use rect_crossing */
+		return (gmt_rect_crossing (GMT, lon1, lat1, lon2, lat2, clon, clat, xx, yy, sides));
+	if (h_out[1] == true && r_out[1] == false)	/* Point 2 is beyond horizon but inside box.  That means point 1 is inside and we use gmt_radial_crossing */
+		return (gmt_radial_crossing (GMT, lon1, lat1, lon2, lat2, clon, clat, xx, yy, sides));
+	/* Don't think we should get here... */
+	GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error in gmt_genper_crossing: None of the cases matched crossing scenario");
+	return (gmt_radial_crossing (GMT, lon1, lat1, lon2, lat2, clon, clat, xx, yy, sides));
+
+}
+
 int gmt_map_jump_x (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1)
 {
 	/* true if x-distance between points exceeds 1/2 map width at this y value */
@@ -1013,8 +1045,40 @@ int gmt_map_jump_x (struct GMT_CTRL *GMT, double x0, double y0, double x1, doubl
 	if (fabs (map_half_size) < GMT_CONV4_LIMIT) return (0);
 
 	dx = x1 - x0;
+	if (fabs (dx) > map_half_size) {	/* Possible jump; let's see how far apart those longitudes really are */
+		/* This test on longitudes was added to deal with issue #672, also see test/psxy/nojump.sh */
+		double last_lon, this_lon, dummy, dlon;
+		GMT_xy_to_geo (GMT, &last_lon, &dummy, x0, y0);
+		GMT_xy_to_geo (GMT, &this_lon, &dummy, x1, y1);
+		dlon = this_lon - last_lon;
+		if (fabs (dlon) > 360.0) dlon += copysign (360.0, -dlon);
+
+		if (fabs (dlon) < 180.0) /* Not going the long way so we judge this to be no jump */
+			return (0);
+		/* Jump it is */
+		if (dx > map_half_size)	return (-1);	/* Cross left/west boundary */
+		if (dx < (-map_half_size)) return (1);	/* Cross right/east boundary */
+	}
+	return (0);
+}
+
+int gmt_map_jump_not (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1)
+{
+#if 0
+	double dx, map_half_size;
+	/* For Genper we believe there should not be jumps [Introduced to test issue #667] */
+	/* However, it does not work for all cases.  Consider this one
+	 * psbasemap -Rg -JG280.969616634/58.7193421224/2513/0/0/0/200/180/6i -Ba30f30g30/a5f5g5NWSE -P
+	 * which draws jump lines across.  I believe this is related to the fact that in this ase
+	 * the map region is a clipped circle and we have no effective way of determining which points
+	 * are outside the map of not.
+	 */
+	map_half_size = MAX (GMT_half_map_width (GMT, y0), GMT_half_map_width (GMT, y1));
+	if (fabs (map_half_size) < GMT_CONV4_LIMIT) return (0);
+	dx = x1 - x0;
 	if (dx > map_half_size)	return (-1);	/* Cross left/west boundary */
 	if (dx < (-map_half_size)) return (1);	/* Cross right/east boundary */
+#endif
 	return (0);
 }
 
@@ -1460,6 +1524,7 @@ unsigned int GMT_split_poly_at_dateline (struct GMT_CTRL *GMT, struct GMT_DATASE
 	struct GMT_DATASEGMENT **L = NULL;
 	bool (*inside[2]) (double, double);
 	bool (*outside[2]) (double, double);
+
 
 	inside[0] = gmt_inside_upper_boundary;	outside[0] = gmt_outside_upper_boundary;
 	inside[1] = gmt_inside_lower_boundary;	outside[1] = gmt_outside_lower_boundary;
@@ -2003,20 +2068,37 @@ bool gmt_wesn_overlap (struct GMT_CTRL *GMT, double lon0, double lat0, double lo
 }
 
 /*! . */
-bool gmt_radial_overlap (struct GMT_CTRL *GMT_UNUSED(GMT), double GMT_UNUSED(lon0), double GMT_UNUSED(lat0), double GMT_UNUSED(lon1), double GMT_UNUSED(lat1))
+bool gmt_radial_overlap (struct GMT_CTRL *GMT, double lon0, double lat0, double lon1, double lat1)
 {	/* Dummy routine */
+	GMT_UNUSED(GMT); GMT_UNUSED(lon0); GMT_UNUSED(lat0); GMT_UNUSED(lon1); GMT_UNUSED(lat1);
 	return (true);
 }
 
 /*! . */
-bool gmt_genper_overlap (struct GMT_CTRL *GMT, double GMT_UNUSED(lon0), double GMT_UNUSED(lat0), double GMT_UNUSED(lon1), double GMT_UNUSED(lat1))
+bool gmt_genperg_overlap (struct GMT_CTRL *GMT, double lon0, double lat0, double lon1, double lat1)
 {	/* Dummy routine */
+	GMT_UNUSED(lon0); GMT_UNUSED(lat0); GMT_UNUSED(lon1); GMT_UNUSED(lat1);
 	if (GMT->current.proj.g_debug > 0) GMT_Report (GMT->parent, GMT_MSG_DEBUG, "genper_overlap: overlap called\n");
 	return (true);
 }
 
 /*! . */
-void gmt_xy_search (struct GMT_CTRL *GMT, double *x0, double *x1, double *y0, double *y1, double w0, double e0, double s0, double n0) {
+bool gmt_genperw_overlap (struct GMT_CTRL *GMT, double lon0, double lat0, double lon1, double lat1)
+{
+	GMT_UNUSED(lon0); GMT_UNUSED(lat0); GMT_UNUSED(lon1); GMT_UNUSED(lat1);
+	bool out0, out1;
+	/* Return true if either of the points (lon0,lat0) and (lon1,lat1) is inside (not on) the windowed genper boundary */
+	/* Check if point 1 is beyond horizon: */
+	out0 = gmt_radial_outside (GMT, lon0, lat0);		/* true if point 0 is beyond the horizon */
+	if (!out0) out0 = gmt_rect_outside (GMT, lon0, lat0);	/* true if point 0 is beyond the map box */
+	out1 = gmt_radial_outside (GMT, lon1, lat1);		/* true if point 1 is beyond the horizon */
+	if (!out1) out1 = gmt_rect_outside (GMT, lon1, lat1);	/* true if point 1 is beyond the map box */
+	return (out0 != out1);
+}
+
+/*! . */
+void gmt_xy_search (struct GMT_CTRL *GMT, double *x0, double *x1, double *y0, double *y1, double w0, double e0, double s0, double n0)
+{
 	unsigned int i, j;
 	double xmin, xmax, ymin, ymax, w, s, x, y, dlon, dlat;
 
@@ -2193,12 +2275,14 @@ double gmt_right_conic (struct GMT_CTRL *GMT, double y) {
 }
 
 /*! . */
-double gmt_left_rect (struct GMT_CTRL *GMT_UNUSED(GMT), double GMT_UNUSED(y)) {
+double gmt_left_rect (struct GMT_CTRL *GMT, double y) {
+	GMT_UNUSED(GMT); GMT_UNUSED(y);
 	return (0.0);
 }
 
 /*! . */
-double gmt_right_rect (struct GMT_CTRL *GMT, double GMT_UNUSED(y)) {
+double gmt_right_rect (struct GMT_CTRL *GMT, double y) {
+	GMT_UNUSED(y);
 	return (GMT->current.map.width);
 }
 
@@ -2232,9 +2316,22 @@ double gmt_right_ellipse (struct GMT_CTRL *GMT, double y) {
 }
 
 /*! . */
-void GMT_get_point_from_r_az (struct GMT_CTRL *GMT_UNUSED(GMT), double lon0, double lat0, double r, double azim, double *lon1, double *lat1)
+double gmt_left_genper (struct GMT_CTRL *GMT, double y)
+{	/* Windowed genper may need to consider the inner of circle and rectangle */
+	return (MAX (0.0, gmt_left_circle (GMT, y)));
+}
+
+/*! . */
+double gmt_right_genper (struct GMT_CTRL *GMT, double y)
+{
+	return (MIN (GMT->current.map.width, gmt_right_circle (GMT, y)));
+}
+
+/*! . */
+void GMT_get_point_from_r_az (struct GMT_CTRL *GMT, double lon0, double lat0, double r, double azim, double *lon1, double *lat1)
 /* Given point (lon0, lat0), find coordinates of a point r degrees away in the azim direction */
 {
+	GMT_UNUSED(GMT);
 	double sinr, cosr, sinaz, cosaz, siny, cosy;
 
 	sincosd (azim, &sinaz, &cosaz);
@@ -2309,12 +2406,13 @@ double gmt_az_backaz_flatearth (struct GMT_CTRL *GMT, double lonE, double latE, 
 }
 
 /*! . */
-double gmt_az_backaz_sphere (struct GMT_CTRL *GMT_UNUSED(GMT), double lonE, double latE, double lonS, double latS, bool baz) {
+double gmt_az_backaz_sphere (struct GMT_CTRL *GMT, double lonE, double latE, double lonS, double latS, bool baz) {
 	/* Calculate azimuths or backazimuths.  Spherical code.
 	 * First point is considered "Event" and second "Station".
 	 * Azimuth is direction from Station to Event.
 	 * BackAzimuth is direction from Event to Station */
 
+	GMT_UNUSED(GMT);
 	double az, sin_yS, cos_yS, sin_yE, cos_yE, sin_dlon, cos_dlon;
 
 	if (baz) {	/* exchange point one and two */
@@ -3556,8 +3654,9 @@ bool gmt_this_point_wraps_tm (struct GMT_CTRL *GMT, double y0, double y1) {
 }
 
 /*! . */
-bool gmt_will_it_wrap_tm (struct GMT_CTRL *GMT, double *GMT_UNUSED(x), double *y, uint64_t n, uint64_t *start)
+bool gmt_will_it_wrap_tm (struct GMT_CTRL *GMT, double *x, double *y, uint64_t n, uint64_t *start)
 {	/* Determines if a polygon will wrap at edges for TM global projection */
+	GMT_UNUSED(x);
 	uint64_t i;
 	bool wrap;
 
@@ -3598,10 +3697,11 @@ void gmt_get_crossings_tm (struct GMT_CTRL *GMT, double *xc, double *yc, double 
 }
 
 /*! . */
-int gmt_map_jump_tm (struct GMT_CTRL *GMT, double GMT_UNUSED(x0), double y0, double GMT_UNUSED(x1), double y1) {
+int gmt_map_jump_tm (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1) {
 	/* true if y-distance between points exceeds 1/2 map height at this x value */
 	/* Only used for TM world maps */
 
+	GMT_UNUSED(x0); GMT_UNUSED(x1);
 	double dy;
 
 	dy = y1 - y0;
@@ -3850,9 +3950,10 @@ double GMT_UTMzone_to_clon (struct GMT_CTRL *GMT, unsigned int zone_x, char zone
 
 /*! Setting w/e/s/n for a fully qualified UTM zone */
 
-bool GMT_UTMzone_to_wesn (struct GMT_CTRL *GMT_UNUSED(GMT), unsigned int zone_x, char zone_y, int hemi, double wesn[])
+bool GMT_UTMzone_to_wesn (struct GMT_CTRL *GMT, unsigned int zone_x, char zone_y, int hemi, double wesn[])
 {	/* Given the full UTM zone specification, return w/e/s/n */
 
+	GMT_UNUSED(GMT);
 	bool error = false;
 
 	wesn[XHI] = -180.0 + 6.0 * zone_x;	wesn[XLO] = wesn[XHI] - 6.0;
@@ -4108,6 +4209,33 @@ bool gmt_map_init_ortho (struct GMT_CTRL *GMT) {
  */
 
 /*! . */
+bool GMT_genper_reset (struct GMT_CTRL *GMT, bool reset)
+{	/* Switch between the windowed functions for lines etc and the rect ones for annotations.
+	 * Because of issue # 667 it became clear that we had problems with gridlines when the
+	 * projection became windowed, i.e., view is a clipped circle with both straight and
+	 * curved boundaries.  I added several new functions to deal with overlaps, crossings,
+	 * left and right boundary x-value, etc (all called gmt_genper_*) but they yield way too
+	 * many annotations (probably due to some confusion) so until that might be looked into I
+	 * have kept the older, simpler functions and switch from those to the new ones when we
+	 * do gridlines.  P. Wessel, Feb 10, 2015.
+	 */
+	if (GMT->current.proj.projection == GMT_GENPER && GMT->current.proj.windowed) {
+		if (reset) {
+			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Revert to old genper crossing/overlap functions\n");
+			GMT->current.map.crossing = &gmt_rect_crossing;
+			GMT->current.map.overlap = &gmt_rect_overlap;
+		}
+		else {
+			GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Switch to new genper crossing/overlap functions\n");
+			GMT->current.map.crossing = &gmt_genper_crossing;
+			GMT->current.map.overlap = &gmt_genperw_overlap;
+		}
+		return true;
+	}
+	return false;
+}
+
+/*! . */
 bool gmt_map_init_genper (struct GMT_CTRL *GMT) {
 	bool search;
 	unsigned int i;
@@ -4163,15 +4291,21 @@ bool gmt_map_init_genper (struct GMT_CTRL *GMT) {
 
 	if (GMT->current.proj.g_width != 0.0) {
 		GMT->common.R.oblique = false;
+		GMT->current.proj.windowed = true;
 		if (GMT->current.proj.g_debug > 0) GMT_Report (GMT->parent, GMT_MSG_DEBUG, "using windowed region\n");
 		GMT->current.map.outside = &gmt_rect_outside2;
 		GMT->current.map.crossing = &gmt_rect_crossing;
 		GMT->current.map.overlap = &gmt_rect_overlap;
+		//GMT->current.map.crossing = &gmt_genper_crossing;
+		//GMT->current.map.overlap = &gmt_genperw_overlap;
 		GMT->current.map.clip = &gmt_rect_clip_old;
-		GMT->current.map.left_edge = &gmt_left_rect;
-		GMT->current.map.right_edge = &gmt_right_rect;
+		//GMT->current.map.left_edge = &gmt_left_rect;
+		//GMT->current.map.right_edge = &gmt_right_rect;
+		GMT->current.map.left_edge = &gmt_left_genper;
+		GMT->current.map.right_edge = &gmt_right_genper;
 		GMT->current.map.frame.check_side = !(GMT->current.setting.map_annot_oblique & 1);
 		GMT->current.map.frame.horizontal = (fabs (GMT->current.proj.pars[1]) < 30.0 && fabs (GMT->common.R.wesn[YHI] - GMT->common.R.wesn[YLO]) < 30.0) ? 1 : 0;
+		GMT->current.map.jump = &gmt_map_jump_not;
 		search = true;
 	}
 	else {
@@ -4180,7 +4314,7 @@ bool gmt_map_init_genper (struct GMT_CTRL *GMT) {
 		for (i = 0; i < GMT_GRID_UPPER; i++)
 			GMT->current.map.frame.axis[GMT_X].item[i].active = GMT->current.map.frame.axis[GMT_Y].item[i].active = false,
 			GMT->current.map.frame.axis[GMT_X].item[i].interval = GMT->current.map.frame.axis[GMT_Y].item[i].interval = 0.0;
-		GMT->current.map.overlap = &gmt_genper_overlap;
+		GMT->current.map.overlap = &gmt_genperg_overlap;
 		GMT->current.map.crossing = &gmt_radial_crossing;
 		GMT->current.map.clip = &gmt_radial_clip;
 		GMT->current.map.outside = &gmt_radial_outside;
@@ -5241,9 +5375,10 @@ double GMT_half_map_width (struct GMT_CTRL *GMT, double y)
 }
 
 /*! . */
-bool gmt_this_point_wraps_x (struct GMT_CTRL *GMT_UNUSED(GMT), double x0, double x1, double w_last, double w_this) {
+bool gmt_this_point_wraps_x (struct GMT_CTRL *GMT, double x0, double x1, double w_last, double w_this) {
 	/* Returns true if the 2 x-points implies a jump at this y-level of the map */
 
+	GMT_UNUSED(GMT);
 	double w_min, w_max, dx;
 
 	if (w_this > w_last) {
@@ -5423,14 +5558,16 @@ bool GMT_near_a_line (struct GMT_CTRL *GMT, double lon, double lat, uint64_t seg
 /* Specific functions that are accessed via pointer only */
 
 /*! . */
-double GMT_cartesian_dist (struct GMT_CTRL *GMT_UNUSED(GMT), double x0, double y0, double x1, double y1)
+double GMT_cartesian_dist (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1)
 {	/* Calculates the good-old straight line distance in users units */
+	GMT_UNUSED(GMT);
 	return (hypot ( (x1 - x0), (y1 - y0)));
 }
 
 /*! . */
-double GMT_cartesian_dist2 (struct GMT_CTRL *GMT_UNUSED(GMT), double x0, double y0, double x1, double y1)
+double GMT_cartesian_dist2 (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1)
 {	/* Calculates the good-old straight line distance squared in users units */
+	GMT_UNUSED(GMT);
 	x1 -= x0;	y1 -= y0;
 	return (x1*x1 + y1*y1);
 }
@@ -5455,11 +5592,12 @@ double GMT_cartesian_dist_proj2 (struct GMT_CTRL *GMT, double lon1, double lat1,
 }
 
 /*! . */
-double gmt_flatearth_dist_degree (struct GMT_CTRL *GMT_UNUSED(GMT), double x0, double y0, double x1, double y1) {
+double gmt_flatearth_dist_degree (struct GMT_CTRL *GMT, double x0, double y0, double x1, double y1) {
 	/* Calculates the approximate flat earth distance in degrees.
 	   If difference in longitudes exceeds 180 we pick the other
 	   offset (360 - offset)
 	 */
+	GMT_UNUSED(GMT);
 	double dlon;
 
 	GMT_set_delta_lon (x0, x1, dlon);
@@ -6555,11 +6693,11 @@ uint64_t GMT_geo_to_xy_line (struct GMT_CTRL *GMT, double *lon, double *lat, uin
 		last_x = this_x;	last_y = this_y;
 	}
 	if (np) GMT->current.plot.pen[0] = PSL_MOVE;	/* Sanity override: Gotta start off with new start point */
-	
+
 	/* When a line that starts and ends inside the domain exits and reenters, we end up with two pieces.
 	 * When these are plotted separately the sections are not joined properly and ugly gaps can appear, especially if
 	 * the pen width is large.  Here we try to fix this case since it happens fairly frequently */
-	
+
 	for (j = n_sections = k = 0; j < np; j++) if (GMT->current.plot.pen[j] == PSL_MOVE) {
 		n_sections++;
 		if (n_sections == 2) k = j;	/* Start of 2nd section */
@@ -6579,7 +6717,7 @@ uint64_t GMT_geo_to_xy_line (struct GMT_CTRL *GMT, double *lon, double *lat, uin
 		GMT_Report (GMT->parent, GMT_MSG_DEBUG, "GMT_geo_to_xy_line: Clipping in two separate abutting lines that were joined into a single line\n");
 		GMT_free (GMT, tmp);
 	}
-	
+
 	return (np);
 }
 
@@ -7279,9 +7417,10 @@ uint64_t GMT_map_clip_path (struct GMT_CTRL *GMT, double **x, double **y, bool *
 }
 
 /*! . */
-double GMT_lat_swap_quick (struct GMT_CTRL *GMT_UNUSED(GMT), double lat, double c[]) {
+double GMT_lat_swap_quick (struct GMT_CTRL *GMT, double lat, double c[]) {
 	/* Return latitude, in degrees, given latitude, in degrees, based on coefficients c */
 
+	GMT_UNUSED(GMT);
 	double delta, cos2phi, sin2phi;
 
 	/* First deal with trivial cases */

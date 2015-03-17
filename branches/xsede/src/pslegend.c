@@ -28,6 +28,7 @@
 #define THIS_MODULE_NAME	"pslegend"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Plot legends on maps"
+#define THIS_MODULE_KEYS	"<TI,ACi,-Xo"
 
 #include "gmt_dev.h"
 
@@ -328,7 +329,7 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 	char font[GMT_LEN256] = {""}, lspace[GMT_LEN256] = {""}, tw[GMT_LEN256] = {""}, jj[GMT_LEN256] = {""};
 	char bar_cpt[GMT_LEN256] = {""}, bar_gap[GMT_LEN256] = {""}, bar_height[GMT_LEN256] = {""}, bar_opts[GMT_BUFSIZ] = {""};
 	char *opt = NULL, sarg[GMT_LEN256] = {""}, txtcolor[GMT_LEN256] = {""}, buffer[GMT_BUFSIZ] = {""}, A[GMT_LEN32] = {""};
-	char B[GMT_LEN32] = {""}, C[GMT_LEN32] = {""}, p[GMT_LEN256] = {""};
+	char path[GMT_BUFSIZ] = {""}, B[GMT_LEN32] = {""}, C[GMT_LEN32] = {""}, p[GMT_LEN256] = {""};
 	char *line = NULL, string[GMT_STR16] = {""}, save_EOF = 0, *c = NULL, *fill[PSLEGEND_MAX_COLS];
 
 	unsigned char *dummy = NULL;
@@ -350,6 +351,7 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 	struct GMT_TEXTSEGMENT *Ts[N_TXT];
 	struct GMT_DATASET *D[N_DAT];
 	struct GMT_DATASEGMENT *Ds[N_DAT];
+	struct GMT_PALETTE *P = NULL;
 	struct GMTAPI_CTRL *API = GMT_get_API_ptr (V_API);	/* Cast from void to GMTAPI_CTRL pointer */
 
 	GMT_memset (&header, 1, struct imageinfo);	/* initialize struct */
@@ -420,7 +422,8 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 						column_number = 0;
 						break;
 
-					case 'C':	/* Color change, no height implication */
+					case 'A':	/* Color change, no height implication */
+					case 'C':
 					case 'F':
 						break;
 
@@ -653,6 +656,15 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 				}
 
 				switch (line[0]) {
+					case 'A':	/* Z lookup color table change: A cptfile */
+						if (P && GMT_Destroy_Data (API, &P) != GMT_OK)	/* Remove the previous CPT from registration */
+							Return (API->error);
+						for (col = 1; line[col] == ' '; col++);	/* Wind past spaces */
+						if ((P = GMT_Read_Data (API, GMT_IS_CPT, GMT_IS_FILE, GMT_IS_NONE, GMT_READ_NORMAL, NULL, &line[col], NULL)) == NULL)
+							Return (API->error);
+						GMT->current.setting.color_model = GMT_RGB;	/* Since we will be interpreting r/g/b triplets via z=<value> */
+						break;
+
 					case 'B':	/* B cptname offset height [ Optional psscale args -A -B -I -L -M -N -S -Z -p ] */
 						/* Color scale Bar [via GMT_psscale] */
 						row_height = GMT_to_inch (GMT, bar_height) + GMT->current.setting.map_tick_length[0] + GMT->current.setting.map_annot_offset[0] + FONT_HEIGHT_PRIMARY * GMT->current.setting.font_annot[0].size / PSL_POINTS_PER_INCH;
@@ -674,6 +686,7 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 
 					case 'C':	/* Font color change: C textcolor */
 						sscanf (&line[2], "%[^\n]", txtcolor);
+						if ((API->error = GMT_get_rgbtxt_from_z (GMT, P, txtcolor))) Return (EXIT_FAILURE);	/* If given z=value then we look up colors */
 						break;
 
 					case 'D':	/* Delimiter record: D [offset] <pen>|- [-|=|+] */
@@ -725,6 +738,7 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 						for (col = 0; col < PSLEGEND_MAX_COLS; col++) if (fill[col]) {free (fill[col]); fill[col] = NULL;}
 						pos = n_col = 0;
 						while ((GMT_strtok (&line[2], " \t", &pos, p))) {
+							if ((API->error = GMT_get_rgbtxt_from_z (GMT, P, p))) Return (EXIT_FAILURE);	/* If given z=value then we look up colors */
 							if (strcmp (p, "-")) fill[n_col++] = strdup (p);
 							if (n_col > n_columns) {
 								GMT_Report (API, GMT_MSG_NORMAL, "Error: Exceeding specified N columns (%d) in F operator (%d)\n", n_columns, n_col);
@@ -770,7 +784,11 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 
 					case 'I':	/* Image record [use GMT_psimage]: I imagefile width justification */
 						sscanf (&line[2], "%s %s %s", image, size, key);
-						PSL_loadimage (PSL, image, &header, &dummy);
+						if (GMT_getdatapath (GMT, image, path, R_OK) == NULL) {
+							GMT_Report (API, GMT_MSG_NORMAL, "Cannot find/open file %s.\n", image);
+							Return (EXIT_FAILURE);
+						}
+						PSL_loadimage (PSL, path, &header, &dummy);
 						PSL_free (dummy);
 						justify = GMT_just_decode (GMT, key, 12);
 						row_height = GMT_to_inch (GMT, size) * (double)header.height / (double)header.width;
@@ -957,6 +975,7 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 
 					case 'S':	/* Symbol record: S dx1 symbol size fill pen [ dx2 text ] */
 						n_scan = sscanf (&line[2], "%s %s %s %s %s %s %[^\n]", txt_a, symbol, size, txt_c, txt_d, txt_b, text);
+						if ((API->error = GMT_get_rgbtxt_from_z (GMT, P, txt_c))) Return (EXIT_FAILURE);	/* If given z=value then we look up colors */
 						if (column_number%n_columns == 0) {	/* Symbol in first column, also fill row if requested */
 							fillcell (GMT, Ctrl->D.anchor->x, row_base_y-one_line_spacing, row_base_y+gap, x_off_col, &d_line_after_gap, n_columns, fill);
 							row_base_y -= one_line_spacing;
@@ -1074,7 +1093,7 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 								/* Because we support both GMT4 and GMT5 vector notations this section is a bit messy */
 								if (strchr (size, ',')) {	/* We got dir,length combined as one argument */
 									sscanf (size, "%[^,],%s", A, B);
-									az1 = GMT_to_inch (GMT, A);
+									az1 = atof (A);
 									x = GMT_to_inch (GMT, B);
 								}
 								else {	/* No dir given, default to horizontal */
@@ -1262,6 +1281,8 @@ int GMT_pslegend (void *V_API, int mode, void *args)
 	if (GMT_Destroy_Data (API, &In) != GMT_OK) {	/* Remove the main input file from registration */
 		Return (API->error);
 	}
+	if (P && GMT_Destroy_Data (API, &P) != GMT_OK)	/* Remove the last CPT from registration */
+		Return (API->error);
 
 	/* Reset the flag */
 	if (GMT_compat_check (GMT, 4)) GMT->current.setting.io_seg_marker[GMT_IN] = save_EOF;

@@ -44,6 +44,35 @@
  * the variables are accessible just like the "public" ones.
  */
 
+/*! Session modes */
+enum GMT_enum_session {
+	GMT_SESSION_NORMAL   = 0,	/* Typical mode to GMT_Create_Session */
+	GMT_SESSION_NOEXIT   = 1,	/* Call return and not exit when error */
+	GMT_SESSION_EXTERNAL = 2};	/* Called by an external API (e.g., Matlab, Python). */
+
+/*! Miscellaneous settings */
+enum GMT_enum_api {
+	GMT_USAGE	= 0,	/* Want to report full program usage message */
+	GMT_SYNOPSIS	= 1,	/* Just want the synopsis of usage */
+	GMT_STR16	= 16	/* Bytes needed to hold the @GMTAPI@-###### resource names */
+};
+
+/*! These data primitive identifiers are as follows: */
+enum GMT_enum_type {
+	GMT_CHAR = 0,  /* int8_t, 1-byte signed integer type */
+	GMT_UCHAR,     /* uint8_t, 1-byte unsigned integer type */
+	GMT_SHORT,     /* int16_t, 2-byte signed integer type */
+	GMT_USHORT,    /* uint16_t, 2-byte unsigned integer type */
+	GMT_INT,       /* int32_t, 4-byte signed integer type */
+	GMT_UINT,      /* uint32_t, 4-byte unsigned integer type */
+	GMT_LONG,      /* int64_t, 8-byte signed integer type */
+	GMT_ULONG,     /* uint64_t, 8-byte unsigned integer type */
+	GMT_FLOAT,     /* 4-byte data float type */
+	GMT_DOUBLE,    /* 8-byte data float type */
+	GMT_TEXT,      /* Arbitrarily long text string [OGR/GMT use only] */
+	GMT_DATETIME,  /* string with date/time info [OGR/GMT use only] */
+	GMT_N_TYPES};  /* The number of supported data types above */
+
 /*! These are the 5 methods for i/o; used as arguments in the API that expects a "method" */
 
 enum GMT_enum_method {
@@ -64,7 +93,7 @@ enum GMT_enum_via {
 	GMT_VIA_VECTOR = 100,	/* Data passed via user matrix */
 	GMT_VIA_MATRIX = 200};	/* Data passed via user vectors */
 
-/*! These are the 5 families of data types, + a coordinate array + 2 help containers for vector and matrix */
+/*! These are the 5 families of data types, + a coordinate array + 3 help containers for vector, matrix, and PS */
 enum GMT_enum_family {
 	GMT_IS_DATASET = 0,	/* Entity is data table */
 	GMT_IS_TEXTSET,		/* Entity is a Text table */
@@ -73,7 +102,8 @@ enum GMT_enum_family {
 	GMT_IS_IMAGE,		/* Entity is a 1- or 3-layer unsigned char image */
 	GMT_IS_VECTOR,		/* Entity is set of user vectors */
 	GMT_IS_MATRIX,		/* Entity is user matrix */
-	GMT_IS_COORD};		/* Entity is a double coordinate array */
+	GMT_IS_COORD,		/* Entity is a double coordinate array */
+	GMT_IS_PS};		/* Entity is a PostScript file [API Developers only] */
 
 /*! These are modes for handling comments */
 enum GMT_enum_comment {
@@ -208,8 +238,8 @@ enum GMT_enum_gridindex {
 enum GMT_enum_dimindex {
         GMT_TBL = 0U,	/* Index for number of tables in dimension array */
         GMT_SEG,	/* Index for number of segments in dimension array */
-        GMT_ROW,	/* Index for number of tables in dimension array */
-        GMT_COL		/* Index for number of tables in dimension array [DATASET only] */
+        GMT_ROW,	/* Index for number of rows in dimension array */
+        GMT_COL		/* Index for number of columns in dimension array [DATASET only] */
 };
 
 enum GMT_enum_gridio {
@@ -294,11 +324,12 @@ struct GMT_GRID_HEADER {
 	size_t t_index[3];               /* NetCDF: index of higher coordinates */
 	size_t data_offset;              /* NetCDF: distance from the beginning of the in-memory grid */
 	unsigned int stride;             /* NetCDF: distance between two rows in the in-memory grid */
-	float nan_value;                 /* Missing value as stored in grid file */
+	float  nan_value;                /* Missing value as stored in grid file */
 	double xy_off;                   /* 0.0 (registration == GMT_GRID_NODE_REG) or 0.5 ( == GMT_GRID_PIXEL_REG) */
 	double r_inc[2];                 /* Reciprocal incs, i.e. 1/inc */
-	char flags[4];                   /* Flags used for ESRI grids */
-	char *pocket;                    /* GDAL: A working variable handy to transmit info between funcs e.g. +b<band_info> to gdalread */
+	char   flags[4];                 /* Flags used for ESRI grids */
+	char  *pocket;                   /* GDAL: A working variable handy to transmit info between funcs e.g. +b<band_info> to gdalread */
+	char   mem_layout[4];            /* GDAL: Four char codes T|B R|C L|R P|L|S to describe array layout in mem and interleaving */
 	double bcr_threshold;            /* sum of cardinals must >= threshold in bilinear; else NaN */
 	unsigned int bcr_interpolant;    /* Interpolation function used (0, 1, 2, 3) */
 	unsigned int bcr_n;              /* Width of the interpolation function */
@@ -577,6 +608,7 @@ struct GMT_PALETTE {		/* Holds all pen, color, and fill-related parameters */
 	uint64_t id;			/* The internal number of the data set */
 	enum GMT_enum_alloc alloc_mode;	/* Allocation mode [GMT_ALLOC_INTERNALLY] */
 	unsigned int alloc_level;	/* The level it was allocated at */
+	unsigned int auto_scale;	/* If 1 then we must resample to fit actual data range */
 	unsigned int model;		/* RGB, HSV, CMYK */
 	unsigned int is_gray;		/* true if only grayshades are needed */
 	unsigned int is_bw;		/* true if only black and white are needed */
@@ -676,6 +708,40 @@ struct GMT_MATRIX {	/* Single container for a user matrix of data */
 	uint64_t id;			/* The internal number of the data set */
 	unsigned int alloc_level;	/* The level it was allocated at */
 	enum GMT_enum_alloc alloc_mode;	/* Allocation mode [GMT_ALLOC_INTERNALLY] */
+};
+
+/*============================================================ */
+/*=============== GMT_OPTION Public Declaration ============== */
+/*============================================================ */
+
+enum GMT_enum_opt {
+	GMT_OPT_USAGE =     '?',	/* Command-line option for full usage */
+	GMT_OPT_SYNOPSIS =  '^',	/* Command-line option for synopsis */
+	GMT_OPT_PARAMETER = '-',	/* Command-line option for GMT defaults parameter */
+	GMT_OPT_INFILE =    '<',	/* Command-line option for input file */
+	GMT_OPT_OUTFILE =   '>'};	/* Command-line option for output file */
+
+/* This struct is used to pass program options in/out of GMT modules */
+
+struct GMT_OPTION {              /* Structure for a single GMT command option */
+	char option;                 /* 1-char command line -<option> (e.g. D in -D) identifying the option (* if file) */
+	char *arg;                   /* If not NULL, contains the argument for this option */
+	struct GMT_OPTION *next;     /* Pointer to next option in a linked list */
+	struct GMT_OPTION *previous; /* Pointer to previous option in a linked list */
+};
+
+/*============================================================ */
+/* struct GMT_INFO is for API Developers only ========= */
+/*============================================================ */
+
+struct GMT_RESOURCE {	/* Information related to passing resources between GMT and external API */
+	enum GMT_enum_family family;	/* GMT data family, i.e., GMT_IS_DATASET, GMT_IS_GRID, etc. */
+	enum GMT_enum_geometry geometry;/* One of the recognized GMT geometries */
+	enum GMT_enum_std direction;	/* Either GMT_IN or GMT_OUT */
+	struct GMT_OPTION *option;	/* Pointer to the corresponding module option */
+	int object_ID;			/* Object ID returned by GMT_Register_IO */
+	int pos;			/* Corresponding index into external object in|out arrays */
+	void *object;			/* Pointer to the registered GMT object */
 };
 
 #endif /* _GMT_RESOURCES_H */

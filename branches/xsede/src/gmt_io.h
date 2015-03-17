@@ -40,12 +40,12 @@
 #	include <locale.h>
 #endif
 
-static inline char* __gmt_token_separators (void) {
-	static char separators[] = ",\t ";
+static inline const char* __gmt_token_separators (void) {
+	static const char separators[] = ",; \t";
 #ifdef HAVE_SETLOCALE
 	struct lconv *lc = localeconv();
 	if ( (strcmp (lc->decimal_point, ",") == 0) )
-		separators[0] = ';';
+		return separators + 1; /* Omit comma */
 #endif
 	return separators;
 }
@@ -338,13 +338,6 @@ struct GMT_PLOT_CALCLOCK {
 	struct GMT_CLOCK_IO clock;
 	struct GMT_GEO_IO geo;
 };
-
-/* Byteswap widths used with gmt_byteswap_file */
-typedef enum {
-	Int16len = 2,
-	Int32len = 4,
-	Int64len = 8
-} SwapWidth;
 
 /* For the GMT_GRID container, see gmt_grdio.h */
 

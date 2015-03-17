@@ -1064,6 +1064,14 @@ void GMT_dist_syntax (struct GMT_CTRL *GMT, char option, char *string)
 /*! Use mode to control which options are displayed */
 void GMT_vector_syntax (struct GMT_CTRL *GMT, unsigned int mode)
 {
+	/* Mode is composed of bit-flags to control which lines are printed.
+	 * Items without if-test are common to all vectors.
+	 * 1	= Accepts +j (not mathangle)
+	 * 2	= Accepts +s (not mathangle)
+	 * 4	= Accepts +p (not mathangle)
+	 * 8	= Accepts +g (not mathangle)
+	 * 16	= Accepts +z (not mathangle, geovector)
+	 */
 	GMT_message (GMT, "\t   Append length of vector head, with optional modifiers:\n");
 	GMT_message (GMT, "\t   [Left and right are defined by looking from start to end of vector]\n");
 	GMT_message (GMT, "\t     +a<angle> to set angle of the vector head apex [30]\n");
@@ -1082,6 +1090,8 @@ void GMT_vector_syntax (struct GMT_CTRL *GMT, unsigned int mode)
 	GMT_message (GMT, "\t     +q if start and stop opening angle is given instead of (azimuth,length) on input.\n");
 	GMT_message (GMT, "\t     +r to only draw right side of all specified vector heads [both sides].\n");
 	if (mode & 2) GMT_message (GMT, "\t     +s if (x,y) coordinates of tip is given instead of (azimuth,length) on input.\n");
+	if (mode & 16) GMT_message (GMT, "\t     +z if (dx,dy) vector components are given instead of (azimuth,length) on input.\n");
+	if (mode & 16) GMT_message (GMT, "\t       Append <scale>[unit] to convert components to length in given unit.\n");
 }
 
 /*! For programs that can read *.img grids */
@@ -1561,7 +1571,8 @@ int gmt_parse_h_option (struct GMT_CTRL *GMT, char *item) {
 }
 
 /*! If region is given then we must have w < e and s < n */
-bool GMT_check_region (struct GMT_CTRL *GMT_UNUSED(GMT), double wesn[]) {
+bool GMT_check_region (struct GMT_CTRL *GMT, double wesn[]) {
+	GMT_UNUSED(GMT);
 	return ((wesn[XLO] >= wesn[XHI] || wesn[YLO] >= wesn[YHI]));
 }
 
@@ -2459,6 +2470,297 @@ int GMT_parse_dash_option (struct GMT_CTRL *GMT, char *text) {
 	return (n);
 }
 
+int count_xy_terms (char *txt, int64_t *xstart, int64_t *xstop, int64_t *ystart, int64_t *ystop)
+{	/* Process things like xxxxyy, x4y2, etc and find the number of x and y items.
+	 * We return the start=stop= number of x and ystart=ystop = number of y. */
+	
+	unsigned int n[2] = {0, 0};
+	size_t len = strlen (txt), k = 0;
+	while (k < len) {
+		switch (txt[k]) {
+			case 'x':
+				if (isdigit (txt[k+1])) {	/* Gave things like x3y */
+					n[GMT_X] += atoi (&txt[k+1]);
+					k++;
+					while (txt[k] && isdigit (txt[k])) k++;	/* Wind pass the number */
+				}
+				else {	/* Just one x */
+					n[GMT_X]++;
+					k++;
+				}
+				break;
+			case 'y':
+				if (isdigit (txt[k+1])) {	/* Gave things like y3x */
+					n[GMT_Y] += atoi (&txt[k+1]);
+					k++;
+					while (txt[k] && isdigit (txt[k])) k++;	/* Wind pass the number */
+				}
+				else {	/* Just one y */
+					n[GMT_Y]++;
+					k++;
+				}
+				break;
+			default:	/* Bad args */
+				return -1;
+				break;
+		}
+	}
+	*xstart = *xstop = n[GMT_X];	/* Just a single x combo */
+	*ystart = *ystop = n[GMT_Y];	/* Just a particular y combo */
+	return 0;
+}
+#if 0
+/*! . */
+int GMT_parse_model (struct GMT_CTRL *GMT, char option, char *in_arg, unsigned int dim, struct GMT_MODEL *M)
+{
+	/* Parse -N[p|P|f|F|c|C|s|S|x|X|y|Y][x|y]<list-of-terms>[,...][+l<lengths>][+o<origins>][+r] for trend1d, trend2d, grdtrend.
+	 * p means polynomial.
+	 * c means cosine.  For 2-D you may optionaly add x|y to only add basis for that dimension [both]
+	 * s means sine.  Optionally append x|y [both]
+	 * f means both cosine and sine.    Optionally append x|y [both]
+	 * list-of-terms is either a single order (e.g., 2) or a range (e.g., 0-3)
+	 * Give one or more lists separated by commas.
+	 * In 1-D, we add the basis x^p, cos(2*pi*p/X), and/or sin(2*pi*p/X) depending on selection.
+	 * In 2-D, for polynomial the order means all p products of x^m*y^n where m+n == p
+	 *   To only have some of these terms you must instead specify which ones you want,
+	 *   e.g., xxxy (or x3y) and yyyx (or y3x) for just those two.
+	 *   For Fourier we add these 4 terms per order:
+	 *   cos(2*pi*p*x/X), sin(2*pi*p*x/X), cos(2*pi*p*y/Y), sin(2*pi*p*y/Y)
+	 *   To only add basis in x or y you must apped x|y after the c|s|f.
+	 * dim is either 1 (1-D) or 2 (for 2-D, grdtrend).
+ 	 * Indicate robust fit by appending +r
+	 */
+	
+	unsigned int pos = 0, n_model = 0, part, n_parts, k, j;
+	int64_t order, xstart, xstop, ystart, ystop, step, n_order;
+	size_t end;
+	bool got_intercept;
+	enum GMT_enum_model kind[2];
+	char p[GMT_BUFSIZ] = {""}, type, *this_range = NULL, *arg = NULL, *name = "pcs";
+	
+	if (!in_arg || !in_arg[0]) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: No arguments given!\n", option);
+		return -1;	/* No arg given */
+	}
+	if ((strchr (in_arg, 'x') || strchr (in_arg, 'y')) && dim == 1) {
+		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Cannot use x|y for 1-D basis\n", option);
+		return -1;
+	}
+	/* Deal with backwards compatibilities: -N[f]<nmodel>[r] for 1-D and -N<nmodel>[r] for 2-D */
+	arg = strdup (in_arg);
+	end = strlen (arg) - 1;
+	if ((isdigit (arg[0]) || (dim == 1 && end > 1 && arg[0] == 'f' && isdigit (arg[2]))) && ((arg[end] == 'r' && arg[end-1] != '+') || isdigit (arg[end])))
+		/* Old GMT4-like syntax. If compatibility allows it we rewrite using new syntax so we only have one parser below */
+		if (GMT_compat_check (GMT, 5)) {	/* Allow old-style syntax */
+			char new[GMT_BUFSIZ] = {""};
+			GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: -%c%s is deprecated; see usage for new syntax\n", option, arg);
+			if (arg[0] != 'f') new[0] = 'p';	/* So we start with f or p */			
+			if (arg[end] == 'r') {
+				arg[end] = '\0';	/* Chop off the r */
+				strcat (new, arg);
+				strcat (new, "+r");	/* Add robust flag */
+			}
+			else
+				strcat (new, arg);
+			strcpy (arg, new);	/* Place revised args */
+		}
+		else {
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Old-style arguments given and chosen compatibility mode does not allow it\n", option);
+			free (arg);
+			return -1;
+		}
+	}
+	if ((c = strchr (arg, '+'))) {	/* Gave one or more modifiers */
+		pos = 0;
+		while ((GMT_strtok (c, "+", &pos, p))) {
+			switch (c[0]) {
+				case 'o':	/* Origin of axes */
+					if ((k = GMT_Get_Value (GMT->parent, &c[1], M->origin)) < 1) {
+						GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Error -%c: Unable to parse the +o arguments (%s)\n", option, &c[1]);
+						return -1;
+					}
+					break;
+				case 'r':
+					M->robust = true;
+					break;
+				case 'x':
+					if ((k = GMT_Get_Value (GMT->parent, &c[1], M->period)) < 1) {
+						GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Error -%c: Unable to parse the +x argument (%s)\n", option, &c[1]);
+						return -1;
+					}
+					break;
+				case 'y':
+					if ((k = GMT_Get_Value (GMT->parent, &c[1], &M->period[GMT_Y])) < 1) {
+						GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Error -%c: Unable to parse the +y argument (%s)\n", option, &c[1]);
+						return -1;
+					}
+					break;
+				default:
+					GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Error -%c: Unrecognized modifier +%s\n", option, c);
+					return -1;
+					break;
+			}
+		}
+		c[0] = '\0';	/* Chop off modifiers in arg before processing settings */
+	}
+	pos = 0;	/* Reset position since now working on arg */
+	while ((GMT_strtok (arg, ",", &pos, p))) {
+		/* Here, p will be one instance of [p|f|c|s][x|y]<list-of-terms> */
+		if (!strchr ("cfsp", p[0])) {
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Bad basis function type (%c)\n", option, p[0]);
+			return -1;
+		}
+		this_range = &p[1];
+		n_parts = 1;	/* Normally just one basis function at the time but f implies both c and s */
+		special = false;
+		switch (p[0]) {	/* What kind of basis function? */
+			case 'p': kind = GMT_POLYNOMIAL; break;
+			case 'c': kind = GMT_COSINE; break;
+			case 's': kind = GMT_SINE; break;
+			case 'f': kind = GMT_FOURIER; break;
+				
+		}
+		if (p[1] == 'x' || p[1] == 'y')	{	/* Single building block and not all items of given order */
+			special = true;
+			count_xy_terms (&p[1], &xstart, &xstop, &ystart, &ystop);
+		else if ((step = gmt_parse_range (GMT, this_range, &xstart, &xstop)) != 1) {
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Bad basis function order (%s)\n", option, this_range);
+			return -1;
+		}
+		
+		if (kind != GMT_POLYNOMIAL && xstart == 0) {
+			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Cosine|Sine cannot start with order 0.  Use p0 to add a constant\n", option);
+			return -1;
+		}
+		/* Here we have range and kind */
+		
+		/* For the Fourier components we need to distinguish bewteen things like cos(x)*sin(y), sin(x)*cos(y), cos(x), etc.  We use these 8 type flags:
+		   0 = C- cos (x)
+		   1 = -C cos (y)
+		   2 = S- sin (x)
+		   3 = -S sin (y)
+		   4 = CC cos (x)*cos(y)
+		   5 = CS cos (x)*sin(y)
+		   6 = SC sin (x)*cos(y)
+		   7 = SS sin (x)*sin(y)
+		 */
+		for (order = xstart; order <= xstop; order++) {
+			/* For each order given in the range, or just this particular order */
+			switch (kind) {
+				case GMT_POLYNOMIAL:	/* Add one or more polynomial basis */
+					if (!special) {
+						ystart = 0;
+						ystop = (dim == 1) ? 0 : order;
+					}
+					for (k = ystart; k <= ystop; k++) {
+						M->term[n_model].kind = GMT_POLYNOMIAL;
+						M->term[n_model].order[GMT_X] = (unsigned int)(order - k);
+						M->term[n_model].order[GMT_Y] = (unsigned int)k;
+						n_model++;
+						if (n_model == GMT_N_MAX_MODEL) {
+							GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Exceeding max basis functions (%d) \n", option, GMT_N_MAX_MODEL);
+							return -1;
+						}
+					}
+					break;
+				case GMT_FOURIER:	/* Add a Fourier basis (2 or 4 parts) */
+					if (!special) {
+						ystart = ystop = order;
+					}
+					for (i = 0; i < 2; i) {	/* Loop over cosine and sine in x */
+						for (k = 0; k < 2; k++) {	/* Loop over cosine and sine in y */
+							M->term[n_model].kind = GMT_FOURIER;
+							M->term[n_model].type = 4 + 2*i + k;	/* CC, CS, SC, SS */
+							M->term[n_model].order[GMT_X] = (unsigned int)order;
+							M->term[n_model].order[GMT_Y] = (unsigned int)ystart;
+							n_model++;
+							if (n_model == GMT_N_MAX_MODEL) {
+								GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Exceeding max basis functions (%d) \n", option, GMT_N_MAX_MODEL);
+								return -1;
+							}
+						}
+					}
+					break;
+				case GMT_COSINE:	/* Add a Cosine basis (1 or 2 parts) */
+					if (!special) {
+						ystart = ystop = order;
+					}
+					/* cosine in x? */
+					if (order) {
+						M->term[n_model].kind = GMT_COSINE;
+						M->term[n_model].type = 0;	/* C- */
+						M->term[n_model].order[GMT_X] = (unsigned int)order;
+						n_model++;
+						if (n_model == GMT_N_MAX_MODEL) {
+							GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Exceeding max basis functions (%d) \n", option, GMT_N_MAX_MODEL);
+							return -1;
+						}
+					}
+					if (ystart) {
+						M->term[n_model].kind = GMT_COSINE;
+						M->term[n_model].type = 1;	/* -C */
+						M->term[n_model].order[GMT_Y] = (unsigned int)ystart;
+						n_model++;
+						if (n_model == GMT_N_MAX_MODEL) {
+							GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Exceeding max basis functions (%d) \n", option, GMT_N_MAX_MODEL);
+							return -1;
+						}
+					}
+					break;
+				case GMT_SINE:	/* Add a Sine basis (1 or 2 parts) */
+					if (!special) {
+						ystart = ystop = order;
+					}
+					/* sine in x? */
+					if (order) {
+						M->term[n_model].kind = GMT_SINE;
+						M->term[n_model].type = 2;	/* S- */
+						M->term[n_model].order[GMT_X] = (unsigned int)order;
+						n_model++;
+						if (n_model == GMT_N_MAX_MODEL) {
+							GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Exceeding max basis functions (%d) \n", option, GMT_N_MAX_MODEL);
+							return -1;
+						}
+					}
+					if (ystart) {
+						M->term[n_model].kind = GMT_SINE;
+						M->term[n_model].type = 3;	/* -S */
+						M->term[n_model].order[GMT_Y] = (unsigned int)ystart;
+						n_model++;
+						if (n_model == GMT_N_MAX_MODEL) {
+							GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Exceeding max basis functions (%d) \n", option, GMT_N_MAX_MODEL);
+							return -1;
+						}
+					}
+					break;
+			}
+		}
+	}
+	free (arg);
+	/* Make sure there are no duplicates */
+	
+	for (k = 0; k < n_model; k++) {
+		for (j = k+1; j < n_model; j++) {
+			if (M->term[k].kind == M->term[j].kind && M->term[k].order[GMT_X] == M->term[j].order[GMT_X] && M->term[k].order[GMT_Y] == M->term[j].order[GMT_Y] && M->term[k].type == M->term[j].type) {
+				if (dim == 1)
+					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Basis %c%u occurs more than once!\n", option, name[M->term[k].kind], M->term[k].order[GMT_X]);
+				else
+					GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error -%c: Basis %cx%uy%u occurs more than once!\n", option, name[M->term[k].kind], M->term[k].order[GMT_X], M->term[k].order[GMT_Y]);
+				return -1;
+			}
+		}
+		if (M->term[k].order == 0) got_intercept = true;
+	}
+	if (GMT_is_verbose (GMT, GMT_MSG_VERBOSE)) {
+		if (!got_intercept) GMT_Report (GMT->parent, GMT_MSG_VERBOSE, "Warning -%c: No intercept term (p0) given\n", option);
+		fprintf (stderr, "Fit %u terms.  Use a robust model?: %s\n", n_model, (*robust) ? "Yes" : "No");
+		for (k = 0; k < n_model; k++)
+			fprintf (stderr, "Model basis %d is of type %c and order %u\n", k, name[M->term[k].kind], M->term[k].order);
+	}
+	return (0);
+}
+#endif
+
 /*! . */
 void GMT_check_lattice (struct GMT_CTRL *GMT, double *inc, unsigned int *registration, bool *active)
 {	/* Uses provided settings to initialize the lattice settings from
@@ -2659,22 +2961,26 @@ double gmt_abs_col_map_dist (struct GMT_CTRL *GMT, uint64_t col) {
 }
 
 /*! Compute point-separation after mapping */
-double gmt_xy_map_dist (struct GMT_CTRL *GMT, uint64_t GMT_UNUSED(col)) {
+double gmt_xy_map_dist (struct GMT_CTRL *GMT, uint64_t col) {
+	GMT_UNUSED(col);
 	return (GMT_cartesian_dist_proj (GMT, GMT->current.io.prev_rec[GMT_X], GMT->current.io.prev_rec[GMT_Y], GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]));
 }
 
 /*! . */
-double gmt_xy_deg_dist (struct GMT_CTRL *GMT, uint64_t GMT_UNUSED(col)) {
+double gmt_xy_deg_dist (struct GMT_CTRL *GMT, uint64_t col) {
+	GMT_UNUSED(col);
 	return (GMT_great_circle_dist_degree (GMT, GMT->current.io.prev_rec[GMT_X], GMT->current.io.prev_rec[GMT_Y], GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]));
 }
 
 /*! . */
-double gmt_xy_true_dist (struct GMT_CTRL *GMT, uint64_t GMT_UNUSED(col)) {
+double gmt_xy_true_dist (struct GMT_CTRL *GMT, uint64_t col) {
+	GMT_UNUSED(col);
 	return (GMT_great_circle_dist_meter (GMT, GMT->current.io.prev_rec[GMT_X], GMT->current.io.prev_rec[GMT_Y], GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]));
 }
 
 /*! . */
-double gmt_xy_cart_dist (struct GMT_CTRL *GMT, uint64_t GMT_UNUSED(col)) {
+double gmt_xy_cart_dist (struct GMT_CTRL *GMT, uint64_t col) {
+	GMT_UNUSED(col);
 	return (GMT_cartesian_dist (GMT, GMT->current.io.prev_rec[GMT_X], GMT->current.io.prev_rec[GMT_Y], GMT->current.io.curr_rec[GMT_X], GMT->current.io.curr_rec[GMT_Y]));
 }
 
@@ -3169,10 +3475,11 @@ int gmt_get_language (struct GMT_CTRL *GMT)
 
 	GMT_memset (months, 12, char *);
 
-	GMT_getsharepath (GMT, "localization", GMT->current.setting.language, ".txt", file, R_OK);
+	sprintf (line, "gmt_%s", GMT->current.setting.language);
+	GMT_getsharepath (GMT, "localization", line, ".locale", file, R_OK);
 	if ((fp = fopen (file, "r")) == NULL) {
 		GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Warning: Could not load language %s - revert to us (English)!\n", GMT->current.setting.language);
-		GMT_getsharepath (GMT, "localization", "us", ".txt", file, R_OK);
+		GMT_getsharepath (GMT, "localization", "gmt_us", ".locale", file, R_OK);
 		if ((fp = fopen (file, "r")) == NULL) {
 			GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Error: Could not find %s!\n", file);
 			GMT_exit (GMT, EXIT_FAILURE); return EXIT_FAILURE;
@@ -3294,7 +3601,7 @@ int gmt_load_encoding (struct GMT_CTRL *GMT)
 	char line[GMT_LEN256] = {""}, symbol[GMT_LEN256] = {""};
 	unsigned int code = 0, pos;
 	FILE *in = NULL;
-	struct gmt_encoding *enc = &GMT->current.setting.ps_encoding;
+	struct GMT_ENCODING *enc = &GMT->current.setting.ps_encoding;
 
 	GMT_getsharepath (GMT, "pslib", enc->name, ".ps", line, R_OK);
 	if ((in = fopen (line, "r")) == NULL) {
@@ -6086,8 +6393,9 @@ char *GMT_putcolor (struct GMT_CTRL *GMT, double *rgb) {
 }
 
 /*! Creates t the string r/g/b corresponding to the RGB triplet */
-char *GMT_putrgb (struct GMT_CTRL *GMT_UNUSED(GMT), double *rgb) {
+char *GMT_putrgb (struct GMT_CTRL *GMT, double *rgb) {
 
+	GMT_UNUSED(GMT);
 	static char text[GMT_LEN256] = {""};
 
 	if (rgb[0] < -0.5)
@@ -6099,9 +6407,9 @@ char *GMT_putrgb (struct GMT_CTRL *GMT_UNUSED(GMT), double *rgb) {
 }
 
 /*! Creates the string c/m/y/k corresponding to the CMYK quadruplet */
-char *GMT_putcmyk (struct GMT_CTRL *GMT_UNUSED(GMT), double *cmyk)
-{
+char *GMT_putcmyk (struct GMT_CTRL *GMT, double *cmyk) {
 
+	GMT_UNUSED(GMT);
 	static char text[GMT_LEN256] = {""};
 
 	if (cmyk[0] < -0.5)
@@ -6113,9 +6421,9 @@ char *GMT_putcmyk (struct GMT_CTRL *GMT_UNUSED(GMT), double *cmyk)
 }
 
 /*! Creates the string h/s/v corresponding to the HSV triplet */
-char *GMT_puthsv (struct GMT_CTRL *GMT_UNUSED(GMT), double *hsv)
-{
+char *GMT_puthsv (struct GMT_CTRL *GMT, double *hsv) {
 
+	GMT_UNUSED(GMT);
 	static char text[GMT_LEN256] = {""};
 
 	if (hsv[0] < -0.5)
@@ -6208,8 +6516,8 @@ unsigned int GMT_unit_lookup (struct GMT_CTRL *GMT, int c, unsigned int unit)
 }
 
 /*! . */
-int GMT_hash (struct GMT_CTRL *GMT_UNUSED(GMT), char *v, unsigned int n_hash)
-{
+int GMT_hash (struct GMT_CTRL *GMT, char *v, unsigned int n_hash) {
+	GMT_UNUSED(GMT);
 	int h;
 	assert (v!=NULL); /* We are in trouble if we get a NULL pointer here */
 	for (h = 0; *v != '\0'; v++) h = (64 * h + (*v)) % n_hash;
@@ -6349,8 +6657,7 @@ int GMT_get_datum (struct GMT_CTRL *GMT, char *name)
 }
 
 /*! . */
-bool GMT_get_time_system (struct GMT_CTRL *GMT_UNUSED(GMT), char *name, struct GMT_TIME_SYSTEM *time_system)
-{
+bool GMT_get_time_system (struct GMT_CTRL *GMT, char *name, struct GMT_TIME_SYSTEM *time_system) {
 	/* Convert TIME_SYSTEM into TIME_EPOCH and TIME_UNIT.
 	   TIME_SYSTEM can be one of the following: j2000, jd, mjd, s1985, unix, dr0001, rata
 	   or any string in the form "TIME_UNIT since TIME_EPOCH", like "seconds since 1985-01-01".
@@ -6358,6 +6665,7 @@ bool GMT_get_time_system (struct GMT_CTRL *GMT_UNUSED(GMT), char *name, struct G
 	   See GMT_init_time_system_structure for that.
 	   TIME_SYSTEM = other is completely ignored.
 	*/
+	GMT_UNUSED(GMT);
 	char *epoch = NULL;
 
 	if (!strcmp (name, "j2000")) {
@@ -6403,7 +6711,8 @@ bool GMT_get_time_system (struct GMT_CTRL *GMT_UNUSED(GMT), char *name, struct G
 }
 
 /*! . */
-int GMT_get_char_encoding (struct GMT_CTRL *GMT_UNUSED(GMT), char *name) {
+int GMT_get_char_encoding (struct GMT_CTRL *GMT, char *name) {
+	GMT_UNUSED(GMT);
 	int i;
 
 	for (i = 0; i < 7 && strcmp (name, GMT_weekdays[i]); i++);
@@ -6722,6 +7031,7 @@ void GMT_end (struct GMT_CTRL *GMT)
 
 	if (GMT->init.runtime_bindir) {free (GMT->init.runtime_bindir); GMT->init.runtime_bindir = NULL;}
 	if (GMT->init.runtime_libdir) {free (GMT->init.runtime_libdir); GMT->init.runtime_libdir = NULL;}
+	if (GMT->init.runtime_plugindir) {free (GMT->init.runtime_plugindir); GMT->init.runtime_plugindir = NULL;}
 	free (GMT->session.SHAREDIR); GMT->session.SHAREDIR = NULL;
 	free (GMT->session.HOMEDIR); GMT->session.HOMEDIR = NULL;
 	if (GMT->session.DATADIR) {free (GMT->session.DATADIR); GMT->session.DATADIR = NULL;}
@@ -7245,9 +7555,10 @@ int gmt_strip_colonitem (struct GMT_CTRL *GMT, int axis, const char *in, const c
 }
 
 /*! . */
-void gmt_handle_atcolon (struct GMT_CTRL *GMT_UNUSED(GMT), char *txt, int old_p)
+void gmt_handle_atcolon (struct GMT_CTRL *GMT, char *txt, int old_p)
 {	/* Way = 0: Replaces @:<size>: and @:: with @^<size>^ and @^^ to avoid trouble in -B:label: parsing;
 	 * Way = 1: Restores it the way it was. */
+	GMT_UNUSED(GMT);
 	int new_p;
 	char *item[2] = {"@:", "@^"}, mark[2] = {':', '^'}, *s = NULL;
 
@@ -7722,8 +8033,9 @@ int gmt4_parse_B_option (struct GMT_CTRL *GMT, char *in) {
 /* New GMT5 functions for parsing new -B syntax */
 
 /*! . */
-void gmt5_handle_plussign (struct GMT_CTRL *GMT_UNUSED(GMT), char *in, unsigned way) {
+void gmt5_handle_plussign (struct GMT_CTRL *GMT, char *in, unsigned way) {
 	/* Way = 0: replace ++ with ASCII 1, Way = 1: Replace ASCII 1 with + */
+	GMT_UNUSED(GMT);
 	if (in == NULL || in[0] == '\0') return;	/* No string to check */
 	if (way == 0) {	/* Replace pairs of ++ with a single ASCII 1 */
 		char *c = in;
@@ -8992,6 +9304,10 @@ int GMT_parse_vector (struct GMT_CTRL *GMT, char symbol, char *text, struct GMT_
 					S->v.status |= GMT_VEC_OUTLINE2;	/* Flag that a pen specification was given */
 				}
 				break;
+			case 'z':	/* Input (angle,length) are vector components (dx,dy) instead */
+				S->v.status |= GMT_VEC_COMPONENTS;
+				S->v.comp_scale = (float)GMT_convert_units (GMT, &p[1], GMT->current.setting.proj_length_unit, GMT_INCH);
+				break;
 			default:
 				GMT_Report (GMT->parent, GMT_MSG_NORMAL, "Bad modifier +%c\n", p[0]);
 				error++;
@@ -9224,7 +9540,7 @@ int GMT_parse_symbol_option (struct GMT_CTRL *GMT, char *text, struct GMT_SYMBOL
 			int one;
 			char txt_c[GMT_LEN256] = {""};
 			p->v.parsed_v4 = false;
-			if (strchr (text, '/') && !strstr (text, "+o")) {	/* Gave old-style arrow dimensions; cannot exactly reproduce GMT 4 arrows since those were polygons */
+			if (strchr (text, '/') && !strchr (text, '+')) {	/* Gave old-style arrow dimensions; cannot exactly reproduce GMT 4 arrows since those were polygons */
 				p->v.status |= GMT_VEC_END;		/* Default is head at end */
 				p->size_y = p->given_size_y = 0.0;
 				GMT_Report (GMT->parent, GMT_MSG_COMPAT, "Warning: <size> = <vectorwidth/headlength/headwidth> is deprecated; see -S%c syntax.\n", text[0]);
@@ -9872,7 +10188,8 @@ int GMT_init_scales (struct GMT_CTRL *GMT, unsigned int unit, double *fwd_scale,
 }
 
 /*! Converts character unit (e.g., 'k') to unit number (e.g., GMT_IS_KM) */
-enum GMT_enum_units GMT_get_unit_number (struct GMT_CTRL *GMT_UNUSED(GMT), char unit) {
+enum GMT_enum_units GMT_get_unit_number (struct GMT_CTRL *GMT, char unit) {
+	GMT_UNUSED(GMT);
 	enum GMT_enum_units mode;
 
 	switch (unit) {
@@ -10440,7 +10757,8 @@ int GMT_init_fonts (struct GMT_CTRL *GMT) {
 }
 
 /*! . */
-struct GMT_CTRL *New_GMT_Ctrl (char *GMT_UNUSED(session), unsigned int pad) {	/* Allocate and initialize a new common control structure */
+struct GMT_CTRL *New_GMT_Ctrl (char *session, unsigned int pad) {	/* Allocate and initialize a new common control structure */
+	GMT_UNUSED(session);
 	int i;
 	char path[PATH_MAX+1];
 	char *unit_name[4] = {"cm", "inch", "m", "point"};

@@ -30,9 +30,26 @@
 #ifndef _GMT_INTERNALS_H
 #define _GMT_INTERNALS_H
 
+#ifdef HAVE_FFTW3F
+/* FFTW_planner_flags: FFTW_ESTIMATE, FFTW_MEASURE, FFTW_PATIENT, FFTW_EXHAUSTIVE */
+#	include <fftw3.h>
+#endif
+
 enum GMT_enum_cplx {GMT_RE = 0, GMT_IM = 1};	/* Real and imaginary indices */
 
+/*--------------------------------------------------------------------
+ *			GMT XINGS STRUCTURE DEFINITION
+ *--------------------------------------------------------------------*/
+
+struct GMT_XINGS {
+        double xx[2], yy[2];    /* Cartesian coordinates of intersection with map boundary */
+        double angle[2];        /* Angles of intersection */
+        unsigned int sides[2];	/* Side id of intersection */
+        unsigned int nx;	/* Number of intersections (1 or 2) */
+};
+
 EXTERN_MSC void GMT_set_dataset_minmax (struct GMT_CTRL *GMT, struct GMT_DATASET *D);
+EXTERN_MSC void GMT_init_cpt (struct GMT_CTRL *GMT, struct GMT_PALETTE *P);
 
 EXTERN_MSC struct GMT_PALETTE * GMT_duplicate_palette (struct GMT_CTRL *GMT, struct GMT_PALETTE *P_from, unsigned int mode);
 EXTERN_MSC unsigned int GMT_unit_lookup (struct GMT_CTRL *GMT, int c, unsigned int unit);
@@ -110,7 +127,7 @@ EXTERN_MSC void gmt_geo_polygon (struct GMT_CTRL *GMT, double *lon, double *lat,
 EXTERN_MSC int GMT_io_banner (struct GMT_CTRL *GMT, unsigned int direction);
 
 EXTERN_MSC int GMT_gmonth_length (int year, int month);
-EXTERN_MSC void GMT_gcal_from_dt (struct GMT_CTRL *GMT, double t, struct GMT_gcal *cal);	/* Break internal time into calendar and clock struct info  */
+EXTERN_MSC void GMT_gcal_from_dt (struct GMT_CTRL *GMT, double t, struct GMT_GCAL *cal);	/* Break internal time into calendar and clock struct info  */
 EXTERN_MSC int GMT_great_circle_intersection (struct GMT_CTRL *GMT, double A[], double B[], double C[], double X[], double *CX_dist);
 EXTERN_MSC double GMT_great_circle_dist_degree (struct GMT_CTRL *GMT, double lon1, double lat1, double lon2, double lat2);
 EXTERN_MSC void GMT_get_point_from_r_az (struct GMT_CTRL *GMT, double lon0, double lat0, double r, double azim, double *lon1, double *lat1);
@@ -266,6 +283,7 @@ EXTERN_MSC double Cabs (double A[]);
 
 EXTERN_MSC void GMT_Garbage_Collection (struct GMTAPI_CTRL *API, int level);
 EXTERN_MSC char * GMT_create_header_item (struct GMTAPI_CTRL *API, unsigned int mode, void *arg);
+EXTERN_MSC const char *GMTAPI_get_moduleinfo (void *V_API, char *module);
 
 /* For supplements */
 EXTERN_MSC int backwards_SQ_parsing (struct GMT_CTRL *GMT, char option, char *item);

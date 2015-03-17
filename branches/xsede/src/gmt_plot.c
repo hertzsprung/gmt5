@@ -84,6 +84,7 @@
 #include "gmt_internals.h"
 
 EXTERN_MSC int gmt_load_custom_annot (struct GMT_CTRL *GMT, struct GMT_PLOT_AXIS *A, char item, double **xx, char ***labels);
+EXTERN_MSC bool GMT_genper_reset (struct GMT_CTRL *GMT, bool reset);
 
 #define GMT_ELLIPSE_APPROX 72
 
@@ -667,8 +668,9 @@ void GMT_linearx_grid (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, dou
 
 }
 
-void GMT_linearx_oblgrid (struct GMT_CTRL *GMT, struct PSL_CTRL *GMT_UNUSED(PSL), double GMT_UNUSED(w), double GMT_UNUSED(e), double s, double n, double dval)
+void GMT_linearx_oblgrid (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, double e, double s, double n, double dval)
 {	/* x gridlines in oblique coordinates for all but the Oblique Mercator projection [which already is oblique] */
+	GMT_UNUSED(PSL); GMT_UNUSED(w); GMT_UNUSED(e);
 	double *x = NULL, *lon = NULL, *lat = NULL, *lat_obl = NULL, tval, p_cap, s_cap;
 	unsigned int idup = 0, i, j, k, nx, np, nc1 = 0, nc2, npc, np1;
 	bool cap = false;
@@ -776,9 +778,10 @@ void gmt_x_grid (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double s, double n,
 	}
 }
 
-void GMT_lineary_oblgrid (struct GMT_CTRL *GMT, struct PSL_CTRL *GMT_UNUSED(PSL), double w, double e, double GMT_UNUSED(s), double GMT_UNUSED(n), double dval)
+void GMT_lineary_oblgrid (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, double e, double s, double n, double dval)
 {	/* y gridlines in oblique coordinates for all but the Oblique Mercator projection [which already is oblique] */
 
+	GMT_UNUSED(PSL); GMT_UNUSED(s); GMT_UNUSED(n);
 	double *y = NULL, *lon = NULL, *lon_obl = NULL, *lat = NULL, tval, p_cap;
 	bool cap;
 	unsigned int i, k, ny, np;
@@ -1483,8 +1486,9 @@ void gmt_conic_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double 
 
 /*	OBLIQUE MERCATOR PROJECTION MAP FUNCTIONS	*/
 
-void gmt_oblmrc_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double GMT_UNUSED(w), double GMT_UNUSED(e), double GMT_UNUSED(s), double GMT_UNUSED(n))
+void gmt_oblmrc_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, double e, double s, double n)
 {
+	GMT_UNUSED(w); GMT_UNUSED(e); GMT_UNUSED(s); GMT_UNUSED(n);
 	gmt_rect_map_boundary (GMT, PSL, 0.0, 0.0, GMT->current.proj.rect[XHI], GMT->current.proj.rect[YHI]);
 }
 
@@ -1516,8 +1520,9 @@ void gmt_basic_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double 
  *	GENERIC MAP PLOTTING FUNCTIONS
  */
 
-int gmt_genper_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double GMT_UNUSED(w), double GMT_UNUSED(e), double GMT_UNUSED(s), double GMT_UNUSED(n))
+int gmt_genper_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, double e, double s, double n)
 {
+	GMT_UNUSED(w); GMT_UNUSED(e); GMT_UNUSED(s); GMT_UNUSED(n);
 	uint64_t nr;
 
 	if (GMT->common.R.oblique) {	/* Draw rectangular boundary and return */
@@ -1539,8 +1544,9 @@ int gmt_genper_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double 
 	return 0;
 }
 
-void gmt_circle_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double GMT_UNUSED(w), double GMT_UNUSED(e), double GMT_UNUSED(s), double GMT_UNUSED(n))
+void gmt_circle_map_boundary (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, double e, double s, double n)
 {
+	GMT_UNUSED(w); GMT_UNUSED(e); GMT_UNUSED(s); GMT_UNUSED(n);
 	if (GMT->common.R.oblique) { /* Draw rectangular boundary and return */
 		gmt_rect_map_boundary (GMT, PSL, 0.0, 0.0, GMT->current.proj.rect[XHI], GMT->current.proj.rect[YHI]);
 		return;
@@ -1796,7 +1802,11 @@ void gmt_map_gridlines (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, do
 {
 	unsigned int k, np, item[2] = {GMT_GRID_UPPER, GMT_GRID_LOWER};
 	double dx, dy, *v = NULL;
+	bool reset = false;
 
+	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Entering gmt_map_gridlines\n");
+	reset = GMT_genper_reset (GMT, reset);
+	
 	for (k = 0; k < 2; k++) {
 		if (GMT->current.setting.map_grid_cross_size[k] > 0.0) continue;
 
@@ -1843,6 +1853,8 @@ void gmt_map_gridlines (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, do
 
 		if (GMT->current.setting.map_grid_pen[k].style) PSL_setdash (PSL, NULL, 0);
 	}
+	reset = GMT_genper_reset (GMT, reset);
+	GMT_Report (GMT->parent, GMT_MSG_DEBUG, "Exiting gmt_map_gridlines\n");
 }
 
 void gmt_map_gridcross (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, double e, double s, double n)
@@ -2038,6 +2050,7 @@ void gmt_map_annotate (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, double w, dou
 	char label[GMT_LEN256] = {""};
 	char **label_c = NULL;
 	double *val = NULL, dx[2], dy[2], w2, s2, del, shift = 0.0;
+	
 
 	if (!(GMT_x_is_lon (GMT, GMT_IN) || GMT_y_is_lat (GMT, GMT_IN) || GMT->current.proj.projection == GMT_POLAR)) return;	/* Annotations and header already done by gmt_linear_map_boundary */
 
@@ -3860,7 +3873,7 @@ void gmt_contlabel_plotlabels (struct GMT_CTRL *GMT, struct PSL_CTRL *PSL, struc
 	form = mode;					/* Which actions to take */
 	if (G->box & 4) form |= PSL_TXT_ROUND;		/* Want round box shape */
 	if (G->curved_text) form |= PSL_TXT_CURVED;	/* Want text set along curved path */
-	if (!G->transparent) form |= PSL_TXT_FILLBOX;	/* Want the box filled */
+	if (G->fillbox) form |= PSL_TXT_FILLBOX;	/* Want the box filled */
 	if (G->box & 1) form |= PSL_TXT_DRAWBOX;	/* Want box outline */
 	if (mode & PSL_TXT_INIT) {	/* Determine and places all PSL attributes */
 		char font[PSL_BUFSIZ] = {""};
@@ -3983,7 +3996,7 @@ void GMT_contlabel_plot (struct GMT_CTRL *GMT, struct GMT_CONTOUR *G)
 
 	GMT_setfont (GMT, &G->font_label);
 
-	if (G->transparent) {		/* Transparent boxes means we must set up plot text, then set up clip paths, then draw lines, then deactivate clipping */
+	if (G->must_clip) {		/* Transparent boxes means we must set up plot text, then set up clip paths, then draw lines, then deactivate clipping */
 		/* Place PSL variables, plot labels, set up clip paths, draw lines */
 		mode = PSL_TXT_INIT | PSL_TXT_SHOW | PSL_TXT_CLIP_ON | PSL_TXT_DRAW;
 		if (!G->delay) mode |= PSL_TXT_CLIP_OFF;	/* Also turn off clip path when done */
@@ -4753,9 +4766,10 @@ double gmt_get_local_scale (struct GMT_CTRL *GMT, double lon0, double lat0, doub
 	return (length / hypot (x1 - x0, y1 - y0));	/* This scales a length in inches to degrees, approximately */
 }
 
-void gmt_circle_pen_poly (struct GMT_CTRL *GMT, double *A, double *GMT_UNUSED(B), bool longway, double rot, struct GMT_PEN *pen, struct GMT_SYMBOL *S, struct GMT_CIRCLE *C, double scale)
+void gmt_circle_pen_poly (struct GMT_CTRL *GMT, double *A, double *B, bool longway, double rot, struct GMT_PEN *pen, struct GMT_SYMBOL *S, struct GMT_CIRCLE *C, double scale)
 {	/* Given vectors A and B, return a small circle polygon path sampled every step that approximates a pen of given width
  	 * drawn on the map.  Use small circle pole and its opening rot */
+	GMT_UNUSED(B);
 	uint64_t k, n, n2;
 	double Ai[3], Ao[3], Px[3], X[3], R[3][3], R0[3][3], w, step;
 	struct GMT_DATASEGMENT *L = GMT_memory (GMT, NULL, 1, struct GMT_DATASEGMENT);

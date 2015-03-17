@@ -27,6 +27,7 @@
 #define THIS_MODULE_NAME	"grd2xyz"
 #define THIS_MODULE_LIB		"core"
 #define THIS_MODULE_PURPOSE	"Convert grid file to data table"
+#define THIS_MODULE_KEYS	"<GI,>DO"
 
 #include "gmt_dev.h"
 
@@ -314,7 +315,7 @@ int GMT_grd2xyz (void *V_API, int mode, void *args)
 				else if (GMT_z_input_is_nan_proxy (GMT, GMT_Z, d_value))	/* The inverse: Grid node is nan-proxy and -di was set, so change to NaN */
 					d_value = GMT->session.d_NaN;
 				write_error = GMT_Put_Record (API, GMT_WRITE_DOUBLE, &d_value);
-				if (write_error == 0) n_suppressed++;	/* Bad value caught by -s[r] */
+				if (write_error != 0) n_suppressed++;	/* Bad value caught by -s[r] */
 			}
 			GMT->current.io.output = save;			/* Reset pointer */
 			GMT->common.b.active[GMT_OUT] = previous;	/* Reset binary */
@@ -432,13 +433,13 @@ int GMT_grd2xyz (void *V_API, int mode, void *args)
 				}
 				else {
 					out[GMT_X] = x[col];	out[GMT_Y] = y[row];	out[GMT_Z] = G->data[ij];
-					if (GMT->common.d.active[GMT_OUT] && GMT_is_dnan (out[GMT_Z]))	/* Input matched no-data setting, so change to NaN */
+					if (GMT->common.d.active[GMT_OUT] && GMT_is_dnan_func (out[GMT_Z]))	/* Input matched no-data setting, so change to NaN */
 						out[GMT_Z] = GMT->common.d.nan_proxy[GMT_OUT];
 					else if (GMT_z_input_is_nan_proxy (GMT, GMT_Z, out[GMT_Z]))
 						out[GMT_Z] = GMT->session.d_NaN;
 				}
 				write_error = GMT_Put_Record (API, GMT_WRITE_DOUBLE, out);		/* Write this to output */
-				if (write_error == 0) n_suppressed++;	/* Bad value caught by -s[r] */
+				if (write_error != 0) n_suppressed++;	/* Bad value caught by -s[r] */
 			}
 			GMT_free (GMT, x);
 			GMT_free (GMT, y);

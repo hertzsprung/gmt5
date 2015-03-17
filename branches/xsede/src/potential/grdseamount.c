@@ -15,6 +15,7 @@
 #define THIS_MODULE_NAME	"grdseamount"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Compute synthetic seamount (Gaussian, parabolic, cone or disc, circular or elliptical) bathymetry"
+#define THIS_MODULE_KEYS	"<DI,GGO"
 
 #include "gmt_dev.h"
 
@@ -319,11 +320,12 @@ int GMT_grdseamount_parse (struct GMT_CTRL *GMT, struct GRDSEAMOUNT_CTRL *Ctrl, 
 	return (n_errors ? GMT_PARSE_ERROR : GMT_OK);
 }
 
-void disc_area_volume_height (double a, double b, double h, double hc, double GMT_UNUSED (f), double *A, double *V, double *z)
+void disc_area_volume_height (double a, double b, double h, double hc, double f, double *A, double *V, double *z)
 {
 	/* Compute area and volume of circular or elliptical disc "seamounts" (more like plateaus).
 	 * Here, f is not used; ignore compiler warning. */
 
+	GMT_UNUSED(f);
 	double r2;
 
 	r2 = a * b;
@@ -658,7 +660,7 @@ int GMT_grdseamount (void *V_API, int mode, void *args)
 				
 	/* Set up and allocate output grid */
 	if ((Grid = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, NULL, Ctrl->I.inc,
-		GMT_GRID_DEFAULT_REG, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+		GMT_GRID_DEFAULT_REG, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 		
 	GMT_set_xy_domain (GMT, wesn, Grid->header);	/* May include some padding if gridline-registered */
 	nx1 = Grid->header->nx + Grid->header->registration - 1;

@@ -33,6 +33,7 @@
 #define THIS_MODULE_NAME	"grdgravmag3d"
 #define THIS_MODULE_LIB		"potential"
 #define THIS_MODULE_PURPOSE	"Computes the gravity effect of one (or two) grids by the method of Okabe"
+#define THIS_MODULE_KEYS	"<GI,FDi,GGO"
 
 #include "gmt_dev.h"
 #include "okbfuns.h"
@@ -520,7 +521,7 @@ int GMT_grdgravmag3d (void *V_API, int mode, void *args) {
 		}
 
 		if ((Gout = GMT_Create_Data (API, GMT_IS_GRID, GMT_IS_SURFACE, GMT_GRID_ALL, NULL, wesn, inc,
-			GridA->header->registration, GMT_NOTSET, Ctrl->G.file)) == NULL) Return (API->error);
+			GridA->header->registration, GMT_NOTSET, NULL)) == NULL) Return (API->error);
 
 		GMT_Report (API, GMT_MSG_VERBOSE, "Grid dimensions are nx = %d, ny = %d\n",
 					Gout->header->nx, Gout->header->ny);
@@ -1068,9 +1069,9 @@ int grdgravmag3d_body_desc_tri(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, s
 }
 
 /* -----------------------------------------------------------------------------------*/
-int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *GMT_UNUSED(Ctrl), struct BODY_DESC *body_desc,
+int grdgravmag3d_body_desc_prism(struct GMT_CTRL *GMT, struct GRDOKB_CTRL *Ctrl, struct BODY_DESC *body_desc,
                                  struct BODY_VERTS **body_verts, unsigned int face) {
-
+	GMT_UNUSED(Ctrl);
 	if (face != 0 && face != 5) return(0);
 
 	body_desc->n_f = 1;
@@ -1183,7 +1184,6 @@ void grdgravmag3d_calc_surf_ (struct THREAD_STRUCT *t) {
     struct GMT_GRID *Gout       = t->Gout;
     struct GMT_GRID *Gsource    = t->Gsource;
     struct BODY_DESC *body_desc = t->body_desc;
-    struct MAG_VAR *mag_var     = t->mag_var;
     struct LOC_OR *loc_or       = t->loc_or;
     double *x_grd               = t->x_grd;
     double *y_grd               = t->y_grd;

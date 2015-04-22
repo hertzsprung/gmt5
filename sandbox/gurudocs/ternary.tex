@@ -1,0 +1,43 @@
+%	$Id$
+% Internal documentation for adding a ternary diagram mode
+% Paul Wessel, April 21, 2015.
+\documentclass[12pt,letterpaper,margin=0.5in]{report}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{breqn}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{lscape}
+\textheight = 9 in
+\topmargin = -1 in
+\begin{document}
+
+\section*{ADDING TERNARY DIAGRAMS TO GMT}
+
+Given that ternary diagrams may contain symbols, lines, contours, images, and text it may
+be simplest to implement ternary plots via a projection that converts (a,b,c) to (x,y).
+However, most GMT tools expect (x,y) for positioning and not (a,b,c).  Thus, it would require
+much work to allow modules to read (a,b,c) and internally determine (x,y) which is what
+the rest of the module may need.  Also, the standard -R option is Cartesian and not easily
+changeable to deal with ternary specification.  One possibility
+is to have a single new module ternary that may (depending on options)
+\begin{itemize}
+	\item Create a ternary basemap \emph{PostScript} overlay.  This is used to present the standard triangle with labels and annotations.
+	  It may need a specialized ``-B'' option to set 3 different axes (4 if 3-D).
+	\item Initiate a triangular clip path.  This is needed so that the plotting that follow (of x,y data using standard
+		linear projection overlays) is clipped to the triangular domain.
+	\item Terminate the triangular clip path when done.
+	\item Project (a,b,c) to (x,y) so that other GMT modules can plot or processed data further. For instance, we may wish to pipe
+		the output from this module through psxy to plot points.
+\end{itemize}
+If we did it this way then only one new module would be needed and it would uniquely handle the special input type
+and projection needed.  Here, perhaps something other than the typical -R may be needed and the same with the size
+of the plot.  Other modules would use -JXwidth to overlay material.  Assuming we don't have crazy stuff like geographical coordinates
+and time along these axes we could do
+\begin{itemize}
+\item {\bf -D}{\it a0/a1/b0/b1/c0/c1[/z0/z1]} to specify domain.
+\item {\bf -T}{\it width} to specify base width.
+\item {\bf -Aaa}{\it int}{\bf f}{\it int}{\bf g}{\it int}, {\bf -Aba}{\it int}{\bf f}{\it int}{\bf g}{\it int},
+{\bf -Aca}{\it int}{\bf f}{\it int}{\bf g}{\it int}, {\bf -Aza}{\it int}{\bf f}{\it int}{\bf g}{\it int} for annotation intervals etc.
+Probably add {\bf +l}``label'' to each of these to label the corner where a,b,z is 100\%.
+\end{itemize}
+\end{document}

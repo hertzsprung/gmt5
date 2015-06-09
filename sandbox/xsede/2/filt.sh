@@ -27,7 +27,7 @@ gmt pscoast -R -J -O -K -W0.25p -Dh >> $ps
 # Place color bar
 gmt psscale -Ct.cpt -D6.2i/-1.1i/9i/0.1i -Baf -O >> $ps
 # Convert to High-Res PDF
-gmt ps2raster -Tf -P $ps
+gmt psconvert -Tf -P $ps
 # Clean up
 rm -f topo_filt_g_int.nc topo_filt_m_int.nc t.cpt gmt.conf gmt.history $ps
 rm -f topo_filt_g.nc topo_filt_m.nc

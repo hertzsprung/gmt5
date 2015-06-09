@@ -1,5 +1,5 @@
 #!/bin/sh
-# Grid topo.xyz using Green's functions for cubic splines
+# Grid topo_${inc}.xyz using Green's functions for cubic splines
 # First we solve the exact interpolation.  Next we solve
 # via SVD and select enough eigenvalues to explain 99.99%
 # of data variance. This exercises both our Gauss-Jordan
@@ -11,7 +11,7 @@ inc=1m		# Use the ~5000 points 1m data set
 # Request time stamps with elapsed time in session
 gmt set TIME_REPORT elapsed
 # Do exact cubic spline interpolation
-gmt greenspline ../topo.xyz -R80W/64W/34N/42N -I${inc} -fg -D2 -Sc $verbose -Gtopo_spline_gj.nc
+gmt greenspline ../topo_${inc}.xyz -R80W/64W/34N/42N -I${inc} -fg -D2 -Sc $verbose -Gtopo_spline_gj.nc
 # Get data gradients to simulate illuminations
 gmt grdgradient topo_spline_gj.nc -A45 -Nt1 -Gtopo_spline_gj_int.nc
 # Get a rainbow color table scaled to data range
@@ -21,7 +21,7 @@ gmt grdimage topo_spline_gj.nc -Itopo_spline_gj_int.nc -Ct.cpt -JM6i -P -Baf -BW
 # Overlay coastline
 gmt pscoast -R -J -O -K -W0.25p -Dh >> $ps
 # Do approximate cubic spline interpolation
-gmt greenspline ../topo.xyz -R80W/64W/34N/42N -I${inc} -fg -D2 -Sc -Cv99.99 $verbose -Gtopo_spline_svd.nc
+gmt greenspline ../topo_${inc}.xyz -R80W/64W/34N/42N -I${inc} -fg -D2 -Sc -Cv99.99 $verbose -Gtopo_spline_svd.nc
 # Get data gradients to simulate illuminations
 gmt grdgradient topo_spline_svd.nc -A45 -Nt1 -Gtopo_spline_svd_int.nc
 # Plot splined result

@@ -13,31 +13,52 @@
 
 \section*{ADDING TERNARY DIAGRAMS TO GMT}
 
-Given that ternary diagrams may contain symbols, lines, contours, images, and text it may
-be simplest to implement ternary plots via a projection that converts (a,b,c) to (x,y).
-However, most GMT tools expect (x,y) for positioning and not (a,b,c).  Thus, it would require
-much work to allow modules to read (a,b,c) and internally determine (x,y) which is what
-the rest of the module may need.  Also, the standard -R option is Cartesian and not easily
-changeable to deal with ternary specification.  One possibility
-is to have a single new module ternary that may (depending on options)
+NSF/Geoinformatics has funded us to add ternary plots to GMT.
+These may contain symbols, lines, contours, images, and text and are
+in all regards just another kind of projection, except input data are
+typically triplets $(a,b,c)$ [with $c = S - a -b$ for some sum $S$] that must first be converted to $(x,y)$ before
+regular GMT plotting, gridding, and other operations can commence.  I suggest we implement ternary plots
+via a low-level i/o function that converts $(a,b,c)$ to $(x,y)$ during read when a ternary flag is set.
+This would be similar to two other low-level checks we currently perform, such as adjusting
+longitude periodicities or inverse-projecting incoming projected coordinates (e.g., convert UTM meters to lon/lat).
+The GMT modules only see the $(x,y)$ coordinates.
+Because additional columns may be present there will be some reshuffling of column arguments.
+
+The standard {\bf -R} option is flexible but not easily
+used to deal with ternary specifications.  We could simply extend it to handle
+a ternary mode, e.g., {\bf -Rt}.  Since {\bf -R} is required we let {\bf -Rt} trigger the
+ternary flag.
+With those changes, setting up a ternary projection is not actually needed as we proceed with
+{\bf -Jx}{\it scale} or {\bf -JX}{\it width}; the ternary flag will let us set a triangular
+clip path under-the-hood. 
+
+It would therefore seem we only have these challenges:
 \begin{itemize}
-	\item Create a ternary basemap \emph{PostScript} overlay.  This is used to present the standard triangle with labels and annotations.
-	  It may need a specialized ``-B'' option to set 3 different axes (4 if 3-D).
-	\item Initiate a triangular clip path.  This is needed so that the plotting that follow (of x,y data using standard
-		linear projection overlays) is clipped to the triangular domain.
-	\item Terminate the triangular clip path when done.
-	\item Project (a,b,c) to (x,y) so that other GMT modules can plot or processed data further. For instance, we may wish to pipe
-		the output from this module through psxy to plot points.
+	\item Specification of annotation, tick, and label information for \emph{three} instead of two axes in the plane.
+	This will need a specialized {\bf -B} mode.  Note there may be
+	four axes if $z$ is involved for a 3-D plot.  Alternatively, we use the {\bf -Bx}, {\bf -By}, {\bf -Bz} for the three
+	planar axes and add {\bf -Bt} for the 3rd dimension.  Or we introduce three new modes {\bf -Ba}, {\bf -Bb}, {\bf -Bc}.
+	The ternary flag lets us call the ternary-aware basemap sub-function.
+	\item The standard GMT plot setup  automatically issues a triangular clip path (unless {\bf -N} is used) as is true
+	for other projections.  The clip path is terminated at the end of a module.
+	\item For gridding $(a,b,c)$ data the $(x,y)$ ends up with a Cartesian {\bf -R} setting with regions of no data (outside triangle
+	but inside rectangle).  We could automatically apply a NaN-mask to those undefined regions (or not, since clipping will mask them).
+	\item When using {\bf -Rt} with grids it is understood that grids are given in $(x,y)$ coordinates that were converted
+	from $(a,b,c)$ [or there could be a flag in the grid header] and this would allow the triangular clipping to be set when needed.
 \end{itemize}
-If we did it this way then only one new module would be needed and it would uniquely handle the special input type
-and projection needed.  Here, perhaps something other than the typical -R may be needed and the same with the size
-of the plot.  Other modules would use -JXwidth to overlay material.  Assuming we don't have crazy stuff like geographical coordinates
-and time along these axes we could do
+
+Action items:
 \begin{itemize}
-\item {\bf -D}{\it a0/a1/b0/b1/c0/c1[/z0/z1]} to specify domain.
-\item {\bf -T}{\it width} to specify base width.
-\item {\bf -Aaa}{\it int}{\bf f}{\it int}{\bf g}{\it int}, {\bf -Aba}{\it int}{\bf f}{\it int}{\bf g}{\it int},
-{\bf -Aca}{\it int}{\bf f}{\it int}{\bf g}{\it int}, {\bf -Aza}{\it int}{\bf f}{\it int}{\bf g}{\it int} for annotation intervals etc.
-Probably add {\bf +l}``label'' to each of these to label the corner where a,b,z is 100\%.
+\item Add the mode {\bf -Rt}{\it a0/a1/b0/b1/c0/c1[/z0/z1]} for ``ternary region specification''.
+\item Add the option {\bf -Bt}{\it args} for axis specification of the vertical frame in 3-D ternary plots (or one of the other schemes).
+\item With ternary flag is true, map $(a,b,c)$ to $(x,y)$ during low-level input.
 \end{itemize}
+Per Wikipedia, given  $(a,b,c)$ coordinates we compute $(x,y)$ Cartesian coordinates via
+\begin{equation}
+	x = \frac{1}{2}\frac{2b+c}{a+b+c}, \quad \quad y = \frac{\sqrt{3}}{2}\frac{c}{a+b+c}.
+\end{equation}
+where it is implied that $a = 100$\% is the lower left vertex at $(0,0)$ and $b = 100$\% is the lower right vertex at $(1,0)$ and
+$c = 100$\% is at $(\frac{1}{2}, \frac{\sqrt{3}}{2})$.  These non-dimensional distances are then scaled by the map projection
+to the desired lengths.  Grids created from ternary data would go from 0 to 1 in $x$ and 0 to $\frac{\sqrt{3}}{2}$ in $y$. This
+means we cannot have an exact integer node count in $y$ but must exceed max y by a tiny bit.
 \end{document}

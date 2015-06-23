@@ -9,9 +9,11 @@ at XSEDE that demonstrate GMT processing bottlenecks that XSEDE might be able
 to speed up using parallelization and linear algebra optimization.<P>
 Test scripts and data demonstrating GMT use for these cases
 are available from this <a href="http://www.soest.hawaii.edu/pwessel/xsede/gmt-xsede.tgz"> gzipped tarball</a>.
-After expanding the tarball the top-level xsede directory contains the demonstration data sets topo.nc (a netCDF grid)
-and topo.xyz (3-column lon,lat,height ascii table), with subdirectories 1, 2 and 3 corresponding to the
-three cases.  The scripts in these subdirectories can be run as soon as GMT .has been installed<P>
+After expanding the tarball the top-level xsede directory contains the demonstration data sets topo.nc (a netCDF grid),
+topo_1m.xyz [~5000 points] and topo_2m.xyz [~1000 points]  (both 3-column lon,lat,height ascii tables), with subdirectories 1, 2 and 3 corresponding to the
+three cases.  The scripts in these subdirectories can be run as soon as GMT has been installed.  Note that
+the scripts in subdirs 1 and 3 uses a variable [$inc] to select the 1m or 2m data set from above.  Change
+this variable between 1m and 2m to do a slow or fast run, respectively.<P>
 
 <h3>GMT 5 XSEDE branch installation</h3>
 XSEDE developers must use the XSEDE branch of GMT 5, which can only
@@ -91,5 +93,5 @@ So when Open MP stuff has been implemented you can run the grdfilter examples by
 <B>Questions:</B> Send them to <A HREF="mailto:pwessel@hawaii.edu?Subject=XSEDE+GMT">Paul Wessel</A>
 <P>
 <HR><P>
-<I>Last update August 18, 2014 by Paul Wessel</I>
+<I>Last update June 9, 2015 by Paul Wessel</I>
 </HTML>

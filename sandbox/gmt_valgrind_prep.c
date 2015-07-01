@@ -23,44 +23,66 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N 100000	/* Lazy so just assume max this many suppressions */
+#define N 10000	/* Lazy so just assume max this many suppressions */
 
 int main () {
-	char buffer[10000] = {""}, line[BUFSIZ] = {""};
-	char *item[N];
-	char *skip = NULL;
-	unsigned int n_items = 0, k, j, n_gmt = 0;
+	char *item[N], *key[N];
+	char buffer[10000] = {""}, top[10000] = {""}, line[BUFSIZ] = {""};
+	char *s = NULL;
+	unsigned int n_unique = 0, n_in = 0, k, j = 0, n_gmt = 0, first;
 	
 	while (fgets (line, BUFSIZ, stdin)) {	/* Read until EOF */
 		if (line[0] == '{') {	/* Start of a suppression block report */
 			buffer[0] = 0;	/* Reset buffer for a new entry */
 			fgets (line, BUFSIZ, stdin);	/* Skip the first line which is "<insert_a_suppression_name_here>" */
+			first = 1;
 			while (fgets (line, BUFSIZ, stdin) && line[0] != '}') {	/* While not seeing the ending brace... */
-				strcat (buffer, line);	/* ..we append the line to the buffer */
+				if (!strncmp (line, "   fun:", 7U) && first) {
+					strcpy (top, line);
+					first = 0;
+				}
+				strcat (buffer, line);	/* ...we append the line to the buffer */
 			}
-			if (strstr (buffer, "GMT") || strstr (buffer, "PSL"))	/* This one is for GMT/PSL so we DONT want to include it */
-				n_gmt++;
-			else	/* Save a copy of this entry */
-				item[n_items++] = strdup (buffer);
-		}
-	}
-	/* Done reading, now find and flag duplicates */
-	skip = calloc (n_items, sizeof (char));
-	for (k = 0; k < n_items; k++) {
-		for (j = k + 1; j > n_items; j++) {
-			if (skip[j]) continue;	/* Already flagged */
-			if (!strcmp (item[k], item[j])) skip[j] = 1;	/* Found a duplicate */
+			n_in++;
+			/* See if we already have this one */
+			for (k = j = 0; j == 0 && k < n_unique; k++) {
+				if (!strcmp (item[k], buffer)) j = 1;	/* Found a duplicate */
+			}
+			if (j == 0) {	/* New entry */
+				s = strdup (top);
+				if (s == NULL) {
+					fprintf (stderr, "Ran out of memory - get a bigger computer!\n");
+					exit (-1);
+				}
+				key[n_unique] = s;
+				s = strdup (buffer);
+				if (s == NULL) {
+					fprintf (stderr, "Ran out of memory - get a bigger computer!\n");
+					exit (-1);
+				}
+				item[n_unique++] = s;
+				if (n_unique == N) {
+					fprintf (stderr, "Recompile after increasing N\n");
+					exit (-1);
+				}
+			}
 		}
 	}
 	/* Now print out the unique entries, giving them unique names in the process */
-	for (k = j = 0; k < n_items; k++) {
-		if (skip[k]) continue;	/* Skip this one */
+	for (k = j = 0; k < n_unique; k++) {
+		if (strstr (key[k], "GMT_") || strstr (key[k], "PSL_") || strstr (key[k], "gmt_") || strstr (key[k], "psl_"))	{	/* This one ends in a GMT/PSL call so we DONT want to suppress it */
+			n_gmt++;
+			fprintf (stderr, "{\n%s}\n", item[k]);
+			continue;
+		}
 		printf ("{\n   GMT-suppress-%6.6d\n", j++);	/* Unique name */
 		printf ("%s", item[k]);
 		printf ("}\n");
 	}
-	fprintf (stderr, "Found %d suppressions, only %d were unique, and we skipped %d that were GMT/PSL-specific.\n", n_items, j, n_gmt);
+	fprintf (stderr, "Found %d suppressions, only %d were unique, and we saved %d after skipping %d that were GMT/PSL-specific.\n", n_in, n_unique, j, n_gmt);
 	/* Free memory */
-	for (k = 0; k < n_items; k++) free (item[k]);
-	free (skip);
+	for (k = 0; k < n_unique; k++) {
+		free (item[k]);
+		free (key[k]);
+	}
 }

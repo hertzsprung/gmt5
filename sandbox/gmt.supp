@@ -1,0 +1,6486 @@
+{
+   GMT-suppress-000000
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_strdup_internal
+   fun:_Z25_objc_allocateFutureClassPKc
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000001
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_strdup_internal
+   fun:NXMapKeyCopyingInsert
+   fun:_Z25_objc_allocateFutureClassPKc
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000002
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_ZL17buildProtocolListP13category_listPK15protocol_list_tPS3_
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_class_getNonMetaClass
+   fun:lookUpImpOrForward
+   fun:objc_msgSend
+   fun:____CFSearchStringROM_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:__CFStringCreateImmutableFunnel3
+   fun:CFStringCreateWithCString
+}
+{
+   GMT-suppress-000003
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:objc_getFutureClass
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000004
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:objc_getFutureClass
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000005
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:objc_getFutureClass
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000006
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:__CFMakeNSBlockClasses
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000007
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:objc_registerClassPair
+   fun:__CFMakeNSBlockClasses
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000008
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:objc_getFutureClass
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000009
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:__CFMakeNSBlockClasses
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000010
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_malloc
+   fun:_CFRuntimeCreateInstance
+   fun:__CFStringCreateImmutableFunnel3
+   fun:CFStringCreateWithCString
+   fun:_CFBundleResourcesInitialize
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:CFBundleGetTypeID
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000011
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:_Z25_objc_allocateFutureClassPKc
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000012
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:strdup
+   fun:_CFProcessPath
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000013
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:_ZL12realizeClassP10objc_class
+   fun:_class_getNonMetaClass
+   fun:lookUpImpOrForward
+   fun:objc_msgSend
+   fun:____CFSearchStringROM_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:__CFStringCreateImmutableFunnel3
+   fun:CFStringCreateWithCString
+   fun:_CFBundleResourcesInitialize
+   fun:_dispatch_client_callout
+}
+{
+   GMT-suppress-000014
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_class_getNonMetaClass
+   fun:lookUpImpOrForward
+   fun:objc_msgSend
+   fun:____CFSearchStringROM_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:__CFStringCreateImmutableFunnel3
+   fun:CFStringCreateWithCString
+   fun:_CFBundleResourcesInitialize
+}
+{
+   GMT-suppress-000015
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_NXHashRehashToCapacity
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:objc_getFutureClass
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000016
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:class_createInstance
+   fun:_objc_rootAlloc
+   fun:____CFSearchStringROM_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:__CFStringCreateImmutableFunnel3
+   fun:CFStringCreateWithCString
+   fun:_CFBundleResourcesInitialize
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:CFBundleGetTypeID
+}
+{
+   GMT-suppress-000017
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_ZL22CPLCreateMutexInternali
+   fun:CPLCreateOrAcquireMutex
+   fun:_ZN14CPLMutexHolderC2EPPvdPKci
+   fun:CPLGetConfigOption
+   fun:_ZL11GDALDestroyv
+   fun:_ZN16ImageLoaderMachO13doTerminationERKN11ImageLoader11LinkContextE
+   fun:_ZN4dyldL23runAllStaticTerminatorsEPv
+   fun:__cxa_finalize_ranges
+   fun:exit
+   fun:start
+   obj:*
+}
+{
+   GMT-suppress-000018
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_malloc
+   fun:____CFCharacterSetInitialize_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000019
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_ZL17buildPropertyListPK15property_list_tP13category_lista
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_class_getNonMetaClass
+   fun:lookUpImpOrForward
+   fun:objc_msgSend
+   fun:____CFSearchStringROM_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:__CFStringCreateImmutableFunnel3
+   fun:CFStringCreateWithCString
+}
+{
+   GMT-suppress-000020
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_memdup_internal
+   fun:_ZL15fixupMethodListP13method_list_tbb
+   fun:_ZL17attachMethodListsP10objc_classPP13method_list_tibbb
+   fun:_ZL12realizeClassP10objc_class
+   fun:_class_getNonMetaClass
+   fun:lookUpImpOrForward
+   fun:objc_msgSend
+   fun:____CFSearchStringROM_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+   fun:__CFStringCreateImmutableFunnel3
+}
+{
+   GMT-suppress-000021
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_calloc
+   fun:NXHashInsert
+   fun:_NXHashRehashToCapacity
+   fun:NXHashInsert
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:objc_getFutureClass
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+}
+{
+   GMT-suppress-000022
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_malloc
+   fun:_CFRuntimeCreateInstance
+   fun:__CFArrayInit
+   fun:__CFArrayCreate0
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000023
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_malloc
+   fun:__CFGetConverter
+   fun:CFStringEncodingGetConverter
+   fun:CFStringGetSystemEncoding
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000024
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_memdup_internal
+   fun:_ZL15fixupMethodListP13method_list_tbb
+   fun:_ZL17attachMethodListsP10objc_classPP13method_list_tibbb
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_class_getNonMetaClass
+   fun:lookUpImpOrForward
+   fun:objc_msgSend
+   fun:____CFSearchStringROM_block_invoke
+   fun:_dispatch_client_callout
+   fun:dispatch_once_f
+}
+{
+   GMT-suppress-000025
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_malloc
+   fun:_CFRuntimeCreateInstance
+   fun:CFBasicHashCreate
+   fun:__CFInitialize
+   fun:_ZN16ImageLoaderMachO11doImageInitERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+{
+   GMT-suppress-000026
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_malloc
+   fun:_ZL12_NXMapRehashP11_NXMapTable
+   fun:NXMapInsert
+   fun:_ZL18__sel_registerNamePKcii
+   fun:_ZL15fixupMethodListP13method_list_tbb
+   fun:_ZL17attachMethodListsP10objc_classPP13method_list_tibbb
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:_ZL12realizeClassP10objc_class
+   fun:look_up_class
+   fun:objc_getFutureClass
+   fun:__CFInitialize
+}
+{
+   GMT-suppress-000027
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:class_createInstance
+   fun:_os_object_alloc_realized
+   fun:_xpc_pipe_create
+   fun:xpc_pipe_create
+   fun:_od_xpc_pipe
+   fun:_od_running
+   fun:ds_user_byuid
+   fun:search_item_bynumber
+   fun:getpwuid
+   fun:psl_putusername
+   fun:PSL_beginplot
+}
+{
+   GMT-suppress-000028
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdgradient
+}
+{
+   GMT-suppress-000029
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdgradient
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000030
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000031
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdgradient
+}
+{
+   GMT-suppress-000032
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000033
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000034
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000035
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:gmt_parse_R_option
+}
+{
+   GMT-suppress-000036
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:gmt_parse_R_option
+   fun:GMT_parse_common_options
+}
+{
+   GMT-suppress-000037
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:gmt_parse_R_option
+}
+{
+   GMT-suppress-000038
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdclip
+}
+{
+   GMT-suppress-000039
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdclip
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000040
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdclip
+}
+{
+   GMT-suppress-000041
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdview
+}
+{
+   GMT-suppress-000042
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdview
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000043
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdview
+}
+{
+   GMT-suppress-000044
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdcontour
+}
+{
+   GMT-suppress-000045
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdcontour
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000046
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdcontour
+}
+{
+   GMT-suppress-000047
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grd2cpt
+}
+{
+   GMT-suppress-000048
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grd2cpt
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000049
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grd2cpt
+}
+{
+   GMT-suppress-000050
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grd2xyz
+}
+{
+   GMT-suppress-000051
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdmath
+}
+{
+   GMT-suppress-000052
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdmath
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000053
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdmath
+}
+{
+   GMT-suppress-000054
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdvector
+}
+{
+   GMT-suppress-000055
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdvector
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000056
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdvector
+}
+{
+   GMT-suppress-000057
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdtrend
+}
+{
+   GMT-suppress-000058
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdtrend
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000059
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdtrend
+}
+{
+   GMT-suppress-000060
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdtrack
+}
+{
+   GMT-suppress-000061
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdtrack
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000062
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdtrack
+}
+{
+   GMT-suppress-000063
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdinfo
+}
+{
+   GMT-suppress-000064
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdinfo
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000065
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdinfo
+}
+{
+   GMT-suppress-000066
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdfilter
+}
+{
+   GMT-suppress-000067
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdfilter
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000068
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdfilter
+}
+{
+   GMT-suppress-000069
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdvolume
+}
+{
+   GMT-suppress-000070
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdvolume
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000071
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdvolume
+}
+{
+   GMT-suppress-000072
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__fread
+   fun:fread
+   fun:psl_read_rasheader
+   fun:PSL_loadimage
+   fun:GMT_psimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000073
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grd2xyz
+}
+{
+   GMT-suppress-000074
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grd2xyz
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000075
+   Memcheck:Cond
+   fun:__vfprintf
+   fun:__v2printf
+   fun:__xvprintf
+   fun:vfprintf
+   fun:PSL_command
+   fun:PSL_plotsymbol
+   fun:GMT_draw_map_panel
+   fun:gmt_draw_colorbar
+   fun:GMT_psscale
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000076
+   Memcheck:Cond
+   fun:__ultoa
+   fun:__vfprintf
+   fun:__v2printf
+   fun:__xvprintf
+   fun:vfprintf
+   fun:PSL_command
+   fun:PSL_plotsymbol
+   fun:GMT_draw_map_panel
+   fun:gmt_draw_colorbar
+   fun:GMT_psscale
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000077
+   Memcheck:Param
+   write(buf)
+   fun:write$NOCANCEL
+   fun:_swrite
+   fun:__sflush
+   fun:__sfvwrite
+   fun:fwrite
+   fun:psl_a85_encode
+   fun:psl_stream_dump
+   fun:PSL_plotcolorimage
+   fun:gmt_draw_colorbar
+   fun:GMT_psscale
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000078
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_greenspline_parse
+}
+{
+   GMT-suppress-000079
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_greenspline_parse
+   fun:GMT_greenspline
+}
+{
+   GMT-suppress-000080
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_greenspline_parse
+}
+{
+   GMT-suppress-000081
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdfft
+}
+{
+   GMT-suppress-000082
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdfft
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000083
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdfft
+}
+{
+   GMT-suppress-000084
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:GMT_memory_func
+   fun:GMTAPI_FFT_init_2d
+   fun:GMT_FFT_Create
+   fun:GMT_grdfft
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000085
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdhisteq
+}
+{
+   GMT-suppress-000086
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdhisteq
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000087
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdhisteq
+}
+{
+   GMT-suppress-000088
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__numeric_load_locale
+   fun:loadlocale
+   fun:GMT_sprintf_float
+   fun:GMT_get_coordinate_label
+   fun:GMT_xy_axis
+   fun:gmt_draw_colorbar
+   fun:GMT_psscale
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000089
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_ZL22CPLCreateMutexInternali
+   fun:CPLCreateOrAcquireMutex
+   fun:_ZN14CPLMutexHolderC2EPPvdPKci
+   fun:CPLGetConfigOption
+   fun:_ZL11GDALDestroyv
+   fun:_ZN16ImageLoaderMachO13doTerminationERKN11ImageLoader11LinkContextE
+   fun:_ZN4dyldL23runAllStaticTerminatorsEPv
+   fun:__cxa_finalize_ranges
+   fun:exit
+   fun:main
+}
+{
+   GMT-suppress-000090
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__srefill
+   fun:fgets
+   fun:GMT_read_cpt
+   fun:GMTAPI_Import_CPT
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_testapi
+   fun:main
+}
+{
+   GMT-suppress-000091
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__srefill
+   fun:fgets
+   fun:GMT_fgets
+   fun:gmt_ascii_input
+   fun:GMT_read_table
+   fun:GMTAPI_Import_Dataset
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_testapi
+}
+{
+   GMT-suppress-000092
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_testapi
+   fun:main
+}
+{
+   GMT-suppress-000093
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_testapi
+   fun:main
+}
+{
+   GMT-suppress-000094
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_testapi
+}
+{
+   GMT-suppress-000095
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_testapi
+   fun:main
+}
+{
+   GMT-suppress-000096
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_testapi
+}
+{
+   GMT-suppress-000097
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_testapi
+   fun:main
+}
+{
+   GMT-suppress-000098
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_testapi
+}
+{
+   GMT-suppress-000099
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__srefill
+   fun:fgets
+   fun:GMT_fgets
+   fun:GMT_ascii_textinput
+   fun:GMT_read_texttable
+   fun:GMTAPI_Import_Textset
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_testapi
+}
+{
+   GMT-suppress-000100
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:main
+}
+{
+   GMT-suppress-000101
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:main
+}
+{
+   GMT-suppress-000102
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:main
+}
+{
+   GMT-suppress-000103
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdconvert
+}
+{
+   GMT-suppress-000104
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdconvert
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000105
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdconvert
+}
+{
+   GMT-suppress-000106
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__fread
+   fun:fread
+   fun:GMT_read_rasheader
+   fun:GMT_is_ras_grid
+   fun:GMT_grd_get_format
+   fun:GMT_grdconvert
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000107
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__fread
+   fun:fread
+   fun:GMT_is_mgg2_grid
+   fun:GMT_grd_get_format
+   fun:GMT_grdconvert
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000108
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__fread
+   fun:fread
+   fun:GMT_is_agc_grid
+   fun:GMT_grd_get_format
+   fun:GMT_grdconvert
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000109
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__fread
+   fun:fread
+   fun:GMT_read_rasheader
+   fun:GMT_is_ras_grid
+   fun:GMT_grd_get_format
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000110
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__fread
+   fun:fread
+   fun:GMT_is_mgg2_grid
+   fun:GMT_grd_get_format
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000111
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__fread
+   fun:fread
+   fun:GMT_is_agc_grid
+   fun:GMT_grd_get_format
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000112
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_open_grd
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000113
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_open_grd
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:init_blend_job
+}
+{
+   GMT-suppress-000114
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_open_grd
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000115
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_open_grd
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000116
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:add_to_NCList
+   fun:NC_open
+   fun:nc_open
+   fun:GMTAPI_open_grd
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:init_blend_job
+   fun:GMT_grdblend
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000117
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdedit
+}
+{
+   GMT-suppress-000118
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdedit
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000119
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdedit
+}
+{
+   GMT-suppress-000120
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdcut
+}
+{
+   GMT-suppress-000121
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdcut
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000122
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdcut
+}
+{
+   GMT-suppress-000123
+   Memcheck:Cond
+   fun:BN_bin2bn
+   fun:bnrand
+   fun:bn_rand_range
+   fun:EC_KEY_generate_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+}
+{
+   GMT-suppress-000124
+   Memcheck:Cond
+   fun:BN_cmp
+   fun:bn_rand_range
+   fun:EC_KEY_generate_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000125
+   Memcheck:Cond
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ecp_nistz256_points_mul
+   fun:EC_POINT_mul
+   fun:EC_KEY_generate_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+}
+{
+   GMT-suppress-000126
+   Memcheck:Value8
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ecp_nistz256_points_mul
+   fun:EC_POINT_mul
+   fun:EC_KEY_generate_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+}
+{
+   GMT-suppress-000127
+   Memcheck:Cond
+   fun:ecp_nistz256_points_mul
+   fun:EC_POINT_mul
+   fun:EC_KEY_generate_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000128
+   Memcheck:Cond
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ecp_nistz256_points_mul
+   fun:EC_POINT_mul
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+}
+{
+   GMT-suppress-000129
+   Memcheck:Value8
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ecp_nistz256_points_mul
+   fun:EC_POINT_mul
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+}
+{
+   GMT-suppress-000130
+   Memcheck:Cond
+   fun:ecp_nistz256_point_add
+}
+{
+   GMT-suppress-000131
+   Memcheck:Cond
+   fun:ecp_nistz256_point_add
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   GMT-suppress-000132
+   Memcheck:Cond
+   fun:ecp_nistz256_points_mul
+   fun:EC_POINT_mul
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000133
+   Memcheck:Cond
+   fun:ecp_nistz256_get_affine
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000134
+   Memcheck:Cond
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000135
+   Memcheck:Value8
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000136
+   Memcheck:Cond
+   fun:BN_num_bits_word
+   fun:BN_bn2bin
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000137
+   Memcheck:Value8
+   fun:BN_num_bits_word
+   fun:BN_bn2bin
+   fun:ecdh_compute_key
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000138
+   Memcheck:Cond
+   fun:ecp_nistz256_get_affine
+   fun:ec_GFp_simple_point2oct
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000139
+   Memcheck:Cond
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ec_GFp_simple_point2oct
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000140
+   Memcheck:Value8
+   fun:BN_num_bits_word
+   fun:BN_num_bits
+   fun:ec_GFp_simple_point2oct
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000141
+   Memcheck:Cond
+   fun:BN_num_bits_word
+   fun:BN_bn2bin
+   fun:ec_GFp_simple_point2oct
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000142
+   Memcheck:Value8
+   fun:BN_num_bits_word
+   fun:BN_bn2bin
+   fun:ec_GFp_simple_point2oct
+   fun:ssl3_send_client_key_exchange
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000143
+   Memcheck:Cond
+   fun:aes_gcm_ctrl
+   fun:EVP_CIPHER_CTX_ctrl
+   fun:aes_gcm_cipher
+   fun:tls1_enc
+   fun:do_ssl3_write
+   fun:ssl3_write_bytes
+   fun:ssl3_do_write
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+}
+{
+   GMT-suppress-000144
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:sock_write
+   fun:BIO_write
+   fun:buffer_ctrl
+   fun:ssl3_connect
+   fun:ssl23_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000145
+   Memcheck:Cond
+   fun:_platform_memcmp
+   fun:aes_gcm_cipher
+   fun:tls1_enc
+   fun:ssl3_read_bytes
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+}
+{
+   GMT-suppress-000146
+   Memcheck:Cond
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000147
+   Memcheck:Cond
+   fun:BUF_MEM_grow_clean
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+}
+{
+   GMT-suppress-000148
+   Memcheck:Cond
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:BUF_MEM_grow_clean
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000149
+   Memcheck:Value8
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:BUF_MEM_grow_clean
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000150
+   Memcheck:Cond
+   fun:ssl3_read_bytes
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+}
+{
+   GMT-suppress-000151
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:ssl3_read_bytes
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000152
+   Memcheck:Cond
+   fun:SHA256_Update
+   fun:ssl3_finish_mac
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000153
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:SHA256_Update
+   fun:ssl3_finish_mac
+   fun:ssl3_get_message
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000154
+   Memcheck:Cond
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000155
+   Memcheck:Cond
+   fun:CRYPTO_memcmp
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000156
+   Memcheck:Value8
+   fun:CRYPTO_memcmp
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000157
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:ssl3_get_finished
+   fun:ssl3_connect
+   fun:ossl_connect_common
+   fun:Curl_ssl_connect_nonblocking
+   fun:https_connecting
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000158
+   Memcheck:Cond
+   fun:ssl3_read_bytes
+   fun:ssl3_read
+   fun:ossl_recv
+   fun:Curl_read
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000159
+   Memcheck:Cond
+   fun:_platform_memcmp
+   fun:aes_gcm_cipher
+   fun:tls1_enc
+   fun:ssl3_read_bytes
+   fun:ssl3_read
+   fun:ossl_recv
+   fun:Curl_read
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000160
+   Memcheck:Cond
+   fun:_platform_memchr$VARIANT$Generic
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000161
+   Memcheck:Cond
+   fun:Curl_raw_nequal
+   fun:checkhttpprefix
+   fun:checkprotoprefix
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000162
+   Memcheck:Cond
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000163
+   Memcheck:Cond
+   fun:strlen
+   fun:vsscanf_l
+   fun:sscanf
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000164
+   Memcheck:Cond
+   fun:__svfscanf_l
+   fun:vsscanf_l
+   fun:sscanf
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000165
+   Memcheck:Value8
+   fun:__svfscanf_l
+   fun:vsscanf_l
+   fun:sscanf
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000166
+   Memcheck:Cond
+   fun:strtoimax_l
+   fun:__svfscanf_l
+   fun:vsscanf_l
+   fun:sscanf
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000167
+   Memcheck:Value8
+   fun:strtoimax_l
+   fun:__svfscanf_l
+   fun:vsscanf_l
+   fun:sscanf
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000168
+   Memcheck:Cond
+   fun:Curl_raw_nequal
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000169
+   Memcheck:Cond
+   fun:Curl_raw_nequal
+   fun:Curl_compareheader
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000170
+   Memcheck:Cond
+   fun:Curl_compareheader
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000171
+   Memcheck:Cond
+   fun:CPLPrintString
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000172
+   Memcheck:Cond
+   fun:CPLParseNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000173
+   Memcheck:Value8
+   fun:Curl_raw_nequal
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000174
+   Memcheck:Cond
+   fun:Curl_copy_header_value
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000175
+   Memcheck:Value8
+   fun:Curl_copy_header_value
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000176
+   Memcheck:Value8
+   fun:_platform_strchr$VARIANT$Generic
+   fun:Curl_copy_header_value
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000177
+   Memcheck:Cond
+   fun:_platform_strchr$VARIANT$Generic
+   fun:Curl_copy_header_value
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000178
+   Memcheck:Cond
+   fun:malloc
+   fun:Curl_copy_header_value
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000179
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:Curl_copy_header_value
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000180
+   Memcheck:Value8
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:Curl_copy_header_value
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000181
+   Memcheck:Cond
+   fun:strncpy
+   fun:CPLParseNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000182
+   Memcheck:Cond
+   fun:strlen
+   fun:CSLSetNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000183
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:CSLSetNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000184
+   Memcheck:Value8
+   fun:strncasecmp_l
+   fun:CSLSetNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000185
+   Memcheck:Cond
+   fun:strlen
+   fun:__vfprintf
+   fun:__v2printf
+   fun:vsprintf_l
+   fun:sprintf
+   fun:CSLSetNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+}
+{
+   GMT-suppress-000186
+   Memcheck:Cond
+   fun:strtol_l
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000187
+   Memcheck:Value8
+   fun:strtol_l
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000188
+   Memcheck:Cond
+   fun:Curl_pgrsSetDownloadSize
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000189
+   Memcheck:Value8
+   fun:Curl_raw_nequal
+   fun:Curl_compareheader
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000190
+   Memcheck:Value8
+   fun:Curl_compareheader
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000191
+   Memcheck:Cond
+   fun:_platform_strchr$VARIANT$Generic
+   fun:Curl_compareheader
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000192
+   Memcheck:Cond
+   fun:strlen
+   fun:CSLAddNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000193
+   Memcheck:Cond
+   fun:strlen
+   fun:CPLStrdup
+   fun:CSLAddString
+   fun:CSLAddNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000194
+   Memcheck:Cond
+   fun:strcpy
+   fun:CPLStrdup
+   fun:CSLAddString
+   fun:CSLAddNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000195
+   Memcheck:Value8
+   fun:strcpy
+   fun:CPLStrdup
+   fun:CSLAddString
+   fun:CSLAddNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000196
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:strcpy
+   fun:CPLStrdup
+   fun:CSLAddString
+   fun:CSLAddNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000197
+   Memcheck:Value8
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:strcpy
+   fun:CPLStrdup
+   fun:CSLAddString
+   fun:CSLAddNameValue
+   fun:_ZL14CPLHdrWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+}
+{
+   GMT-suppress-000198
+   Memcheck:Cond
+   fun:Curl_http_auth_act
+   fun:Curl_http_readwrite_headers
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000199
+   Memcheck:Cond
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000200
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:ssl3_read_bytes
+   fun:ssl3_read
+   fun:ossl_recv
+   fun:Curl_read
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000201
+   Memcheck:Value8
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:ssl3_read_bytes
+   fun:ssl3_read
+   fun:ossl_recv
+   fun:Curl_read
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000202
+   Memcheck:Cond
+   fun:ssl3_read
+   fun:ossl_recv
+   fun:Curl_read
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000203
+   Memcheck:Cond
+   fun:ossl_recv
+   fun:Curl_read
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000204
+   Memcheck:Cond
+   fun:Curl_read
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000205
+   Memcheck:Value8
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000206
+   Memcheck:Cond
+   fun:Curl_client_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000207
+   Memcheck:Cond
+   fun:Curl_client_chop_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000208
+   Memcheck:Cond
+   fun:_ZL11CPLWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000209
+   Memcheck:Cond
+   fun:malloc
+   fun:realloc
+   fun:_ZL11CPLWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000210
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:_ZL11CPLWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000211
+   Memcheck:Value8
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:_ZL11CPLWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000212
+   Memcheck:Value8
+   fun:_ZL11CPLWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000213
+   Memcheck:Cond
+   fun:realloc
+   fun:_ZL11CPLWriteFctPvmmS_
+   fun:Curl_client_chop_write
+   fun:Curl_readwrite
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000214
+   Memcheck:Cond
+   fun:Curl_retry_request
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000215
+   Memcheck:Cond
+   fun:Curl_http_done
+   fun:Curl_done
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000216
+   Memcheck:Cond
+   fun:Curl_pgrsUpdate
+   fun:Curl_pgrsDone
+   fun:Curl_done
+   fun:multi_runsingle
+   fun:curl_multi_perform
+   fun:curl_easy_perform
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000217
+   Memcheck:Cond
+   fun:CPLHTTPFetch
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000218
+   Memcheck:Cond
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000219
+   Memcheck:Cond
+   fun:_platform_strncmp
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000220
+   Memcheck:Cond
+   fun:_ZN12VSIMemHandle4ReadEPvmm
+   fun:_ZN12GDALOpenInfoC2EPKc10GDALAccessPPc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000221
+   Memcheck:Cond
+   fun:strstr
+   fun:_ZN10VRTDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN10VRTDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000222
+   Memcheck:Cond
+   fun:_ZN12GTiffDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN12GTiffDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000223
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN11NITFDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN11NITFDataset12OpenInternalEP12GDALOpenInfoP11GDALDataseti
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000224
+   Memcheck:Cond
+   fun:___tolower_l
+   fun:strncasecmp_l
+   fun:_ZN11NITFDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN11NITFDataset12OpenInternalEP12GDALOpenInfoP11GDALDataseti
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000225
+   Memcheck:Value8
+   fun:___tolower_l
+   fun:strncasecmp_l
+   fun:_ZN11NITFDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN11NITFDataset12OpenInternalEP12GDALOpenInfoP11GDALDataseti
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000226
+   Memcheck:Cond
+   fun:_platform_memcmp
+   fun:_ZN13RPFTOCDataset16IsNonNITFFileTOCEP12GDALOpenInfoPKc
+   fun:_ZN13RPFTOCDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN13RPFTOCDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000227
+   Memcheck:Cond
+   fun:_ZN13RPFTOCDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN13RPFTOCDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000228
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN13RPFTOCDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN13RPFTOCDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000229
+   Memcheck:Cond
+   fun:strstr
+   fun:_ZN14ECRGTOCDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN14ECRGTOCDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000230
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN10HFADataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000231
+   Memcheck:Cond
+   fun:_ZN15SAR_CEOSDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000232
+   Memcheck:Cond
+   fun:_ZN11CEOSDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000233
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN17PALSARJaxaDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN17PALSARJaxaDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000234
+   Memcheck:Value8
+   fun:strncasecmp_l
+   fun:_ZN17PALSARJaxaDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN17PALSARJaxaDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000235
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN10GFFDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000236
+   Memcheck:Cond
+   fun:_ZN11ELASDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000237
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN11AAIGDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN11AAIGDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000238
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN17GRASSASCIIDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN17GRASSASCIIDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000239
+   Memcheck:Cond
+   fun:_ZN11SDTSDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000240
+   Memcheck:Cond
+   fun:strncasecmp_l
+   fun:_ZN11DTEDDataset8IdentifyEP12GDALOpenInfo
+   fun:_ZN11DTEDDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000241
+   Memcheck:Cond
+   fun:_platform_memcmp
+   fun:png_sig_cmp
+   fun:_ZN10PNGDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000242
+   Memcheck:Cond
+   fun:_ZN10PNGDataset4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000243
+   Memcheck:Cond
+   fun:_ZN16JPGDatasetCommon8IdentifyEP12GDALOpenInfo
+   fun:_ZN16JPGDatasetCommon4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000244
+   Memcheck:Cond
+   fun:_ZN16JPGDatasetCommon4OpenEP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000245
+   Memcheck:Cond
+   fun:_ZN12VSIMemHandle4SeekEyi
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000246
+   Memcheck:Cond
+   fun:_ZN12VSIMemHandle4ReadEPvmm
+   fun:_ZL17fill_input_bufferP22jpeg_decompress_struct
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000247
+   Memcheck:Cond
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000248
+   Memcheck:Value8
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000249
+   Memcheck:Cond
+   fun:next_marker
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000250
+   Memcheck:Cond
+   fun:get_interesting_appn
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000251
+   Memcheck:Cond
+   fun:examine_app0
+   fun:get_interesting_appn
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000252
+   Memcheck:Cond
+   fun:skip_variable
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000253
+   Memcheck:Cond
+   fun:_ZL15skip_input_dataP22jpeg_decompress_structl
+   fun:skip_variable
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000254
+   Memcheck:Value8
+   fun:next_marker
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000255
+   Memcheck:Cond
+   fun:get_sof
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+}
+{
+   GMT-suppress-000256
+   Memcheck:Cond
+   fun:alloc_small
+   fun:get_sof
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+}
+{
+   GMT-suppress-000257
+   Memcheck:Cond
+   fun:malloc
+   fun:alloc_small
+   fun:get_sof
+   fun:read_markers
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+}
+{
+   GMT-suppress-000258
+   Memcheck:Cond
+   fun:consume_markers
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000259
+   Memcheck:Cond
+   fun:jpeg_consume_input
+   fun:jpeg_read_header
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000260
+   Memcheck:Cond
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000261
+   Memcheck:Cond
+   fun:_ZN16JPGDatasetCommon21InitInternalOverviewsEv
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000262
+   Memcheck:Cond
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_ZN16JPGDatasetCommon21InitInternalOverviewsEv
+   fun:_ZN10JPGDataset4OpenEPKcPPci
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:_ZL8HTTPOpenP12GDALOpenInfo
+   fun:_Z16GDALOpenInternalR12GDALOpenInfoPKPKc
+   fun:_Z16GDALOpenInternalPKc10GDALAccessPKS0_
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000263
+   Memcheck:Cond
+   fun:GDALGetDataTypeName
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000264
+   Memcheck:Value8
+   fun:GDALGetDataTypeName
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000265
+   Memcheck:Cond
+   fun:_ZN14GDALRasterBand10GetMinimumEPi
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000266
+   Memcheck:Value8
+   fun:_ZN14GDALRasterBand10GetMinimumEPi
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000267
+   Memcheck:Cond
+   fun:_ZN14GDALRasterBand10GetMaximumEPi
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000268
+   Memcheck:Value8
+   fun:_ZN14GDALRasterBand10GetMaximumEPi
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000269
+   Memcheck:Cond
+   fun:_ZN14GDALRasterBand13InitBlockInfoEv
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000270
+   Memcheck:Cond
+   fun:calloc
+   fun:_ZN14GDALRasterBand13InitBlockInfoEv
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000271
+   Memcheck:Cond
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000272
+   Memcheck:Cond
+   fun:_ZN14GDALRasterBand20TryGetLockedBlockRefEii
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000273
+   Memcheck:Value8
+   fun:_ZN15GDALRasterBlock13SafeLockBlockEPPS_
+   fun:_ZN14GDALRasterBand20TryGetLockedBlockRefEii
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000274
+   Memcheck:Value8
+   fun:_ZN14GDALRasterBand20TryGetLockedBlockRefEii
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000275
+   Memcheck:Cond
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000276
+   Memcheck:Cond
+   fun:_ZN14GDALRasterBand12GetBlockSizeEPiS0_
+   fun:_ZN15GDALRasterBlockC1EP14GDALRasterBandii
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000277
+   Memcheck:Cond
+   fun:GDALGetDataTypeSize
+   fun:_ZN15GDALRasterBlock11InternalizeEv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000278
+   Memcheck:Value8
+   fun:GDALGetDataTypeSize
+   fun:_ZN15GDALRasterBlock11InternalizeEv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000279
+   Memcheck:Cond
+   fun:malloc
+   fun:_ZN15GDALRasterBlock11InternalizeEv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000280
+   Memcheck:Cond
+   fun:_ZN15GDALRasterBlock11InternalizeEv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000281
+   Memcheck:Value8
+   fun:_ZN14GDALRasterBand10AdoptBlockEiiP15GDALRasterBlock
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000282
+   Memcheck:Cond
+   fun:GDALGetDataTypeSize
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000283
+   Memcheck:Value8
+   fun:GDALGetDataTypeSize
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000284
+   Memcheck:Cond
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdimage
+}
+{
+   GMT-suppress-000285
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000286
+   Memcheck:Value8
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000287
+   Memcheck:Cond
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000288
+   Memcheck:Cond
+   fun:jpeg_core_output_dimensions
+   fun:jpeg_calc_output_dimensions
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000289
+   Memcheck:Cond
+   fun:jpeg_calc_output_dimensions
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000290
+   Memcheck:Value8
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000291
+   Memcheck:Cond
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000292
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000293
+   Memcheck:Value8
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000294
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_color_deconverter
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000295
+   Memcheck:Value8
+   fun:jinit_color_deconverter
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000296
+   Memcheck:Cond
+   fun:jinit_color_deconverter
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000297
+   Memcheck:Cond
+   fun:alloc_small
+   fun:build_ycc_rgb_table
+   fun:jinit_color_deconverter
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000298
+   Memcheck:Value8
+   fun:build_ycc_rgb_table
+   fun:jinit_color_deconverter
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000299
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_upsampler
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000300
+   Memcheck:Value8
+   fun:jinit_upsampler
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000301
+   Memcheck:Cond
+   fun:jinit_upsampler
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000302
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_d_post_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000303
+   Memcheck:Value8
+   fun:jinit_d_post_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000304
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_inverse_dct
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000305
+   Memcheck:Value8
+   fun:jinit_inverse_dct
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000306
+   Memcheck:Cond
+   fun:jinit_inverse_dct
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000307
+   Memcheck:Value8
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:jinit_inverse_dct
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000308
+   Memcheck:Cond
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:jinit_inverse_dct
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000309
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_huff_decoder
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000310
+   Memcheck:Value8
+   fun:jinit_huff_decoder
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000311
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_d_coef_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000312
+   Memcheck:Value8
+   fun:jinit_d_coef_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000313
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000314
+   Memcheck:Value8
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000315
+   Memcheck:Cond
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000316
+   Memcheck:Cond
+   fun:alloc_sarray
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000317
+   Memcheck:Cond
+   fun:alloc_small
+   fun:alloc_sarray
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000318
+   Memcheck:Cond
+   fun:alloc_large
+   fun:alloc_sarray
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000319
+   Memcheck:Cond
+   fun:malloc
+   fun:alloc_large
+   fun:alloc_sarray
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000320
+   Memcheck:Value8
+   fun:alloc_sarray
+   fun:jinit_d_main_controller
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000321
+   Memcheck:Cond
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000322
+   Memcheck:Value8
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000323
+   Memcheck:Cond
+   fun:alloc_small
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000324
+   Memcheck:Cond
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000325
+   Memcheck:Value8
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000326
+   Memcheck:Cond
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000327
+   Memcheck:Value8
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000328
+   Memcheck:Cond
+   fun:jpeg_make_d_derived_tbl
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000329
+   Memcheck:Value8
+   fun:jpeg_make_d_derived_tbl
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000330
+   Memcheck:Cond
+   fun:alloc_small
+   fun:jpeg_make_d_derived_tbl
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000331
+   Memcheck:Cond
+   fun:_platform_memset$VARIANT$Ivybridge
+   fun:jpeg_make_d_derived_tbl
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000332
+   Memcheck:Cond
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:jpeg_make_d_derived_tbl
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000333
+   Memcheck:Value8
+   fun:_platform_bzero$VARIANT$Ivybridge
+   fun:jpeg_make_d_derived_tbl
+   fun:start_pass_huff_decoder
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+}
+{
+   GMT-suppress-000334
+   Memcheck:Cond
+   fun:start_iMCU_row
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000335
+   Memcheck:Value8
+   fun:start_iMCU_row
+   fun:start_input_pass
+   fun:jinit_master_decompress
+   fun:jpeg_start_decompress
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000336
+   Memcheck:Value8
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000337
+   Memcheck:Value8
+   fun:prepare_for_output_pass
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000338
+   Memcheck:Cond
+   fun:start_pass
+   fun:prepare_for_output_pass
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000339
+   Memcheck:Value8
+   fun:start_pass
+   fun:prepare_for_output_pass
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000340
+   Memcheck:Value8
+   fun:start_output_pass
+   fun:prepare_for_output_pass
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000341
+   Memcheck:Value8
+   fun:start_pass_upsample
+   fun:prepare_for_output_pass
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000342
+   Memcheck:Value8
+   fun:start_pass_dpost
+   fun:prepare_for_output_pass
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000343
+   Memcheck:Value8
+   fun:start_pass_main
+   fun:prepare_for_output_pass
+   fun:output_pass_setup
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000344
+   Memcheck:Cond
+   fun:CPLMalloc
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000345
+   Memcheck:Cond
+   fun:malloc
+   fun:CPLMalloc
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000346
+   Memcheck:Cond
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000347
+   Memcheck:Value8
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000348
+   Memcheck:Value8
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+}
+{
+   GMT-suppress-000349
+   Memcheck:Value8
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000350
+   Memcheck:Cond
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+   fun:GMTAPI_Import_Data
+}
+{
+   GMT-suppress-000351
+   Memcheck:Value8
+   fun:decode_mcu
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000352
+   Memcheck:Cond
+   fun:jpeg_fill_bit_buffer
+   fun:decode_mcu
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+}
+{
+   GMT-suppress-000353
+   Memcheck:Cond
+   fun:decode_mcu
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000354
+   Memcheck:Value8
+   fun:jpeg_idct_islow
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000355
+   Memcheck:Cond
+   fun:jpeg_idct_islow
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000356
+   Memcheck:Value8
+   fun:jpeg_idct_16x16
+   fun:decompress_onepass
+   fun:process_data_simple_main
+   fun:jpeg_read_scanlines
+   fun:_ZN10JPGDataset12LoadScanlineEi
+   fun:_ZN13JPGRasterBand10IReadBlockEiiPv
+   fun:_ZN14GDALRasterBand17GetLockedBlockRefEiii
+   fun:_ZN14GDALRasterBand19ComputeRasterMinMaxEiPd
+   fun:populate_metadata
+   fun:GMT_gdalread
+   fun:GMT_read_image_info
+   fun:GMTAPI_Import_Image
+}
+{
+   GMT-suppress-000357
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:ConnectToServer
+   fun:DNSServiceCreateConnection
+   fun:_mdns_search
+   fun:mdns_addrinfo
+   fun:search_addrinfo
+   fun:si_addrinfo
+   fun:getaddrinfo
+   fun:Curl_getaddrinfo_ex
+   fun:Curl_getaddrinfo
+   fun:Curl_resolv
+   fun:Curl_resolv_timeout
+}
+{
+   GMT-suppress-000358
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:sa_dst_lookup
+   fun:sa_dst_compare_internal
+   fun:_qsort
+   fun:_gai_sort_list
+   fun:si_addrinfo
+   fun:getaddrinfo
+   fun:Curl_getaddrinfo_ex
+   fun:Curl_getaddrinfo
+   fun:Curl_resolv
+   fun:Curl_resolv_timeout
+   fun:Curl_connect
+}
+{
+   GMT-suppress-000359
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_malloc
+   fun:lh_new
+   fun:int_thread_get
+   fun:int_thread_set_item
+   fun:ERR_get_state
+   fun:ERR_clear_error
+   fun:ENGINE_load_builtin_engines
+   fun:Curl_ossl_init
+   fun:curl_global_init
+   fun:curl_easy_init
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000360
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_malloc
+   fun:lh_new
+   fun:int_err_get
+   fun:int_err_set_item
+   fun:ERR_load_ERR_strings
+   fun:ERR_load_crypto_strings
+   fun:SSL_load_error_strings
+   fun:Curl_ossl_init
+   fun:curl_global_init
+   fun:curl_easy_init
+   fun:CPLHTTPFetch
+}
+{
+   GMT-suppress-000361
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdpaste
+}
+{
+   GMT-suppress-000362
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdpaste
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000363
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdpaste
+}
+{
+   GMT-suppress-000364
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdproject
+}
+{
+   GMT-suppress-000365
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdproject
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000366
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdproject
+}
+{
+   GMT-suppress-000367
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_ZL22CPLCreateMutexInternali
+   fun:CPLCreateOrAcquireMutex
+   fun:_ZN14CPLMutexHolderC2EPPvdPKci
+   fun:CPLGetConfigOption
+   fun:_ZN10CPLLocaleCC2Ev
+   fun:_ZN19OGRSpatialReference15importFromProj4EPKc
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_write_grd
+   fun:GMT_write_grd
+   fun:GMTAPI_Export_Grid
+   fun:GMTAPI_Export_Data
+}
+{
+   GMT-suppress-000368
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdsample
+}
+{
+   GMT-suppress-000369
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdsample
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000370
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdsample
+}
+{
+   GMT-suppress-000371
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:class_createInstance
+   fun:_os_object_alloc_realized
+   fun:_xpc_pipe_create
+   fun:xpc_pipe_create
+   fun:_od_xpc_pipe
+   fun:_od_running
+   fun:ds_user_byuid
+   fun:search_item_bynumber
+   fun:getpwuid
+   fun:GMT_putusername
+   obj:*
+}
+{
+   GMT-suppress-000372
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_gravfft
+}
+{
+   GMT-suppress-000373
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_gravfft
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000374
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_gravfft
+}
+{
+   GMT-suppress-000375
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:GMT_memory_func
+   fun:GMTAPI_FFT_init_2d
+   fun:GMT_FFT_Create
+   obj:*
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000376
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:Prepare_Load
+}
+{
+   GMT-suppress-000377
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:Prepare_Load
+   fun:GMT_grdflexure
+}
+{
+   GMT-suppress-000378
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:Prepare_Load
+}
+{
+   GMT-suppress-000379
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdgravmag3d
+}
+{
+   GMT-suppress-000380
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdgravmag3d
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000381
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdgravmag3d
+}
+{
+   GMT-suppress-000382
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__numeric_load_locale
+   fun:loadlocale
+   fun:GMT_sprintf_float
+   fun:GMT_draw_map_scale
+   fun:GMT_psbasemap
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000383
+   Memcheck:Addr1
+   fun:strlen
+   fun:__vfprintf
+   fun:__v2printf
+   fun:__xvprintf
+   fun:vfprintf_l
+   fun:fprintf
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000384
+   Memcheck:Addr1
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:__sfvwrite
+   fun:__vfprintf
+   fun:__v2printf
+   fun:__xvprintf
+   fun:vfprintf_l
+   fun:fprintf
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+}
+{
+   GMT-suppress-000385
+   Memcheck:Addr1
+   fun:_platform_strcmp
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000386
+   Memcheck:Addr1
+   fun:strlen
+   fun:__strcat_chk
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000387
+   Memcheck:Addr1
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:__strcat_chk
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000388
+   Memcheck:Addr1
+   fun:strlen
+   fun:gmt_contlabel_addpath
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000389
+   Memcheck:Addr1
+   fun:strlen
+   fun:stpcpy
+   fun:__strcpy_chk
+   fun:gmt_contlabel_addpath
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000390
+   Memcheck:Addr2
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:stpcpy
+   fun:__strcpy_chk
+   fun:gmt_contlabel_addpath
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000391
+   Memcheck:Addr1
+   fun:_platform_memmove$VARIANT$Ivybridge
+   fun:stpcpy
+   fun:__strcpy_chk
+   fun:gmt_contlabel_addpath
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000392
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   fun:GMT_memory_func
+   fun:gmt_hold_contour_sub
+   fun:GMT_hold_contour
+   fun:GMT_psxy
+   fun:GMT_Call_Module
+   fun:GMT_pslegend
+   fun:GMT_Call_Module
+   fun:main
+}
+{
+   GMT-suppress-000393
+   Memcheck:Param
+   write(buf)
+   fun:write$NOCANCEL
+   fun:_swrite
+   fun:__sflush
+   fun:__sfvwrite
+   fun:__vfprintf
+   fun:__v2printf
+   fun:__xvprintf
+   fun:vfprintf
+   fun:PSL_command
+   fun:psl_stream_dump
+   fun:PSL_plotcolorimage
+   fun:gmt_draw_colorbar
+}
+{
+   GMT-suppress-000394
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_fopen
+   fun:GMT_fopen
+   fun:GMT_read_table
+   fun:GMTAPI_Import_Dataset
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_gmtmath
+}
+{
+   GMT-suppress-000395
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_fopen
+   fun:GMT_fopen
+   fun:GMT_read_table
+   fun:GMTAPI_Import_Dataset
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_gmtmath
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000396
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__srefill0
+   fun:__srefill
+   fun:fgets
+   fun:GMT_fgets
+   fun:gmt_ascii_input
+   fun:GMT_read_table
+   fun:GMTAPI_Import_Dataset
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+}
+{
+   GMT-suppress-000397
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdrotater
+}
+{
+   GMT-suppress-000398
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdrotater
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000399
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdrotater
+}
+{
+   GMT-suppress-000400
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdpmodeler
+}
+{
+   GMT-suppress-000401
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdpmodeler
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000402
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdpmodeler
+}
+{
+   GMT-suppress-000403
+   Memcheck:Cond
+   fun:strnlen
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdspotter
+}
+{
+   GMT-suppress-000404
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdspotter
+   fun:GMT_Call_Module
+}
+{
+   GMT-suppress-000405
+   Memcheck:Cond
+   fun:stpncpy
+   fun:__strncpy_chk
+   fun:GMT_nc_get_att_text
+   fun:gmt_nc_get_units
+   fun:gmt_nc_grd_info
+   fun:GMT_nc_read_grd_info
+   fun:GMT_read_grd_info
+   fun:GMTAPI_Import_Grid
+   fun:GMTAPI_Import_Data
+   fun:GMT_Get_Data
+   fun:GMT_Read_Data
+   fun:GMT_grdspotter
+}

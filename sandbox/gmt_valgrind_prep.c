@@ -8,13 +8,13 @@
  *
  * 0. find . -name 'valgrind_*.log' -exec rm -f {} \;
  * 1. Set export VALGRIND_ARGS="--track-origins=yes --leak-check=full --gen-suppressions=all"
- * 2. Run "make test"
+ * 2. Run "make check"
  * 3. find . -name 'valgrind_*.log' > t.lis
  * 4. cat `cat t.lis` | gmt_valgrind_prep > gmt.supp
  *    Now you are ready to run calgrind without all those silly messages.  Note you may have
  *    to provide full path or place gmt.supp in the current dir first.
  * 5. export VALGRIND_ARGS="--track-origins=yes --leak-check=full --suppressions=gmt.supp"
- * 6. make test
+ * 6. make check
  *
  * Paul Wessel, June 22, 2015.
  */

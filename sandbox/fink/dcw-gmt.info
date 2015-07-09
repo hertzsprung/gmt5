@@ -7,7 +7,7 @@ Recommends: gmt
 CompileScript: echo "Moving files..."
 InstallScript: <<
 	mkdir -p %i/share/gmt/dcw
-	mv *.nc %i/share/gmt/dcw
+	mv *.nc dcw-*.txt %i/share/gmt/dcw
 <<
 Description: Digital Chart of the World for GMT
 DescDetail: <<

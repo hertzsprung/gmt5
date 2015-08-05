@@ -26,7 +26,7 @@ the model, and the optional {\bf r} selects robust fitting.
 
 The proposed revised syntax for 1-D will be
 \\ \\
-{\bf --N}[{\bf p}$|${\bf P}$|${\bf f}$|${\bf F}$|${\bf c}$|${\bf C}$|${\bf s}$|${\bf S}]{\it n}[{\bf +l}$X$][{\bf +o}$x_0$][{\bf +r}]
+{\bf --N}[{\bf p}$|${\bf P}$|${\bf f}$|${\bf F}$|${\bf c}$|${\bf C}$|${\bf s}$|${\bf S}$|${\bf x}]{\it n}[{\bf +l}$X$][{\bf +o}$x_0$][{\bf +r}]
 \\ \\
 with new choices for specifying basis types and new modifiers that override default settings for key parameters; these are discussed
 in more detail when they are introduced below.
@@ -48,7 +48,7 @@ We want to select this entire sum (\ref{1D}) or just portions of it.  The new sy
 \begin{enumerate}
 	\item {\bf p}{\it n} will include all $n+1$ terms of the full polynomial sum in (1) [i.e., the old {\bf --N}{\it n}].
 	\item {\bf P}{\it n} (or {\bf x}{\it n}, or {\bf xx...x}) will only include the single term $x^n$.
-	\item {\bf f}{\it m} will include all $2m$ terms in the full Fourier sum (1), i.e., both the cosine and sine components [The old {\bf --Nf}{\it m}].
+	\item {\bf f}{\it m} will include all $2m$ terms in the full Fourier sum (1), i.e., both the cosine and sine components [i.e., the old {\bf --Nf}{\it m}].
 	\item {\bf F}{\it m} will only include 2 items: the sine and cosine terms for the $m$'th frequency.
 	\item {\bf c}{\it m} will include only the cosine series ($m$ terms) in (1).
 	\item {\bf C}{\it m} will only include the single cosine term for the $m$'th frequency.
@@ -75,20 +75,20 @@ The proposed revised syntax for 2-D is similar:
 \\ \\
 {\bf --N}[{\bf p}$|${\bf P}$|${\bf f}$|${\bf F}$|${\bf c}$|${\bf C}$|${\bf s}$|${\bf S}$|${\bf x}$|${\bf X}$|${\bf y}$|${\bf Y}][{\bf x}]{\it n}[{\bf y}{\it m}][{\bf +l}$X/Y$][{\bf +o}$x_0/y_0$][{\bf +r}]
 \\ \\
-Here, the general model is
+Here, the general model is (with $x$ implying $x - x_0$ and $y$ implying $y - y_0$)
 \begin{equation}
-z(x,y) = \sum_{i = 0}^n \sum_{j = 0}^n p_{ij} x^iy^j + \sum_{i = 0}^m \sum_{j = 0}^m f_{ij} \cos \left [\omega_i^x x \
-	- \phi_i^x \right ] \cos \left [\omega_j^y y - \phi_j^y \right ] .
+z(x,y) = \sum_{i = 0}^n \sum_{j = 0}^n p_{ij} x^iy^j + \sum_{i = 0}^m \sum_{j = 0}^m f_{ij} \cos \left [u_i x \
+	- \phi_i \right ] \cos \left [v_j y - \theta_j \right ] .
 \label{2D}
 \end{equation}
 with the obvious extension to include $y$-parameters.
-This model is nonlinear in $\phi_i^x$ and $\phi_i^y$ so we linearize the Fourier terms, i.e.,
+This model is nonlinear in $\phi_i$ and $\theta_j$ so we linearize the Fourier terms, i.e.,
 \begin{dmath}
-f_{ij} \cos \left [\omega_i^x x- \phi_i^x \right ] \cos \left [\omega_j^y y - \phi_j^y \right ] =
-a_{ij} \cos \omega_i^x x \cos \omega_j^y y + b_{ij} \cos \omega_i^x x \sin \omega_j^y y + \\
-c_{ij} \sin \omega_i^x x \cos \omega_j^y y + d_{ij} \sin \omega_i^x x \sin \omega_j^y y
+f_{ij} \cos \left [u_i x- \phi_i \right ] \cos \left [v_j y - \theta_j \right ] =
+a_{ij} \cos u_i x \cos v_j y + b_{ij} \cos u_i x \sin v_j y + \\
+c_{ij} \sin u_i x \cos v_j y + d_{ij} \sin u_i x \sin v_j y
 \end{dmath}
-and we recover the original parameters via $\phi_i^x = \tan^{-1}(c_{ij}/a_{ij})$ and $\phi_i^y = \tan^{-1}(b_{ij}/a_{ij})$
+and we recover the original parameters via $\phi_i = \tan^{-1}(c_{ij}/a_{ij})$ and $\theta_j = \tan^{-1}(b_{ij}/a_{ij})$
 for the two phases and $f_{ij} = \sqrt{a_{ij}^2 + b_{ij}^2 + c_{ij}^2 + f_{ij}^2}$ for the single amplitude.
 As for the 1-D case
 we wish to be able to specify subsets of this general model in (\ref{2D}).  Here are the possible arguments to {\bf --N}, alone or comma-separated:

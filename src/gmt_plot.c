@@ -4541,10 +4541,6 @@ uint64_t gmt_geo_polygon (struct GMT_CTRL *GMT, double *lon, double *lat, uint64
 		 */
 
 		if ((GMT->current.plot.n = GMT_clip_to_map (GMT, lon, lat, n, &xp, &yp)) == 0) return 0;		/* All points are outside region */
-		if (init) {
-			PSL_comment (PSL, "Temporarily set FO to P for complex polygon building\n");
-			PSL_command (PSL, "/FO {P}!\n");		/* Temporarily replace FO so we can build a complex path of closed polygons using {P} */
-		}
 		PSL_comment (PSL, comment);
 		PSL_plotpolygon (PSL, xp, yp, (unsigned int)GMT->current.plot.n);	/* Fill Cartesian polygon and possibly draw outline */
 		/* Free the memory we are done with */
@@ -4556,10 +4552,6 @@ uint64_t gmt_geo_polygon (struct GMT_CTRL *GMT, double *lon, double *lat, uint64
 		/* Here we come for all non-azimuthal projections */
 
 		if ((GMT->current.plot.n = GMT_geo_to_xy_line (GMT, lon, lat, n)) == 0) return 0;		/* Convert to (x,y,pen) - return if nothing to do */
-		if (init) {
-			PSL_comment (PSL, "Temporarily set FO to P for complex polygon building\n");
-			PSL_command (PSL, "/FO {P}!\n");		/* Temporarily replace FO so we can build a complex path of closed polygons using {P} */
-		}
 		PSL_comment (PSL, comment);
 
 		if (!GMT_is_geographic (GMT, GMT_IN)) {		/* Not geographic data so there are no periodic boundaries to worry about */
@@ -4712,10 +4704,6 @@ void GMT_geo_polygons (struct GMT_CTRL *GMT, struct GMT_DATASEGMENT *S)
 	for (S2 = S->next; S2; S2 = S2->next) {	/* Process all holes [none processed if there aren't any holes] */
 		if (PSL->internal.comments) sprintf (comment, "Hole polygon for %s\n", use[PSL->current.outline]);
 		used += gmt_geo_polygon_segment (GMT, S2, false, false, comment);	/* Add this hole to the path */
-	}
-	if (used) {
-		PSL_comment (PSL, "Reset FO and fill the path\n");
-		PSL_command (PSL, "/FO {fs os}!\nFO\n");	/* Reset FO to its original settings, then force the fill */
 	}
 	if (separate) {	/* Must draw outline separately */
 		if ((GMT->current.plot.n = GMT_geo_to_xy_line (GMT, S->coord[GMT_X], S->coord[GMT_Y], S->n_rows)) == 0) return;	/* Nothing further to do */

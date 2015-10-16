@@ -1024,7 +1024,7 @@ int GMT_pscontour (void *V_API, int mode, void *args)
 
 	if (Ctrl->D.active) {
 		uint64_t dim[4] = {0, 0, 0, 3};
-		if (Ctrl->D.file || !strchr (Ctrl->D.file, '%')) {	/* No file given or filename without C-format specifiers means a single output file */
+		if (!Ctrl->D.file || !strchr (Ctrl->D.file, '%')) {	/* No file given or filename without C-format specifiers means a single output file */
 			io_mode = GMT_WRITE_SET;
 			n_tables = 1;
 		}
